@@ -39,6 +39,58 @@ describe("EngineFileReader", (): void => {
     }
   });
 
+  it("reads exact content for a Markdown file", async (): Promise<void> => {
+    fixtureDirectory = await mkdtemp(join(tmpdir(), "opennav-file-reader-"));
+    const outputDirectory = join(fixtureDirectory, "dist");
+    const filePath = "docs/api.md";
+    const absoluteFilePath = join(outputDirectory, filePath);
+    const content = "# API\n\nUse the OpenNav AI engine.";
+    await mkdir(join(outputDirectory, "docs"), { recursive: true });
+    await writeFile(absoluteFilePath, content, "utf8");
+
+    const reader = new EngineFileReader();
+    const result = await reader.read({
+      outputDirectory,
+      filePath,
+    });
+
+    expect(result.isOk()).toEqual(true);
+    if (result.isOk()) {
+      expect(result.value).toEqual({
+        filePath,
+        kind: "markdown",
+        content,
+      });
+    }
+  });
+
+  it("returns an exact typed error for a missing file", async (): Promise<void> => {
+    fixtureDirectory = await mkdtemp(join(tmpdir(), "opennav-file-reader-"));
+    const outputDirectory = join(fixtureDirectory, "dist");
+    const filePath = "missing.html";
+    const absoluteFilePath = join(outputDirectory, filePath);
+    await mkdir(outputDirectory);
+
+    const reader = new EngineFileReader();
+    const result = await reader.read({
+      outputDirectory,
+      filePath,
+    });
+
+    expect(result.isErr()).toEqual(true);
+    if (result.isErr()) {
+      expect(result.error).toEqual({
+        code: "ENGINE_FILE_READ_FAILED",
+        message: "The engine could not read the built site file.",
+        context: {
+          outputDirectory,
+          filePath,
+          cause: `ENOENT: no such file or directory, open '${absoluteFilePath}'`,
+        },
+      });
+    }
+  });
+
   it("returns an exact typed error for a path outside the output directory", async (): Promise<void> => {
     fixtureDirectory = await mkdtemp(join(tmpdir(), "opennav-file-reader-"));
     const outputDirectory = join(fixtureDirectory, "dist");
