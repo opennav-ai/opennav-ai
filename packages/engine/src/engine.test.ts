@@ -93,7 +93,7 @@ describe("Engine", (): void => {
         context: {
           outputDirectory,
           filePath,
-          cause: `ENOENT: no such file or directory, open '${absoluteFilePath}'`,
+          cause: `ENOENT: no such file or directory, access '${absoluteFilePath}'`,
         },
       });
     }
