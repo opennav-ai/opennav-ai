@@ -32,6 +32,7 @@ export class EngineFileListReader {
     input: EngineFileListReadInput,
   ): Promise<Result<EngineFileListReadResult, OpenNavError>> {
     const files: EngineFile[] = [];
+    const skippedFilePaths: EngineFilePath[] = [];
     const warnings: OpenNavError[] = [];
 
     for (const filePath of input.filePaths) {
@@ -42,6 +43,7 @@ export class EngineFileListReader {
       }
 
       if (kindResult.value === "unsupported") {
+        skippedFilePaths.push(filePath);
         warnings.push(this.createUnsupportedFileWarning(filePath));
         continue;
       }
@@ -60,6 +62,7 @@ export class EngineFileListReader {
 
     return ok({
       files,
+      skippedFilePaths,
       warnings,
     });
   }

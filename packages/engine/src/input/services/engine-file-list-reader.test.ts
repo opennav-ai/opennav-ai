@@ -40,6 +40,7 @@ describe("EngineFileListReader", (): void => {
             content: htmlContent,
           },
         ],
+        skippedFilePaths: [unsupportedFilePath],
         warnings: [
           {
             code: "ENGINE_FILE_UNSUPPORTED",

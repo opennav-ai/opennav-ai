@@ -1,43 +1,99 @@
-import { describe, expect, it } from "vitest";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import type { Result } from "neverthrow";
+import { afterEach, describe, expect, it } from "vitest";
+import type { OpenNavError } from "./common/types/opennav-error";
 import { Engine } from "./engine";
 import * as publicExports from "./index";
 import type { EngineExecuteInput } from "./types/engine-execute-input";
+import type { EngineExecuteResult } from "./types/engine-execute-result";
 
-describe("Engine", () => {
-  it("is exported from the public package entrypoint", () => {
+describe("Engine", (): void => {
+  let fixtureDirectory: string | undefined;
+
+  afterEach(async (): Promise<void> => {
+    if (fixtureDirectory !== undefined) {
+      await rm(fixtureDirectory, { force: true, recursive: true });
+      fixtureDirectory = undefined;
+    }
+  });
+
+  it("is exported from the public package entrypoint", (): void => {
     expect(publicExports.Engine).toEqual(Engine);
   });
 
-  it("keeps Engine as the only runtime export", () => {
+  it("keeps Engine as the only runtime export", (): void => {
     expect(Object.keys(publicExports).sort()).toEqual(["Engine"]);
   });
 
-  it("accepts site settings, an output directory, and built file paths", () => {
+  it("reads built file paths and returns unsupported files as skipped warnings", async (): Promise<void> => {
+    fixtureDirectory = await mkdtemp(join(tmpdir(), "opennav-engine-"));
+    const outputDirectory = join(fixtureDirectory, "dist");
+    const htmlFilePath = "index.html";
+    const unsupportedFilePath = "image.png";
+    await mkdir(outputDirectory);
+    await writeFile(
+      join(outputDirectory, htmlFilePath),
+      "<html><head><title>Home</title></head></html>",
+      "utf8",
+    );
+    await writeFile(join(outputDirectory, unsupportedFilePath), "PNG", "utf8");
     const input: EngineExecuteInput = {
       siteName: "Example Docs",
       baseUrl: "https://example.com",
-      outputDirectory: "dist",
-      filePaths: [
-        "index.html",
-        "docs/getting-started/index.html",
-        "robots.txt",
-        "sitemap.xml",
-      ],
+      outputDirectory,
+      filePaths: [htmlFilePath, unsupportedFilePath],
     };
 
-    const result = Engine.execute(input, { dryRun: true });
+    const result: Result<EngineExecuteResult, OpenNavError> =
+      await Engine.execute(input, { dryRun: true });
+
+    expect(result.isOk()).toEqual(true);
+    if (result.isOk()) {
+      expect(result.value).toEqual({
+        createdFilePaths: [],
+        modifiedFilePaths: [],
+        skippedFilePaths: [unsupportedFilePath],
+        warnings: [
+          {
+            code: "ENGINE_FILE_UNSUPPORTED",
+            message: "The engine skipped an unsupported built site file.",
+            context: {
+              filePath: unsupportedFilePath,
+              kind: "unsupported",
+            },
+          },
+        ],
+      });
+    }
+  });
+
+  it("returns an exact typed error when a built file cannot be read", async (): Promise<void> => {
+    fixtureDirectory = await mkdtemp(join(tmpdir(), "opennav-engine-"));
+    const outputDirectory = join(fixtureDirectory, "dist");
+    const filePath = "missing.html";
+    const absoluteFilePath = join(outputDirectory, filePath);
+    await mkdir(outputDirectory);
+    const input: EngineExecuteInput = {
+      siteName: "Example Docs",
+      baseUrl: "https://example.com",
+      outputDirectory,
+      filePaths: [filePath],
+    };
+
+    const result: Result<EngineExecuteResult, OpenNavError> =
+      await Engine.execute(input, { dryRun: true });
 
     expect(result.isErr()).toEqual(true);
     if (result.isErr()) {
       expect(result.error).toEqual({
-        code: "ENGINE_NOT_IMPLEMENTED",
-        message: "Engine.execute has been defined but not implemented yet.",
+        code: "ENGINE_FILE_READ_FAILED",
+        message: "The engine could not read the built site file.",
         context: {
-          siteName: "Example Docs",
-          baseUrl: "https://example.com",
-          outputDirectory: "dist",
-          filePathCount: 4,
-          dryRun: true,
+          outputDirectory,
+          filePath,
+          cause: `ENOENT: no such file or directory, open '${absoluteFilePath}'`,
         },
       });
     }

@@ -1,5 +1,6 @@
-import { err, type Result } from "neverthrow";
+import { err, ok, type Result } from "neverthrow";
 import type { OpenNavError } from "./common/types/opennav-error";
+import { EngineFileListReader } from "./input/services/engine-file-list-reader";
 import type { EngineExecuteInput } from "./types/engine-execute-input";
 import type { EngineExecuteOptions } from "./types/engine-execute-options";
 import type { EngineExecuteResult } from "./types/engine-execute-result";
@@ -16,20 +17,27 @@ export class Engine {
    * @param options - Optional execution settings such as dry-run mode.
    * @returns A typed result containing the execution report or a typed OpenNav AI error.
    */
-  public static execute(
+  public static async execute(
     input: EngineExecuteInput,
     options: EngineExecuteOptions = {},
-  ): Result<EngineExecuteResult, OpenNavError> {
-    return err({
-      code: "ENGINE_NOT_IMPLEMENTED",
-      message: "Engine.execute has been defined but not implemented yet.",
-      context: {
-        siteName: input.siteName,
-        baseUrl: input.baseUrl,
-        outputDirectory: input.outputDirectory,
-        filePathCount: input.filePaths.length,
-        dryRun: options.dryRun ?? false,
-      },
+  ): Promise<Result<EngineExecuteResult, OpenNavError>> {
+    void options;
+
+    const fileListReader = new EngineFileListReader();
+    const fileListResult = await fileListReader.read({
+      outputDirectory: input.outputDirectory,
+      filePaths: input.filePaths,
+    });
+
+    if (fileListResult.isErr()) {
+      return err(fileListResult.error);
+    }
+
+    return ok({
+      createdFilePaths: [],
+      modifiedFilePaths: [],
+      skippedFilePaths: fileListResult.value.skippedFilePaths,
+      warnings: fileListResult.value.warnings,
     });
   }
 }
