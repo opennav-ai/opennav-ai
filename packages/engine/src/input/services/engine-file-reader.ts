@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { isAbsolute, relative, resolve } from "node:path";
 import { err, type Result, ResultAsync } from "neverthrow";
 import type { OpenNavError } from "../../common/types/opennav-error";
 import type { EngineFileReadInput } from "../types/engine-file-read-input";
@@ -26,6 +27,10 @@ export class EngineFileReader {
   public async read(
     input: EngineFileReadInput,
   ): Promise<Result<EngineFileReadResult, OpenNavError>> {
+    if (!this.isInsideOutputDirectory(input)) {
+      return err(this.createOutsideOutputDirectoryError(input));
+    }
+
     const kindResult = this.#fileKindDetector.detect(input.filePath);
 
     if (kindResult.isErr()) {
@@ -63,6 +68,34 @@ export class EngineFileReader {
         cause: this.describeCause(cause),
       },
     };
+  }
+
+  private createOutsideOutputDirectoryError(
+    input: EngineFileReadInput,
+  ): OpenNavError {
+    return {
+      code: "ENGINE_FILE_OUTSIDE_OUTPUT_DIRECTORY",
+      message: "The engine can only read files inside the output directory.",
+      context: {
+        outputDirectory: input.outputDirectory,
+        filePath: input.filePath,
+      },
+    };
+  }
+
+  private isInsideOutputDirectory(input: EngineFileReadInput): boolean {
+    const resolvedOutputDirectory = resolve(input.outputDirectory);
+    const resolvedFilePath = resolve(input.filePath);
+    const relativeFilePath = relative(
+      resolvedOutputDirectory,
+      resolvedFilePath,
+    );
+
+    return (
+      relativeFilePath !== "" &&
+      !relativeFilePath.startsWith("..") &&
+      !isAbsolute(relativeFilePath)
+    );
   }
 
   private describeCause(cause: unknown): string {

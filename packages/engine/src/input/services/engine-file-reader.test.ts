@@ -37,4 +37,30 @@ describe("EngineFileReader", (): void => {
       });
     }
   });
+
+  it("returns an exact typed error for a path outside the output directory", async (): Promise<void> => {
+    fixtureDirectory = await mkdtemp(join(tmpdir(), "opennav-file-reader-"));
+    const outputDirectory = join(fixtureDirectory, "dist");
+    const filePath = join(fixtureDirectory, "secrets.html");
+    await mkdir(outputDirectory);
+    await writeFile(filePath, "<html>Private</html>", "utf8");
+
+    const reader = new EngineFileReader();
+    const result = await reader.read({
+      outputDirectory,
+      filePath,
+    });
+
+    expect(result.isErr()).toEqual(true);
+    if (result.isErr()) {
+      expect(result.error).toEqual({
+        code: "ENGINE_FILE_OUTSIDE_OUTPUT_DIRECTORY",
+        message: "The engine can only read files inside the output directory.",
+        context: {
+          outputDirectory,
+          filePath,
+        },
+      });
+    }
+  });
 });
