@@ -17,10 +17,11 @@ describe("EngineFileReader", (): void => {
   it("reads exact content for an HTML file", async (): Promise<void> => {
     fixtureDirectory = await mkdtemp(join(tmpdir(), "opennav-file-reader-"));
     const outputDirectory = join(fixtureDirectory, "dist");
-    const filePath = join(outputDirectory, "index.html");
+    const filePath = "index.html";
+    const absoluteFilePath = join(outputDirectory, filePath);
     const content = "<html><head><title>Home</title></head></html>";
     await mkdir(outputDirectory);
-    await writeFile(filePath, content, "utf8");
+    await writeFile(absoluteFilePath, content, "utf8");
 
     const reader = new EngineFileReader();
     const result = await reader.read({
@@ -41,9 +42,10 @@ describe("EngineFileReader", (): void => {
   it("returns an exact typed error for a path outside the output directory", async (): Promise<void> => {
     fixtureDirectory = await mkdtemp(join(tmpdir(), "opennav-file-reader-"));
     const outputDirectory = join(fixtureDirectory, "dist");
-    const filePath = join(fixtureDirectory, "secrets.html");
+    const filePath = "../secrets.html";
+    const absoluteFilePath = join(fixtureDirectory, "secrets.html");
     await mkdir(outputDirectory);
-    await writeFile(filePath, "<html>Private</html>", "utf8");
+    await writeFile(absoluteFilePath, "<html>Private</html>", "utf8");
 
     const reader = new EngineFileReader();
     const result = await reader.read({

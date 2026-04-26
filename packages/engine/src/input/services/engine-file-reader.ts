@@ -27,7 +27,9 @@ export class EngineFileReader {
   public async read(
     input: EngineFileReadInput,
   ): Promise<Result<EngineFileReadResult, OpenNavError>> {
-    if (!this.isInsideOutputDirectory(input)) {
+    const resolvedFilePath = this.resolveFilePath(input);
+
+    if (!this.isInsideOutputDirectory(input, resolvedFilePath)) {
       return err(this.createOutsideOutputDirectoryError(input));
     }
 
@@ -38,7 +40,7 @@ export class EngineFileReader {
     }
 
     const readContentPromise: Promise<string> = readFile(
-      input.filePath,
+      resolvedFilePath,
       "utf8",
     );
     const contentResult = await ResultAsync.fromPromise(
@@ -83,9 +85,11 @@ export class EngineFileReader {
     };
   }
 
-  private isInsideOutputDirectory(input: EngineFileReadInput): boolean {
+  private isInsideOutputDirectory(
+    input: EngineFileReadInput,
+    resolvedFilePath: string,
+  ): boolean {
     const resolvedOutputDirectory = resolve(input.outputDirectory);
-    const resolvedFilePath = resolve(input.filePath);
     const relativeFilePath = relative(
       resolvedOutputDirectory,
       resolvedFilePath,
@@ -96,6 +100,14 @@ export class EngineFileReader {
       !relativeFilePath.startsWith("..") &&
       !isAbsolute(relativeFilePath)
     );
+  }
+
+  private resolveFilePath(input: EngineFileReadInput): string {
+    if (isAbsolute(input.filePath)) {
+      return resolve(input.filePath);
+    }
+
+    return resolve(input.outputDirectory, input.filePath);
   }
 
   private describeCause(cause: unknown): string {

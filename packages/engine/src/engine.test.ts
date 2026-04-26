@@ -18,10 +18,10 @@ describe("Engine", () => {
       baseUrl: "https://example.com",
       outputDirectory: "dist",
       filePaths: [
-        "dist/index.html",
-        "dist/docs/getting-started/index.html",
-        "dist/robots.txt",
-        "dist/sitemap.xml",
+        "index.html",
+        "docs/getting-started/index.html",
+        "robots.txt",
+        "sitemap.xml",
       ],
     };
 

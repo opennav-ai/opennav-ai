@@ -9,11 +9,11 @@ describe("FileKindDetector", (): void => {
   it("detects supported built site file kinds from their paths", (): void => {
     const detector = new FileKindDetector();
     const filePaths: readonly EngineFilePath[] = [
-      "dist/index.html",
-      "dist/docs/api.md",
-      "dist/robots.txt",
-      "dist/sitemap.xml",
-      "dist/image.png",
+      "index.html",
+      "docs/api.md",
+      "robots.txt",
+      "sitemap.xml",
+      "image.png",
     ];
 
     const results = filePaths.map(
