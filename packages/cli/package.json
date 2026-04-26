@@ -1,0 +1,10 @@
+{
+  "name": "@opennav-ai/cli",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "echo \"CLI package shell only\"",
+    "test": "echo \"CLI package shell only\""
+  }
+}
