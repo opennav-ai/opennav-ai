@@ -3,6 +3,33 @@ import type { LlmsTxtGenerateResult } from "../types/llms-txt-generate-result";
 import { LlmsTxtGenerator } from "./llms-txt-generator";
 
 describe("LlmsTxtGenerator", (): void => {
+  it("includes the site description as a blockquote when provided", (): void => {
+    const generator = new LlmsTxtGenerator();
+
+    const result: LlmsTxtGenerateResult = generator.generate({
+      siteName: "Example Docs",
+      siteDescription:
+        "Documentation for making static sites readable by agents.",
+      baseUrl: "https://example.com",
+      pages: [
+        {
+          sourceFilePath: "index.html",
+          sourceContentType: "html",
+          route: "/",
+          canonicalUrl: "https://example.com/",
+          title: "Home",
+          description: "Project overview and entry point.",
+        },
+      ],
+    });
+
+    expect(result).toEqual({
+      outputFilePath: "llms.txt",
+      content:
+        "# Example Docs\n\n> Documentation for making static sites readable by agents.\n\n## Root\n\n- [Home](https://example.com/index.md): Project overview and entry point.\n",
+    });
+  });
+
   it("generates exact llms.txt content with hierarchical Markdown artifact links", (): void => {
     const generator = new LlmsTxtGenerator();
 

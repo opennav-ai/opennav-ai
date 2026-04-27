@@ -42,7 +42,7 @@ export class LlmsTxtGenerator {
     const lines: string[] = [`# ${input.siteName}`];
 
     if (this.isNonBlank(input.siteDescription)) {
-      lines.push("", input.siteDescription);
+      lines.push("", `> ${input.siteDescription}`);
     }
 
     for (const section of sections) {
