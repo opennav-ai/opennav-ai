@@ -2,6 +2,7 @@ import { err, ok, type Result } from "neverthrow";
 import type { OpenNavError } from "../../common/types/opennav-error";
 import type { OpenNavPage } from "../../pages/types/opennav-page";
 import type { SiteValidationInput } from "../types/site-validation-input";
+import type { SiteValidationMessage } from "../types/site-validation-message";
 import type { SiteValidationResult } from "../types/site-validation-result";
 
 /**
@@ -26,7 +27,7 @@ export class OpenNavSiteValidator {
     }
 
     return ok({
-      warnings: [],
+      warnings: this.createMissingTitleWarnings(input),
     });
   }
 
@@ -43,6 +44,37 @@ export class OpenNavSiteValidator {
         mode: input.mode,
       },
     };
+  }
+
+  private createMissingTitleWarning(
+    input: SiteValidationInput,
+    page: OpenNavPage,
+  ): SiteValidationMessage {
+    return {
+      code: "SITE_VALIDATION_PAGE_TITLE_MISSING",
+      message:
+        "A page title is missing, so loose validation will allow fallback behavior.",
+      context: {
+        sourceFilePath: page.sourceFilePath,
+        route: page.route,
+        mode: input.mode,
+      },
+    };
+  }
+
+  private createMissingTitleWarnings(
+    input: SiteValidationInput,
+  ): readonly SiteValidationMessage[] {
+    if (input.mode !== "loose") {
+      return [];
+    }
+
+    return input.pages
+      .filter((page: OpenNavPage): boolean => page.title === undefined)
+      .map(
+        (page: OpenNavPage): SiteValidationMessage =>
+          this.createMissingTitleWarning(input, page),
+      );
   }
 
   private findMissingTitlePage(

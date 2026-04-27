@@ -72,4 +72,42 @@ describe("OpenNavSiteValidator", (): void => {
       });
     }
   });
+
+  it("returns an exact warning in loose mode when a page title is missing", (): void => {
+    const validator = new OpenNavSiteValidator();
+    const result: Result<SiteValidationResult, OpenNavError> =
+      validator.validate({
+        siteName: "Example Docs",
+        baseUrl: "https://example.com",
+        mode: "loose",
+        pages: [
+          {
+            sourceFilePath: "docs/api.md",
+            sourceContentType: "markdown",
+            route: "/docs/api",
+            canonicalUrl: "https://example.com/docs/api",
+            title: undefined,
+            description: "Use the OpenNav AI engine.",
+          },
+        ],
+      });
+
+    expect(result.isOk()).toEqual(true);
+    if (result.isOk()) {
+      expect(result.value).toEqual({
+        warnings: [
+          {
+            code: "SITE_VALIDATION_PAGE_TITLE_MISSING",
+            message:
+              "A page title is missing, so loose validation will allow fallback behavior.",
+            context: {
+              sourceFilePath: "docs/api.md",
+              route: "/docs/api",
+              mode: "loose",
+            },
+          },
+        ],
+      });
+    }
+  });
 });
