@@ -15,6 +15,7 @@
     "test": "vitest run --reporter=default"
   },
   "dependencies": {
+    "js-tiktoken": "^1.0.21",
     "neverthrow": "^8.2.0",
     "parse5": "^8.0.1"
   },
