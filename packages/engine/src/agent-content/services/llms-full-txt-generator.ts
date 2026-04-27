@@ -11,8 +11,13 @@ import { MarkdownPageArtifactPathBuilder } from "./markdown-page-artifact-path-b
 
 const LLMS_FULL_TXT_OUTPUT_FILE_PATH = "llms-full.txt";
 
+interface LlmsFullTxtContentBuildResult {
+  readonly content: string;
+  readonly omittedPages: readonly LlmsFullTxtPageContent[];
+}
+
 /**
- * Creates optional `llms-full.txt` content from generated Markdown page bodies.
+ * Creates capped `llms-full.txt` content from generated Markdown page bodies.
  */
 export class LlmsFullTxtGenerator {
   readonly #artifactPathBuilder: MarkdownPageArtifactPathBuilder;
@@ -37,32 +42,66 @@ export class LlmsFullTxtGenerator {
   }
 
   /**
-   * Generates in-memory `llms-full.txt` content when the configured token limit allows it.
+   * Generates in-memory `llms-full.txt` content up to the configured token limit.
    *
    * @param input - Site metadata, explicit token limit, and generated page Markdown bodies.
-   * @returns Generated full-context content or a skipped-file warning result.
+   * @returns Generated full-context content with warnings when later page blocks are omitted.
    */
   public generate(
     input: LlmsFullTxtGenerateInput,
   ): Result<LlmsFullTxtGenerateResult, OpenNavError> {
-    const content = this.formatContent(input);
-    const actualContentTokens = this.#tokenCounter.count(content);
-
-    if (actualContentTokens > input.maxContentTokens) {
-      return ok({
-        outputFilePath: undefined,
-        content: undefined,
-        skippedFilePaths: [LLMS_FULL_TXT_OUTPUT_FILE_PATH],
-        warnings: [this.createTokenLimitWarning(input, actualContentTokens)],
-      });
-    }
+    const contentBuildResult = this.formatContent(input);
+    const actualContentTokens = this.#tokenCounter.count(
+      contentBuildResult.content,
+    );
+    const warnings =
+      contentBuildResult.omittedPages.length === 0
+        ? []
+        : [
+            this.createTokenLimitWarning(
+              input,
+              actualContentTokens,
+              contentBuildResult.omittedPages,
+            ),
+          ];
 
     return ok({
       outputFilePath: LLMS_FULL_TXT_OUTPUT_FILE_PATH,
-      content,
+      content: contentBuildResult.content,
       skippedFilePaths: [],
-      warnings: [],
+      warnings,
     });
+  }
+
+  private appendPageBlockWithinTokenLimit(
+    lines: string[],
+    input: LlmsFullTxtGenerateInput,
+    section: LlmsTxtPageSection,
+    link: LlmsTxtPageLink,
+    markdownContent: string,
+    sectionHasAcceptedPage: boolean,
+    hasAcceptedAnyPage: boolean,
+  ): boolean {
+    const candidateLines = [
+      ...lines,
+      ...this.createPageBlockLines(
+        section,
+        link,
+        markdownContent,
+        sectionHasAcceptedPage,
+        hasAcceptedAnyPage,
+      ),
+    ];
+    const candidateContent = `${candidateLines.join("\n")}\n`;
+    const actualContentTokens = this.#tokenCounter.count(candidateContent);
+
+    if (actualContentTokens > input.maxContentTokens) {
+      return false;
+    }
+
+    lines.splice(0, lines.length, ...candidateLines);
+
+    return true;
   }
 
   private buildContentByPublicUrl(
@@ -85,31 +124,67 @@ export class LlmsFullTxtGenerator {
     return contentByPublicUrl;
   }
 
-  private countPages(sections: readonly LlmsTxtPageSection[]): number {
-    return sections.reduce(
-      (pageCount: number, section: LlmsTxtPageSection): number =>
-        pageCount + section.links.length,
-      0,
-    );
-  }
-
   private createTokenLimitWarning(
     input: LlmsFullTxtGenerateInput,
     actualContentTokens: number,
+    omittedPages: readonly LlmsFullTxtPageContent[],
   ): OpenNavError {
     return {
-      code: "LLMS_FULL_TXT_TOKEN_LIMIT_EXCEEDED",
+      code: "LLMS_FULL_TXT_TOKEN_LIMIT_REACHED",
       message:
-        "The generated llms-full.txt file exceeded the configured token limit.",
+        "The generated llms-full.txt file stopped before adding content that would exceed the configured token limit.",
       context: {
         outputFilePath: LLMS_FULL_TXT_OUTPUT_FILE_PATH,
         maxContentTokens: input.maxContentTokens,
         actualContentTokens,
+        omittedPageCount: omittedPages.length,
+        omittedPageSourceFilePaths: omittedPages.map(
+          (pageContent: LlmsFullTxtPageContent): string =>
+            pageContent.page.sourceFilePath,
+        ),
       },
     };
   }
 
-  private formatContent(input: LlmsFullTxtGenerateInput): string {
+  private createPageBlockLines(
+    section: LlmsTxtPageSection,
+    link: LlmsTxtPageLink,
+    markdownContent: string,
+    sectionHasAcceptedPage: boolean,
+    hasAcceptedAnyPage: boolean,
+  ): readonly string[] {
+    const lines: string[] = [];
+
+    if (hasAcceptedAnyPage) {
+      lines.push("", "---");
+    }
+
+    if (!sectionHasAcceptedPage) {
+      lines.push("", `## ${section.heading}`);
+    }
+
+    lines.push("", this.formatPageBlock(link, markdownContent));
+
+    return lines;
+  }
+
+  private findPageContentByPublicUrl(
+    input: LlmsFullTxtGenerateInput,
+    publicUrl: string,
+  ): LlmsFullTxtPageContent | undefined {
+    return input.pages.find((pageContent: LlmsFullTxtPageContent): boolean => {
+      const artifactPath = this.#artifactPathBuilder.build({
+        baseUrl: input.baseUrl,
+        page: pageContent.page,
+      });
+
+      return artifactPath.publicUrl === publicUrl;
+    });
+  }
+
+  private formatContent(
+    input: LlmsFullTxtGenerateInput,
+  ): LlmsFullTxtContentBuildResult {
     const organizedPages = this.#pageOrganizer.organize({
       baseUrl: input.baseUrl,
       pages: input.pages.map(
@@ -118,30 +193,55 @@ export class LlmsFullTxtGenerator {
     });
     const contentByPublicUrl = this.buildContentByPublicUrl(input);
     const lines: string[] = [`# ${input.siteName}`];
-    const totalPageCount = this.countPages(organizedPages.sections);
-    let formattedPageCount = 0;
+    const omittedPages: LlmsFullTxtPageContent[] = [];
+    let hasAcceptedAnyPage = false;
+    let tokenLimitReached = false;
 
     if (this.isNonBlank(input.siteDescription)) {
       lines.push("", `> ${input.siteDescription}`);
     }
 
     for (const section of organizedPages.sections) {
-      lines.push("", `## ${section.heading}`);
+      let sectionHasAcceptedPage = false;
 
       for (const link of section.links) {
-        formattedPageCount += 1;
-        lines.push(
-          "",
-          this.formatPageBlock(link, contentByPublicUrl.get(link.url) ?? ""),
+        const pageContent = this.findPageContentByPublicUrl(input, link.url);
+
+        if (tokenLimitReached) {
+          if (pageContent !== undefined) {
+            omittedPages.push(pageContent);
+          }
+          continue;
+        }
+
+        const didAppendPageBlock = this.appendPageBlockWithinTokenLimit(
+          lines,
+          input,
+          section,
+          link,
+          contentByPublicUrl.get(link.url) ?? "",
+          sectionHasAcceptedPage,
+          hasAcceptedAnyPage,
         );
 
-        if (formattedPageCount < totalPageCount) {
-          lines.push("", "---");
+        if (didAppendPageBlock) {
+          sectionHasAcceptedPage = true;
+          hasAcceptedAnyPage = true;
+          continue;
+        }
+
+        tokenLimitReached = true;
+
+        if (pageContent !== undefined) {
+          omittedPages.push(pageContent);
         }
       }
     }
 
-    return `${lines.join("\n")}\n`;
+    return {
+      content: `${lines.join("\n")}\n`,
+      omittedPages,
+    };
   }
 
   private formatPageBlock(

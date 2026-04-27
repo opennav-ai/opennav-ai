@@ -113,13 +113,13 @@ describe("LlmsFullTxtGenerator", (): void => {
     }
   });
 
-  it("skips llms-full.txt with an exact warning when the configured token limit is exceeded", (): void => {
+  it("caps llms-full.txt at the last complete page block with an exact warning", (): void => {
     const tokenCounter = new WhitespaceLlmsFullTxtTokenCounter();
     const generator = new LlmsFullTxtGenerator(tokenCounter);
-    const completeContent =
+    const cappedContent =
       "# Example Docs\n\n## Root\n\n### Home\n\nURL: https://example.com/index.md\n\n# Home\n\nHello agents.\n";
-    const actualContentTokens = tokenCounter.count(completeContent);
-    const maxContentTokens = actualContentTokens - 1;
+    const actualContentTokens = tokenCounter.count(cappedContent);
+    const maxContentTokens = actualContentTokens;
 
     const result: Result<LlmsFullTxtGenerateResult, OpenNavError> =
       generator.generate({
@@ -138,24 +138,37 @@ describe("LlmsFullTxtGenerator", (): void => {
             },
             markdownContent: "# Home\n\nHello agents.\n",
           },
+          {
+            page: {
+              sourceFilePath: "docs/api.html",
+              sourceContentType: "html",
+              route: "/docs/api",
+              canonicalUrl: "https://example.com/docs/api",
+              title: "API Reference",
+              description: undefined,
+            },
+            markdownContent: "# API Reference\n\nUse the engine.\n",
+          },
         ],
       });
 
     expect(result.isOk()).toEqual(true);
     if (result.isOk()) {
       expect(result.value).toEqual({
-        outputFilePath: undefined,
-        content: undefined,
-        skippedFilePaths: ["llms-full.txt"],
+        outputFilePath: "llms-full.txt",
+        content: cappedContent,
+        skippedFilePaths: [],
         warnings: [
           {
-            code: "LLMS_FULL_TXT_TOKEN_LIMIT_EXCEEDED",
+            code: "LLMS_FULL_TXT_TOKEN_LIMIT_REACHED",
             message:
-              "The generated llms-full.txt file exceeded the configured token limit.",
+              "The generated llms-full.txt file stopped before adding content that would exceed the configured token limit.",
             context: {
               outputFilePath: "llms-full.txt",
               maxContentTokens,
               actualContentTokens,
+              omittedPageCount: 1,
+              omittedPageSourceFilePaths: ["docs/api.html"],
             },
           },
         ],

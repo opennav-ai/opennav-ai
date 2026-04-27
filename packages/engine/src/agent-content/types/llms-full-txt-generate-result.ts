@@ -8,35 +8,35 @@ export interface LlmsFullTxtGenerateResult {
   /**
    * Output-directory-relative path where generated `llms-full.txt` belongs.
    *
-   * The value is `"llms-full.txt"` when complete content is available. It is
-   * `undefined` when the optional full-context file was skipped, such as when
-   * the caller-provided token limit is exceeded.
+   * The value is `"llms-full.txt"`. When the token limit is reached, the file
+   * still exists with the page blocks that fit before the next block would
+   * exceed `maxContentTokens`.
    */
-  readonly outputFilePath: EngineFilePath | undefined;
+  readonly outputFilePath: EngineFilePath;
 
   /**
    * Complete UTF-8 text content for `llms-full.txt`.
    *
    * The value is ready to write as-is and includes its final trailing newline.
-   * It is `undefined` when the file was skipped; skipped paths and reasons are
-   * available in `skippedFilePaths` and `warnings`.
+   * It may contain a capped subset of page blocks when adding the next complete
+   * page block would exceed `maxContentTokens`.
    */
-  readonly content: string | undefined;
+  readonly content: string;
 
   /**
    * Output-directory-relative paths for optional files not generated.
    *
-   * The array is empty when `llms-full.txt` content is available. It contains
-   * `"llms-full.txt"` when the complete output exceeds `maxContentTokens`.
+   * The array is empty for `llms-full.txt` token caps because the file is still
+   * generated with the content that fit.
    */
   readonly skippedFilePaths: readonly EngineFilePath[];
 
   /**
-   * Non-fatal typed warnings explaining why optional content was skipped.
+   * Non-fatal typed warnings explaining why page blocks were omitted.
    *
-   * When the token limit is exceeded, this includes
-   * `LLMS_FULL_TXT_TOKEN_LIMIT_EXCEEDED` with the configured limit and actual
-   * complete token count in the warning context.
+   * When the token limit is reached, this includes
+   * `LLMS_FULL_TXT_TOKEN_LIMIT_REACHED` with the configured limit, final token
+   * count, omitted page count, and omitted source paths in the warning context.
    */
   readonly warnings: readonly OpenNavError[];
 }
