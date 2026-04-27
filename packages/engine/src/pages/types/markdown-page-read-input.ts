@@ -1,0 +1,30 @@
+import type { EngineFileReference } from "../../input/types/engine-file-reference";
+
+/**
+ * Input needed to create lightweight page metadata from one Markdown file.
+ */
+export interface MarkdownPageReadInput {
+  /**
+   * Built static site output directory that contains the source Markdown file.
+   *
+   * The reader uses this directory only to read the one referenced file while
+   * extracting metadata; the returned page does not retain the file body.
+   */
+  readonly outputDirectory: string;
+
+  /**
+   * Public site root used to build the page canonical URL.
+   *
+   * The value may include a path prefix, and route joining follows the same
+   * rules as `PageUrlBuilder`.
+   */
+  readonly baseUrl: string;
+
+  /**
+   * Lightweight supported file reference for the Markdown source page.
+   *
+   * The reference must have `kind: "markdown"`; other file kinds are rejected
+   * because they require different extraction rules.
+   */
+  readonly fileReference: EngineFileReference;
+}
