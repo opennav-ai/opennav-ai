@@ -6,7 +6,7 @@ export interface LlmsTxtPageLink {
    * Human-readable label displayed inside the Markdown link.
    *
    * The value comes from validated page metadata when available. Loose
-   * validation may allow later fallback labels for pages with missing titles.
+   * validation may allow route labels for pages with missing titles.
    */
   readonly title: string;
 

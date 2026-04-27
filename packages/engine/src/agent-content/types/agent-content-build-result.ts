@@ -17,8 +17,9 @@ export interface AgentContentBuildResult {
   /**
    * Output-directory-relative paths intentionally skipped during planning.
    *
-   * Duplicate lower-priority fallbacks are not included here because their
-   * higher-priority generated file already covers the same path.
+   * Existing Markdown page paths are not listed here when they reserve a path
+   * that an HTML mirror would otherwise generate, because the file already
+   * exists in the output directory.
    */
   readonly skippedFilePaths: readonly EngineFilePath[];
 

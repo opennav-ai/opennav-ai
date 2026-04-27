@@ -8,18 +8,15 @@ import type { AgentContentBuildResult } from "../types/agent-content-build-resul
 import type { AgentContentFile } from "../types/agent-content-file";
 import type { AgentContentFileContent } from "../types/agent-content-file-content";
 import type { LlmsFullTxtPageContent } from "../types/llms-full-txt-page-content";
-import { IndexMdFallbackGenerator } from "./index-md-fallback-generator";
 import { LlmsFullTxtGenerator } from "./llms-full-txt-generator";
 import { LlmsTxtGenerator } from "./llms-txt-generator";
 import { MarkdownPageArtifactGenerator } from "./markdown-page-artifact-generator";
 import { MarkdownPageArtifactPathBuilder } from "./markdown-page-artifact-path-builder";
 import { O200kBaseLlmsFullTxtTokenCounter } from "./o200k-base-llms-full-txt-token-counter";
 
-const INDEX_MD_FALLBACK_OUTPUT_FILE_PATH: EngineFilePath = "index.md";
 const LLMS_FULL_TXT_OUTPUT_FILE_PATH: EngineFilePath = "llms-full.txt";
 
 interface AgentContentFileBuilderDependencies {
-  readonly indexMdFallbackGenerator?: IndexMdFallbackGenerator;
   readonly llmsFullTxtGenerator?: LlmsFullTxtGenerator;
   readonly llmsTxtGenerator?: LlmsTxtGenerator;
   readonly markdownPageArtifactGenerator?: MarkdownPageArtifactGenerator;
@@ -29,12 +26,10 @@ interface AgentContentFileBuilderDependencies {
 /**
  * Plans lazy agent-readable content files for a validated static site.
  *
- * File paths are claimed in write-priority order: `llms.txt`, mirrored
- * Markdown page artifacts, `llms-full.txt`, then optional `index.md` fallback.
- * Once a path is claimed, later lower-priority files do not run for that path.
+ * Existing Markdown page paths reserve their own `.md` endpoints. HTML page
+ * paths then get mirrored Markdown files unless that `.md` path already exists.
  */
 export class AgentContentFileBuilder {
-  readonly #indexMdFallbackGenerator: IndexMdFallbackGenerator;
   readonly #llmsFullTxtGenerator: LlmsFullTxtGenerator;
   readonly #llmsTxtGenerator: LlmsTxtGenerator;
   readonly #markdownPageArtifactGenerator: MarkdownPageArtifactGenerator;
@@ -46,8 +41,6 @@ export class AgentContentFileBuilder {
    * @param dependencies - Optional generator overrides for focused tests.
    */
   public constructor(dependencies: AgentContentFileBuilderDependencies = {}) {
-    this.#indexMdFallbackGenerator =
-      dependencies.indexMdFallbackGenerator ?? new IndexMdFallbackGenerator();
     this.#llmsFullTxtGenerator =
       dependencies.llmsFullTxtGenerator ??
       new LlmsFullTxtGenerator(new O200kBaseLlmsFullTxtTokenCounter());
@@ -64,7 +57,7 @@ export class AgentContentFileBuilder {
   /**
    * Builds an in-memory file plan without generating file bodies.
    *
-   * @param input - Site metadata, token cap, fallback option, and lazy source pages.
+   * @param input - Site metadata, token cap, and lazy source pages.
    * @returns Generated file entries with lazy content callbacks and planning diagnostics.
    */
   public build(input: AgentContentBuildInput): AgentContentBuildResult {
@@ -74,27 +67,27 @@ export class AgentContentFileBuilder {
     // Priority 1: the site map is always planned first and owns `llms.txt`.
     this.addFile(files, reservedOutputFilePaths, this.createLlmsTxtFile(input));
 
-    // Priority 2: mirrored Markdown artifacts own page `.md` paths. If two
-    // source pages map to the same output path, the first validated page wins.
+    // Priority 2: existing Markdown pages already occupy their `.md` paths, so
+    // generated HTML mirrors do not overwrite them.
+    this.reserveExistingMarkdownPagePaths(input, reservedOutputFilePaths);
+
+    // Priority 3: HTML page files get mirrored `.md` artifacts by source path.
     for (const pageInput of input.pages) {
-      this.addFile(
+      this.addMarkdownPageArtifactFile(
+        input,
+        pageInput,
         files,
         reservedOutputFilePaths,
-        this.createMarkdownPageArtifactFile(input, pageInput),
       );
     }
 
-    // Priority 3: the full-context file has a stable root path and is capped
+    // Priority 4: the full-context file has a stable root path and is capped
     // lazily when its content callback runs.
     this.addFile(
       files,
       reservedOutputFilePaths,
       this.createLlmsFullTxtFile(input),
     );
-
-    // Priority 4: fallback paths are only planned after higher-priority files
-    // have claimed their paths, so fallback generation never duplicates a file.
-    this.addIndexMdFallbackFile(input, files, reservedOutputFilePaths);
 
     return {
       files,
@@ -118,30 +111,20 @@ export class AgentContentFileBuilder {
     files.push(file);
   }
 
-  private addIndexMdFallbackFile(
+  private addMarkdownPageArtifactFile(
     input: AgentContentBuildInput,
+    pageInput: AgentContentBuildPage,
     files: AgentContentFile[],
     reservedOutputFilePaths: Set<EngineFilePath>,
   ): void {
-    // `index.md` fallback is copy-through convenience content. If a mirrored
-    // page artifact already owns `index.md`, that artifact is the priority file.
-    if (
-      !input.generateIndexMdFallback ||
-      reservedOutputFilePaths.has(INDEX_MD_FALLBACK_OUTPUT_FILE_PATH)
-    ) {
-      return;
-    }
-
-    const rootPageInput = this.findRootPageInput(input.pages);
-
-    if (rootPageInput === undefined) {
+    if (pageInput.page.sourceContentType !== "html") {
       return;
     }
 
     this.addFile(
       files,
       reservedOutputFilePaths,
-      this.createIndexMdFallbackFile(input, rootPageInput),
+      this.createMarkdownPageArtifactFile(input, pageInput),
     );
   }
 
@@ -166,42 +149,6 @@ export class AgentContentFileBuilder {
     }
 
     return ok(artifactResult.value.content);
-  }
-
-  private createIndexMdFallbackFile(
-    input: AgentContentBuildInput,
-    pageInput: AgentContentBuildPage,
-  ): AgentContentFile {
-    return {
-      outputFilePath: INDEX_MD_FALLBACK_OUTPUT_FILE_PATH,
-      getContent: async (): Promise<
-        Result<AgentContentFileContent, OpenNavError>
-      > => {
-        const markdownContentResult = await this.buildMarkdownPageContent(
-          input,
-          pageInput,
-        );
-
-        if (markdownContentResult.isErr()) {
-          return err(markdownContentResult.error);
-        }
-
-        const fallbackResult = this.#indexMdFallbackGenerator.generate({
-          enabled: true,
-          page: pageInput.page,
-          markdownContent: markdownContentResult.value,
-        });
-
-        if (fallbackResult.isErr()) {
-          return err(fallbackResult.error);
-        }
-
-        return ok({
-          content: fallbackResult.value.content ?? "",
-          warnings: fallbackResult.value.warnings,
-        });
-      },
-    };
   }
 
   private createLlmsFullTxtFile(
@@ -316,12 +263,21 @@ export class AgentContentFileBuilder {
     };
   }
 
-  private findRootPageInput(
-    pageInputs: readonly AgentContentBuildPage[],
-  ): AgentContentBuildPage | undefined {
-    return pageInputs.find(
-      (pageInput: AgentContentBuildPage): boolean =>
-        pageInput.page.route === "/",
-    );
+  private reserveExistingMarkdownPagePaths(
+    input: AgentContentBuildInput,
+    reservedOutputFilePaths: Set<EngineFilePath>,
+  ): void {
+    for (const pageInput of input.pages) {
+      if (pageInput.page.sourceContentType !== "markdown") {
+        continue;
+      }
+
+      const artifactPath = this.#markdownPageArtifactPathBuilder.build({
+        baseUrl: input.baseUrl,
+        page: pageInput.page,
+      });
+
+      reservedOutputFilePaths.add(artifactPath.outputFilePath);
+    }
   }
 }

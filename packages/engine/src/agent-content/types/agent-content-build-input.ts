@@ -37,18 +37,11 @@ export interface AgentContentBuildInput {
   readonly maxLlmsFullContentTokens: number;
 
   /**
-   * Controls whether optional root `index.md` fallback planning is enabled.
-   *
-   * When enabled, the builder only plans a fallback path if a higher-priority
-   * generated file has not already claimed `index.md`.
-   */
-  readonly generateIndexMdFallback: boolean;
-
-  /**
    * Source pages available for generated Markdown artifacts and `llms-full.txt`.
    *
-   * Page metadata is used during planning. Page body callbacks are used later
-   * by individual lazy files.
+   * Page metadata is used during planning. Existing Markdown source page paths
+   * reserve their matching `.md` output paths, and page body callbacks are used
+   * later by individual lazy files.
    */
   readonly pages: readonly AgentContentBuildPage[];
 }
