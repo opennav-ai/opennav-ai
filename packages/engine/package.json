@@ -15,7 +15,8 @@
     "test": "vitest run --reporter=default"
   },
   "dependencies": {
-    "neverthrow": "^8.2.0"
+    "neverthrow": "^8.2.0",
+    "parse5": "^8.0.1"
   },
   "devDependencies": {
     "typescript": "^6.0.2",
