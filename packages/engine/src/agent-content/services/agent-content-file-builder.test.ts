@@ -1,4 +1,4 @@
-import { ok, type Result } from "neverthrow";
+import { err, ok, type Result } from "neverthrow";
 import { describe, expect, it } from "vitest";
 import type { OpenNavError } from "../../common/types/opennav-error";
 import type { OpenNavPage } from "../../pages/types/opennav-page";
@@ -105,6 +105,25 @@ function createSourcePageProbe(
         readCount += 1;
 
         return ok(sourceContent);
+      },
+    },
+    readCount: (): number => readCount,
+  };
+}
+
+function createFailingSourcePageProbe(
+  page: OpenNavPage,
+  sourceReadError: OpenNavError,
+): SourcePageProbe {
+  let readCount = 0;
+
+  return {
+    buildPage: {
+      page,
+      getSourceContent: async (): Promise<Result<string, OpenNavError>> => {
+        readCount += 1;
+
+        return err(sourceReadError);
       },
     },
     readCount: (): number => readCount,
@@ -359,6 +378,88 @@ describe("AgentContentFileBuilder", (): void => {
         },
       });
     }
+  });
+
+  it("returns source read errors from lazy Markdown page content callbacks", async (): Promise<void> => {
+    const sourceReadError: OpenNavError = {
+      code: "ENGINE_FILE_READ_FAILED",
+      message: "Could not read the source page.",
+      context: {
+        sourceFilePath: "docs/api.html",
+      },
+    };
+    const apiProbe = createFailingSourcePageProbe(
+      createHtmlPage("docs/api.html", "/docs/api", "API", "Use the API."),
+      sourceReadError,
+    );
+    const builder = new AgentContentFileBuilder({
+      llmsFullTxtGenerator: new LlmsFullTxtGenerator(
+        new StaticLlmsFullTxtTokenCounter(),
+      ),
+    });
+    const result = builder.build(createBuildInput([apiProbe.buildPage]));
+    const apiFile = findFileByPath(result.files, "docs/api.md");
+
+    const contentResult = await apiFile.getContent();
+
+    expect({
+      isErr: contentResult.isErr(),
+      error: contentResult.isErr() ? contentResult.error : undefined,
+      sourceReadCounts: {
+        api: apiProbe.readCount(),
+      },
+    }).toEqual({
+      isErr: true,
+      error: sourceReadError,
+      sourceReadCounts: {
+        api: 1,
+      },
+    });
+  });
+
+  it("returns source read errors from the lazy llms-full content callback", async (): Promise<void> => {
+    const sourceReadError: OpenNavError = {
+      code: "ENGINE_FILE_READ_FAILED",
+      message: "Could not read the source page.",
+      context: {
+        sourceFilePath: "docs/api.html",
+      },
+    };
+    const homeProbe = createSourcePageProbe(
+      createHtmlPage("index.html", "/", "Home", "Project overview."),
+      "<h1>Home</h1><p>Project overview.</p>",
+    );
+    const apiProbe = createFailingSourcePageProbe(
+      createHtmlPage("docs/api.html", "/docs/api", "API", "Use the API."),
+      sourceReadError,
+    );
+    const builder = new AgentContentFileBuilder({
+      llmsFullTxtGenerator: new LlmsFullTxtGenerator(
+        new StaticLlmsFullTxtTokenCounter(),
+      ),
+    });
+    const result = builder.build(
+      createBuildInput([homeProbe.buildPage, apiProbe.buildPage]),
+    );
+    const llmsFullFile = findFileByPath(result.files, "llms-full.txt");
+
+    const contentResult = await llmsFullFile.getContent();
+
+    expect({
+      isErr: contentResult.isErr(),
+      error: contentResult.isErr() ? contentResult.error : undefined,
+      sourceReadCounts: {
+        home: homeProbe.readCount(),
+        api: apiProbe.readCount(),
+      },
+    }).toEqual({
+      isErr: true,
+      error: sourceReadError,
+      sourceReadCounts: {
+        home: 1,
+        api: 1,
+      },
+    });
   });
 
   it("does not create a route-based index.md file for a non-index root HTML file", (): void => {
