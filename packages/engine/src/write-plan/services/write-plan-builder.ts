@@ -557,6 +557,7 @@ export class WritePlanBuilder {
 
     return (
       content.includes('opennav compatible="true"') &&
+      content.includes('build-fingerprint="') &&
       content.includes('manifest="/.well-known/opennav.json"')
     );
   }

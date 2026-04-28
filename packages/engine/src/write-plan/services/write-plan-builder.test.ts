@@ -394,6 +394,16 @@ describe("WritePlanBuilder", (): void => {
       existingContent: "# Caller API\n",
     },
     {
+      outputFilePath: "docs/api.md",
+      existingContent:
+        '# Caller API\n\n<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" manifest="/.well-known/opennav.json" -->\n',
+    },
+    {
+      outputFilePath: "docs/api.md",
+      existingContent:
+        '# Caller API\n\n<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:build" -->\n',
+    },
+    {
       outputFilePath: ".well-known/opennav.json",
       existingContent: '{\n  "opennav": false\n}\n',
     },
@@ -477,6 +487,85 @@ describe("WritePlanBuilder", (): void => {
           ],
         },
         warnings: [],
+      });
+    }
+  });
+
+  it("returns exact combined write plan order for generated files, page edits, and access guidance", async (): Promise<void> => {
+    const outputDirectory = await createOutputDirectory();
+    await writeOutputFile(
+      outputDirectory,
+      "index.html",
+      "<html><head><title>Home</title></head></html>",
+    );
+    const llmsTxtProbe = createGeneratedFileProbe("llms.txt", "# Example\n");
+    const accessGuidanceFile: AccessGuidanceFile = {
+      outputFilePath: "robots.txt",
+      content: createManagedRobotsBlock("Content-signal: search=yes"),
+    };
+    const builder = new WritePlanBuilder();
+
+    const result: Result<WritePlanResult, OpenNavError> = await builder.build({
+      outputDirectory,
+      generatedFiles: [llmsTxtProbe.file],
+      pageEdits: [createPageEdit()],
+      accessGuidanceFiles: [accessGuidanceFile],
+    });
+
+    expect(result.isOk()).toEqual(true);
+    if (result.isOk()) {
+      expect({
+        operations: result.value.plan.operations.map(
+          (
+            operation: WriteOperation,
+          ):
+            | {
+                readonly headInsertionOffset: number;
+                readonly headLinkMarkup: string;
+                readonly kind: "edit-html-page";
+                readonly outputFilePath: string;
+              }
+            | {
+                readonly kind: "create-file" | "overwrite-file";
+                readonly outputFilePath: string;
+              } => {
+            if (operation.kind === "edit-html-page") {
+              return {
+                kind: operation.kind,
+                outputFilePath: operation.outputFilePath,
+                headInsertionOffset: operation.headInsertionOffset,
+                headLinkMarkup: operation.headLinkMarkup,
+              };
+            }
+
+            return {
+              kind: operation.kind,
+              outputFilePath: operation.outputFilePath,
+            };
+          },
+        ),
+        warnings: result.value.warnings,
+        sourceReadCount: llmsTxtProbe.readCount(),
+      }).toEqual({
+        operations: [
+          {
+            kind: "create-file",
+            outputFilePath: "llms.txt",
+          },
+          {
+            kind: "edit-html-page",
+            outputFilePath: "index.html",
+            headInsertionOffset: 12,
+            headLinkMarkup:
+              '\n  <link rel="alternate" type="text/markdown" href="https://example.com/index.md">\n  <link rel="index" type="text/plain" href="https://example.com/llms.txt" title="LLMs text site index">\n',
+          },
+          {
+            kind: "create-file",
+            outputFilePath: "robots.txt",
+          },
+        ],
+        warnings: [],
+        sourceReadCount: 0,
       });
     }
   });
@@ -620,6 +709,44 @@ describe("WritePlanBuilder", (): void => {
     const accessGuidanceFile: AccessGuidanceFile = {
       outputFilePath: "robots.txt",
       content: createManagedRobotsBlock("Content-signal: search=yes"),
+    };
+    const builder = new WritePlanBuilder();
+
+    const result: Result<WritePlanResult, OpenNavError> = await builder.build({
+      outputDirectory,
+      generatedFiles: [],
+      pageEdits: [],
+      accessGuidanceFiles: [accessGuidanceFile],
+    });
+
+    expect({
+      isErr: result.isErr(),
+      error: result.isErr() ? result.error : undefined,
+    }).toEqual({
+      isErr: true,
+      error: {
+        code: "WRITE_PLAN_PROTECTED_OUTPUT_FILE",
+        message:
+          "The write planner will not overwrite a caller-owned output file.",
+        context: {
+          outputDirectory,
+          outputFilePath: "robots.txt",
+        },
+      },
+    });
+  });
+
+  it("returns exact protected-file error when access guidance has an unmarked managed robots.txt block", async (): Promise<void> => {
+    const outputDirectory = await createOutputDirectory();
+    await writeOutputFile(
+      outputDirectory,
+      "robots.txt",
+      "User-agent: *\nDisallow: /admin\n",
+    );
+    const accessGuidanceFile: AccessGuidanceFile = {
+      outputFilePath: "robots.txt",
+      content:
+        "User-agent: *\n# Begin OpenNav AI\nContent-signal: search=yes\n# End OpenNav AI\nDisallow: /admin\n",
     };
     const builder = new WritePlanBuilder();
 
@@ -817,6 +944,66 @@ describe("WritePlanBuilder", (): void => {
         },
       },
       sourceReadCount: 0,
+    });
+  });
+
+  it("returns exact path-kind conflict when an access-guidance file path is already a directory", async (): Promise<void> => {
+    const outputDirectory = await createOutputDirectory();
+    await mkdir(join(outputDirectory, "robots.txt"), { recursive: true });
+    const accessGuidanceFile: AccessGuidanceFile = {
+      outputFilePath: "robots.txt",
+      content: createManagedRobotsBlock("Content-signal: search=yes"),
+    };
+    const builder = new WritePlanBuilder();
+
+    const result: Result<WritePlanResult, OpenNavError> = await builder.build({
+      outputDirectory,
+      generatedFiles: [],
+      pageEdits: [],
+      accessGuidanceFiles: [accessGuidanceFile],
+    });
+
+    expect({
+      isErr: result.isErr(),
+      error: result.isErr() ? result.error : undefined,
+    }).toEqual({
+      isErr: true,
+      error: {
+        code: "WRITE_PLAN_PATH_KIND_CONFLICT",
+        message: "A planned file path is not a writable file.",
+        context: {
+          outputDirectory,
+          outputFilePath: "robots.txt",
+        },
+      },
+    });
+  });
+
+  it("returns exact path-kind conflict when a planned HTML page edit target is already a directory", async (): Promise<void> => {
+    const outputDirectory = await createOutputDirectory();
+    await mkdir(join(outputDirectory, "index.html"), { recursive: true });
+    const builder = new WritePlanBuilder();
+
+    const result: Result<WritePlanResult, OpenNavError> = await builder.build({
+      outputDirectory,
+      generatedFiles: [],
+      pageEdits: [createPageEdit()],
+      accessGuidanceFiles: [],
+    });
+
+    expect({
+      isErr: result.isErr(),
+      error: result.isErr() ? result.error : undefined,
+    }).toEqual({
+      isErr: true,
+      error: {
+        code: "WRITE_PLAN_PATH_KIND_CONFLICT",
+        message: "A planned file path is not a writable file.",
+        context: {
+          outputDirectory,
+          outputFilePath: "index.html",
+        },
+      },
     });
   });
 
