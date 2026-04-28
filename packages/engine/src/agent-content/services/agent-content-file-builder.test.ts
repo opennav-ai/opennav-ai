@@ -219,7 +219,7 @@ describe("AgentContentFileBuilder", (): void => {
     );
     const apiProbe = createSourcePageProbe(
       createHtmlPage("docs/api.html", "/docs/api", "API", "Use the API."),
-      "<h1>API</h1><p>Use the API.</p>",
+      '<h1>API</h1><p>Use the <a href="/docs/guide">guide</a>.</p>',
     );
     const guideProbe = createSourcePageProbe(
       createHtmlPage(
@@ -257,7 +257,8 @@ describe("AgentContentFileBuilder", (): void => {
         },
       }).toEqual({
         fileContent: {
-          content: "# API\n\nUse the API.\n",
+          content:
+            "# API\n\nUse the [guide](https://example.com/docs/guide.md).\n",
           warnings: [],
         },
         sourceReadCounts: {

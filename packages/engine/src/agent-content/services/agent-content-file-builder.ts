@@ -141,6 +141,9 @@ export class AgentContentFileBuilder {
     const artifactResult = this.#markdownPageArtifactGenerator.generate({
       baseUrl: input.baseUrl,
       page: pageInput.page,
+      pages: input.pages.map(
+        (candidate: AgentContentBuildPage): OpenNavPage => candidate.page,
+      ),
       sourceContent: sourceContentResult.value,
     });
 

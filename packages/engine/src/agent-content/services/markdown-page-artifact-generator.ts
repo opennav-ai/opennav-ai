@@ -40,7 +40,9 @@ export class MarkdownPageArtifactGenerator {
       page: input.page,
     });
     const contentResult = this.#contentGenerator.generate({
+      baseUrl: input.baseUrl,
       page: input.page,
+      pages: input.pages,
       sourceContent: input.sourceContent,
     });
 

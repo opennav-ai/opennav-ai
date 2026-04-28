@@ -7,6 +7,14 @@ import { PageMarkdownContentGenerator } from "./page-markdown-content-generator"
 describe("PageMarkdownContentGenerator", (): void => {
   it("returns exact Markdown content for a Markdown source page", (): void => {
     const generator = new PageMarkdownContentGenerator();
+    const page = {
+      sourceFilePath: "docs/cli/options.md",
+      sourceContentType: "markdown",
+      route: "/docs/cli/options",
+      canonicalUrl: "https://example.com/docs/cli/options",
+      title: "CLI Options",
+      description: "Configure OpenNav AI from the command line.",
+    } as const;
     const sourceContent = [
       "# CLI Options",
       "",
@@ -19,14 +27,9 @@ describe("PageMarkdownContentGenerator", (): void => {
 
     const result: Result<PageMarkdownContentGenerateResult, OpenNavError> =
       generator.generate({
-        page: {
-          sourceFilePath: "docs/cli/options.md",
-          sourceContentType: "markdown",
-          route: "/docs/cli/options",
-          canonicalUrl: "https://example.com/docs/cli/options",
-          title: "CLI Options",
-          description: "Configure OpenNav AI from the command line.",
-        },
+        baseUrl: "https://example.com",
+        page,
+        pages: [page],
         sourceContent,
       });
 
@@ -40,6 +43,14 @@ describe("PageMarkdownContentGenerator", (): void => {
 
   it("converts HTML headings, paragraphs, and links into exact Markdown content", (): void => {
     const generator = new PageMarkdownContentGenerator();
+    const page = {
+      sourceFilePath: "index.html",
+      sourceContentType: "html",
+      route: "/",
+      canonicalUrl: "https://example.com/",
+      title: "Home",
+      description: "OpenNav AI creates agent-readable files.",
+    } as const;
     const sourceContent = [
       "<!doctype html>",
       "<html>",
@@ -55,14 +66,9 @@ describe("PageMarkdownContentGenerator", (): void => {
 
     const result: Result<PageMarkdownContentGenerateResult, OpenNavError> =
       generator.generate({
-        page: {
-          sourceFilePath: "index.html",
-          sourceContentType: "html",
-          route: "/",
-          canonicalUrl: "https://example.com/",
-          title: "Home",
-          description: "OpenNav AI creates agent-readable files.",
-        },
+        baseUrl: "https://example.com",
+        page,
+        pages: [page],
         sourceContent,
       });
 
@@ -75,8 +81,161 @@ describe("PageMarkdownContentGenerator", (): void => {
     }
   });
 
+  it("rewrites known internal HTML links to Markdown artifact URLs", (): void => {
+    const generator = new PageMarkdownContentGenerator();
+    const currentPage = {
+      sourceFilePath: "docs/guide.html",
+      sourceContentType: "html",
+      route: "/docs/guide",
+      canonicalUrl: "https://example.com/docs/guide",
+      title: "Guide",
+      description: "Read the guide.",
+    } as const;
+    const apiPage = {
+      sourceFilePath: "docs/api.html",
+      sourceContentType: "html",
+      route: "/docs/api",
+      canonicalUrl: "https://example.com/docs/api",
+      title: "API",
+      description: "Use the API.",
+    } as const;
+    const sourceContent = [
+      "<!doctype html>",
+      "<html>",
+      "<body>",
+      "<h1>Guide</h1>",
+      '<p>Read the <a href="/docs/api">API</a> and <a href="https://anotherdomain.com/docs/api">external API</a>.</p>',
+      '<p>Keep <a href="#install">local anchors</a> and <a href="/docs/api?tab=auth">query links</a>.</p>',
+      "</body>",
+      "</html>",
+    ].join("");
+
+    const result: Result<PageMarkdownContentGenerateResult, OpenNavError> =
+      generator.generate({
+        baseUrl: "https://example.com",
+        page: currentPage,
+        pages: [currentPage, apiPage],
+        sourceContent,
+      });
+
+    expect(result.isOk()).toEqual(true);
+    if (result.isOk()) {
+      expect(result.value).toEqual({
+        content:
+          "# Guide\n\nRead the [API](https://example.com/docs/api.md) and [external API](https://anotherdomain.com/docs/api).\n\nKeep [local anchors](#install) and [query links](/docs/api?tab=auth).\n",
+      });
+    }
+  });
+
+  it("rewrites absolute same-site HTML links to Markdown artifact URLs", (): void => {
+    const generator = new PageMarkdownContentGenerator();
+    const currentPage = {
+      sourceFilePath: "docs/guide.html",
+      sourceContentType: "html",
+      route: "/docs/guide",
+      canonicalUrl: "https://example.com/docs/guide",
+      title: "Guide",
+      description: "Read the guide.",
+    } as const;
+    const apiPage = {
+      sourceFilePath: "docs/api.html",
+      sourceContentType: "html",
+      route: "/docs/api",
+      canonicalUrl: "https://example.com/docs/api",
+      title: "API",
+      description: "Use the API.",
+    } as const;
+    const sourceContent = [
+      "<!doctype html>",
+      "<html>",
+      "<body>",
+      "<h1>Guide</h1>",
+      '<p>Read the <a href="https://example.com/docs/api">full URL API page</a>.</p>',
+      "</body>",
+      "</html>",
+    ].join("");
+
+    const result: Result<PageMarkdownContentGenerateResult, OpenNavError> =
+      generator.generate({
+        baseUrl: "https://example.com",
+        page: currentPage,
+        pages: [currentPage, apiPage],
+        sourceContent,
+      });
+
+    expect(result.isOk()).toEqual(true);
+    if (result.isOk()) {
+      expect(result.value).toEqual({
+        content:
+          "# Guide\n\nRead the [full URL API page](https://example.com/docs/api.md).\n",
+      });
+    }
+  });
+
+  it("rewrites and preserves additional HTML link shapes through the site page map", (): void => {
+    const generator = new PageMarkdownContentGenerator();
+    const currentPage = {
+      sourceFilePath: "docs/guides/install.html",
+      sourceContentType: "html",
+      route: "/docs/guides/install",
+      canonicalUrl: "https://example.com/docs/guides/install",
+      title: "Install",
+      description: "Install the package.",
+    } as const;
+    const docsIndexPage = {
+      sourceFilePath: "docs/index.html",
+      sourceContentType: "html",
+      route: "/docs/",
+      canonicalUrl: "https://example.com/docs/",
+      title: "Docs",
+      description: "Read the docs.",
+    } as const;
+    const apiPage = {
+      sourceFilePath: "docs/api.html",
+      sourceContentType: "html",
+      route: "/docs/api",
+      canonicalUrl: "https://example.com/docs/api",
+      title: "API",
+      description: "Use the API.",
+    } as const;
+    const sourceContent = [
+      "<!doctype html>",
+      "<html>",
+      "<body>",
+      "<h1>Install</h1>",
+      '<p>Start at <a href="/docs/">Docs</a>, then read <a href="../api">API</a> and <a href="/docs/api#auth">Auth</a>.</p>',
+      '<p>Email <a href="mailto:hello@example.com">support</a>, inspect <a href="/assets/logo.png">the logo</a>, or keep <a href="/docs/missing">unknown pages</a>.</p>',
+      "</body>",
+      "</html>",
+    ].join("");
+
+    const result: Result<PageMarkdownContentGenerateResult, OpenNavError> =
+      generator.generate({
+        baseUrl: "https://example.com",
+        page: currentPage,
+        pages: [currentPage, docsIndexPage, apiPage],
+        sourceContent,
+      });
+
+    expect(result.isOk()).toEqual(true);
+    if (result.isOk()) {
+      expect(result.value).toEqual({
+        content:
+          "# Install\n\nStart at [Docs](https://example.com/docs/index.md), then read [API](https://example.com/docs/api.md) and [Auth](https://example.com/docs/api.md#auth).\n\nEmail [support](mailto:hello@example.com), inspect [the logo](/assets/logo.png), or keep [unknown pages](/docs/missing).\n",
+      });
+    }
+  });
+
   it("converts HTML lists and code blocks into exact Markdown content", (): void => {
     const generator = new PageMarkdownContentGenerator();
+    const page = {
+      sourceFilePath: "docs/cli.html",
+      sourceContentType: "html",
+      route: "/docs/cli",
+      canonicalUrl: "https://example.com/docs/cli",
+      title: "CLI",
+      description: "Run OpenNav from the command line.",
+    } as const;
     const sourceContent = [
       "<html>",
       "<body>",
@@ -96,14 +255,9 @@ describe("PageMarkdownContentGenerator", (): void => {
 
     const result: Result<PageMarkdownContentGenerateResult, OpenNavError> =
       generator.generate({
-        page: {
-          sourceFilePath: "docs/cli.html",
-          sourceContentType: "html",
-          route: "/docs/cli",
-          canonicalUrl: "https://example.com/docs/cli",
-          title: "CLI",
-          description: "Run OpenNav from the command line.",
-        },
+        baseUrl: "https://example.com",
+        page,
+        pages: [page],
         sourceContent,
       });
 

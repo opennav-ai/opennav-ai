@@ -3,11 +3,25 @@ import { type DefaultTreeAdapterTypes, parse } from "parse5";
 import type { OpenNavError } from "../../common/types/opennav-error";
 import type { PageMarkdownContentGenerateInput } from "../types/page-markdown-content-generate-input";
 import type { PageMarkdownContentGenerateResult } from "../types/page-markdown-content-generate-result";
+import { MarkdownLinkHrefRewriter } from "./markdown-link-href-rewriter";
 
 /**
  * Converts one source page body into Markdown content for agent-readable files.
  */
 export class PageMarkdownContentGenerator {
+  readonly #linkHrefRewriter: MarkdownLinkHrefRewriter;
+
+  /**
+   * Creates a page content generator with the default link href rewriter.
+   *
+   * @param linkHrefRewriter - Rewrites known internal links to Markdown endpoints.
+   */
+  public constructor(
+    linkHrefRewriter: MarkdownLinkHrefRewriter = new MarkdownLinkHrefRewriter(),
+  ) {
+    this.#linkHrefRewriter = linkHrefRewriter;
+  }
+
   /**
    * Generates an in-memory Markdown body for one page.
    *
@@ -24,19 +38,21 @@ export class PageMarkdownContentGenerator {
     }
 
     return ok({
-      content: this.convertHtmlToMarkdown(input.sourceContent),
+      content: this.convertHtmlToMarkdown(input),
     });
   }
 
-  private convertHtmlToMarkdown(sourceContent: string): string {
-    const document = parse(sourceContent);
+  private convertHtmlToMarkdown(
+    input: PageMarkdownContentGenerateInput,
+  ): string {
+    const document = parse(input.sourceContent);
     const bodyElement =
       this.findFirstElement(
         document,
         (element: DefaultTreeAdapterTypes.Element): boolean =>
           element.tagName === "body",
       ) ?? document;
-    const blocks = this.convertChildBlocks(bodyElement);
+    const blocks = this.convertChildBlocks(bodyElement, input);
 
     if (blocks.length === 0) {
       return "";
@@ -45,7 +61,10 @@ export class PageMarkdownContentGenerator {
     return `${blocks.join("\n\n")}\n`;
   }
 
-  private convertBlock(node: DefaultTreeAdapterTypes.Node): string | undefined {
+  private convertBlock(
+    node: DefaultTreeAdapterTypes.Node,
+    input: PageMarkdownContentGenerateInput,
+  ): string | undefined {
     if (this.isTextNode(node)) {
       return this.normalizeText(node.value);
     }
@@ -59,7 +78,9 @@ export class PageMarkdownContentGenerator {
     }
 
     if (this.isHeadingElement(node)) {
-      const headingText = this.normalizeText(this.convertInlineChildren(node));
+      const headingText = this.normalizeText(
+        this.convertInlineChildren(node, input),
+      );
 
       if (headingText === undefined) {
         return undefined;
@@ -69,32 +90,33 @@ export class PageMarkdownContentGenerator {
     }
 
     if (node.tagName === "p") {
-      return this.normalizeText(this.convertInlineChildren(node));
+      return this.normalizeText(this.convertInlineChildren(node, input));
     }
 
     if (node.tagName === "ul" || node.tagName === "ol") {
-      return this.convertList(node);
+      return this.convertList(node, input);
     }
 
     if (node.tagName === "li") {
-      return this.normalizeText(this.convertInlineChildren(node));
+      return this.normalizeText(this.convertInlineChildren(node, input));
     }
 
     if (node.tagName === "pre") {
       return this.convertPreformattedBlock(node);
     }
 
-    const childBlocks = this.convertChildBlocks(node);
+    const childBlocks = this.convertChildBlocks(node, input);
 
     if (childBlocks.length > 0) {
       return childBlocks.join("\n\n");
     }
 
-    return this.normalizeText(this.convertInlineChildren(node));
+    return this.normalizeText(this.convertInlineChildren(node, input));
   }
 
   private convertChildBlocks(
     node: DefaultTreeAdapterTypes.Node,
+    input: PageMarkdownContentGenerateInput,
   ): readonly string[] {
     if (!this.isParentNode(node)) {
       return [];
@@ -103,7 +125,7 @@ export class PageMarkdownContentGenerator {
     const blocks: string[] = [];
 
     for (const childNode of node.childNodes) {
-      const block = this.convertBlock(childNode);
+      const block = this.convertBlock(childNode, input);
 
       if (block !== undefined) {
         blocks.push(block);
@@ -115,6 +137,7 @@ export class PageMarkdownContentGenerator {
 
   private convertInline(
     node: DefaultTreeAdapterTypes.Node,
+    input: PageMarkdownContentGenerateInput,
   ): string | undefined {
     if (this.isTextNode(node)) {
       return node.value;
@@ -125,7 +148,7 @@ export class PageMarkdownContentGenerator {
     }
 
     if (node.tagName === "a") {
-      return this.convertLink(node);
+      return this.convertLink(node, input);
     }
 
     if (node.tagName === "code") {
@@ -136,7 +159,7 @@ export class PageMarkdownContentGenerator {
       return "\n";
     }
 
-    return this.convertInlineChildren(node);
+    return this.convertInlineChildren(node, input);
   }
 
   private convertInlineCode(
@@ -151,7 +174,10 @@ export class PageMarkdownContentGenerator {
     return `\`${codeText}\``;
   }
 
-  private convertInlineChildren(node: DefaultTreeAdapterTypes.Node): string {
+  private convertInlineChildren(
+    node: DefaultTreeAdapterTypes.Node,
+    input: PageMarkdownContentGenerateInput,
+  ): string {
     if (!this.isParentNode(node)) {
       return "";
     }
@@ -159,13 +185,14 @@ export class PageMarkdownContentGenerator {
     return node.childNodes
       .map(
         (childNode: DefaultTreeAdapterTypes.ChildNode): string =>
-          this.convertInline(childNode) ?? "",
+          this.convertInline(childNode, input) ?? "",
       )
       .join("");
   }
 
   private convertList(
     element: DefaultTreeAdapterTypes.Element,
+    input: PageMarkdownContentGenerateInput,
   ): string | undefined {
     if (!this.isParentNode(element)) {
       return undefined;
@@ -180,7 +207,7 @@ export class PageMarkdownContentGenerator {
       }
 
       const itemText = this.normalizeText(
-        this.convertInlineChildren(childNode),
+        this.convertInlineChildren(childNode, input),
       );
 
       if (itemText === undefined) {
@@ -205,8 +232,11 @@ export class PageMarkdownContentGenerator {
 
   private convertLink(
     element: DefaultTreeAdapterTypes.Element,
+    input: PageMarkdownContentGenerateInput,
   ): string | undefined {
-    const linkText = this.normalizeText(this.convertInlineChildren(element));
+    const linkText = this.normalizeText(
+      this.convertInlineChildren(element, input),
+    );
 
     if (linkText === undefined) {
       return undefined;
@@ -218,7 +248,14 @@ export class PageMarkdownContentGenerator {
       return linkText;
     }
 
-    return `[${linkText}](${href})`;
+    const rewrittenHref = this.#linkHrefRewriter.rewrite({
+      baseUrl: input.baseUrl,
+      currentPage: input.page,
+      pages: input.pages,
+      href,
+    });
+
+    return `[${linkText}](${rewrittenHref.href})`;
   }
 
   private convertPreformattedBlock(

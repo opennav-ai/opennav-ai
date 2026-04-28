@@ -22,6 +22,15 @@ export interface MarkdownPageArtifactGenerateInput {
   readonly page: OpenNavPage;
 
   /**
+   * Validated metadata-only page records for the current static site.
+   *
+   * This list is passed into the page Markdown content generator so links in
+   * HTML-derived Markdown can point to generated `.md` endpoints for known
+   * internal pages without reading any other page bodies.
+   */
+  readonly pages: readonly OpenNavPage[];
+
+  /**
    * Exact UTF-8 body read from the page source file.
    *
    * This generator does not read from disk. Callers provide one page body at a
