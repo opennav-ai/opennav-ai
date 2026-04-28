@@ -16,6 +16,8 @@ interface SourcePageProbe {
   readonly readCount: () => number;
 }
 
+const BUILD_FINGERPRINT = "sha256:build";
+
 class StaticLlmsFullTxtTokenCounter implements LlmsFullTxtTokenCounter {
   /**
    * Returns a small token count for any generated `llms-full.txt` body.
@@ -51,10 +53,13 @@ class WhitespaceLlmsFullTxtTokenCounter implements LlmsFullTxtTokenCounter {
 function createBuildInput(
   pages: readonly AgentContentBuildPage[],
   maxLlmsFullContentTokens: number = DEFAULT_LLMS_FULL_MAX_CONTENT_TOKENS,
+  contentSignalsConfigured = false,
 ): AgentContentBuildInput {
   return {
     siteName: "Example Docs",
     baseUrl: "https://example.com",
+    buildFingerprint: BUILD_FINGERPRINT,
+    contentSignalsConfigured,
     maxLlmsFullContentTokens,
     pages,
   };
@@ -150,6 +155,17 @@ function getFilePaths(files: readonly AgentContentFile[]): readonly string[] {
   return files.map((file: AgentContentFile): string => file.outputFilePath);
 }
 
+function appendExpectedBuildFingerprintMarker(content: string): string {
+  return `${content}\n<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="${BUILD_FINGERPRINT}" manifest="/.well-known/opennav.json" -->\n`;
+}
+
+function createExpectedOpenNavManifestContent(
+  contentSignals: boolean,
+  htmlResourceLinks: boolean,
+): string {
+  return `{\n  "opennav": true,\n  "version": "1.0",\n  "profile": "static-agent-ready",\n  "site": "https://example.com",\n  "build_fingerprint": "${BUILD_FINGERPRINT}",\n  "spec": "https://opennav.ai/spec/1.0",\n  "artifacts": {\n    "llms_txt": "/llms.txt",\n    "llms_full_txt": "/llms-full.txt",\n    "well_known_llms_txt": "/.well-known/llms.txt",\n    "well_known_llms_full_txt": "/.well-known/llms-full.txt"\n  },\n  "capabilities": {\n    "clean_markdown": true,\n    "llms_txt": true,\n    "llms_full_txt": true,\n    "html_resource_links": ${htmlResourceLinks ? "true" : "false"},\n    "content_signals": ${contentSignals ? "true" : "false"}\n  }\n}\n`;
+}
+
 describe("AgentContentFileBuilder", (): void => {
   it("returns exact priority-ordered file paths for a small site without reading page bodies", (): void => {
     const homeProbe = createSourcePageProbe(
@@ -186,6 +202,7 @@ describe("AgentContentFileBuilder", (): void => {
         "docs/api.md",
         "llms-full.txt",
         ".well-known/llms-full.txt",
+        ".well-known/opennav.json",
       ],
       skippedFilePaths: [],
       warnings: [],
@@ -231,6 +248,7 @@ describe("AgentContentFileBuilder", (): void => {
         "docs/api.md",
         "llms-full.txt",
         ".well-known/llms-full.txt",
+        ".well-known/opennav.json",
       ],
       skippedFilePaths: [],
       warnings: [],
@@ -264,6 +282,10 @@ describe("AgentContentFileBuilder", (): void => {
       result.files,
       ".well-known/llms-full.txt",
     ).getContent();
+    const openNavManifestContentResult = await findFileByPath(
+      result.files,
+      ".well-known/opennav.json",
+    ).getContent();
 
     expect({
       llmsTxt: llmsTxtContentResult.isOk()
@@ -284,35 +306,48 @@ describe("AgentContentFileBuilder", (): void => {
       wellKnownLlmsFullTxt: wellKnownLlmsFullTxtContentResult.isOk()
         ? wellKnownLlmsFullTxtContentResult.value
         : wellKnownLlmsFullTxtContentResult.error,
+      openNavManifest: openNavManifestContentResult.isOk()
+        ? openNavManifestContentResult.value
+        : openNavManifestContentResult.error,
     }).toEqual({
       llmsTxt: {
-        content:
+        content: appendExpectedBuildFingerprintMarker(
           "# Example Docs\n\n## Root\n\n- [Home](https://example.com/index.md): Project overview.\n\n## Docs\n\n- [API](https://example.com/docs/api.md): Use the API.\n",
+        ),
         warnings: [],
       },
       wellKnownLlmsTxt: {
-        content:
+        content: appendExpectedBuildFingerprintMarker(
           "# Example Docs\n\n## Root\n\n- [Home](https://example.com/index.md): Project overview.\n\n## Docs\n\n- [API](https://example.com/docs/api.md): Use the API.\n",
+        ),
         warnings: [],
       },
       homeMarkdown: {
-        content:
+        content: appendExpectedBuildFingerprintMarker(
           "# Home\n\nStart with the [API](https://example.com/docs/api.md).\n\n---\n\nSite index: [llms.txt](https://example.com/llms.txt)\n",
+        ),
         warnings: [],
       },
       apiMarkdown: {
-        content:
+        content: appendExpectedBuildFingerprintMarker(
           "# API\n\nUse API features after reading [Home](https://example.com/index.md).\n\n---\n\nSite index: [llms.txt](https://example.com/llms.txt)\n",
+        ),
         warnings: [],
       },
       llmsFullTxt: {
-        content:
+        content: appendExpectedBuildFingerprintMarker(
           "# Example Docs\n\n## Root\n\n### Home\n\nURL: https://example.com/index.md\n\nProject overview.\n\n# Home\n\nStart with the [API](https://example.com/docs/api.md).\n\n---\n\n## Docs\n\n### API\n\nURL: https://example.com/docs/api.md\n\nUse the API.\n\n# API\n\nUse API features after reading [Home](https://example.com/index.md).\n",
+        ),
         warnings: [],
       },
       wellKnownLlmsFullTxt: {
-        content:
+        content: appendExpectedBuildFingerprintMarker(
           "# Example Docs\n\n## Root\n\n### Home\n\nURL: https://example.com/index.md\n\nProject overview.\n\n# Home\n\nStart with the [API](https://example.com/docs/api.md).\n\n---\n\n## Docs\n\n### API\n\nURL: https://example.com/docs/api.md\n\nUse the API.\n\n# API\n\nUse API features after reading [Home](https://example.com/index.md).\n",
+        ),
+        warnings: [],
+      },
+      openNavManifest: {
+        content: createExpectedOpenNavManifestContent(false, true),
         warnings: [],
       },
     });
@@ -355,6 +390,7 @@ describe("AgentContentFileBuilder", (): void => {
         ".well-known/llms.txt",
         "llms-full.txt",
         ".well-known/llms-full.txt",
+        ".well-known/opennav.json",
       ],
       skippedFilePaths: [],
       warnings: [],
@@ -363,6 +399,41 @@ describe("AgentContentFileBuilder", (): void => {
         markdown: 0,
       },
     });
+  });
+
+  it("reports configured static capabilities in the OpenNav manifest", async (): Promise<void> => {
+    const markdownProbe = createSourcePageProbe(
+      createMarkdownPage("docs/api.md", "/docs/api", "Markdown API", undefined),
+      "# Markdown API\n\nGenerated from Markdown.\n",
+    );
+    const builder = new AgentContentFileBuilder({
+      llmsFullTxtGenerator: new LlmsFullTxtGenerator(
+        new StaticLlmsFullTxtTokenCounter(),
+      ),
+    });
+    const result = builder.build(
+      createBuildInput([markdownProbe.buildPage], undefined, true),
+    );
+    const manifestFile = findFileByPath(
+      result.files,
+      ".well-known/opennav.json",
+    );
+
+    const contentResult = await manifestFile.getContent();
+
+    expect(contentResult.isOk()).toEqual(true);
+    if (contentResult.isOk()) {
+      expect({
+        fileContent: contentResult.value,
+        sourceReadCount: markdownProbe.readCount(),
+      }).toEqual({
+        fileContent: {
+          content: createExpectedOpenNavManifestContent(true, false),
+          warnings: [],
+        },
+        sourceReadCount: 0,
+      });
+    }
   });
 
   it("generates only the requested Markdown page body when one page file is read", async (): Promise<void> => {
@@ -410,8 +481,9 @@ describe("AgentContentFileBuilder", (): void => {
         },
       }).toEqual({
         fileContent: {
-          content:
+          content: appendExpectedBuildFingerprintMarker(
             "# API\n\nUse the [guide](https://example.com/docs/guide.md).\n\n---\n\nSite index: [llms.txt](https://example.com/llms.txt)\n",
+          ),
           warnings: [],
         },
         sourceReadCounts: {
@@ -556,6 +628,7 @@ describe("AgentContentFileBuilder", (): void => {
         "home.md",
         "llms-full.txt",
         ".well-known/llms-full.txt",
+        ".well-known/opennav.json",
       ],
       skippedFilePaths: [],
       warnings: [],
@@ -610,7 +683,7 @@ describe("AgentContentFileBuilder", (): void => {
       {
         isOk: true,
         value: {
-          content: cappedContent,
+          content: appendExpectedBuildFingerprintMarker(cappedContent),
           warnings: [
             {
               code: "LLMS_FULL_TXT_TOKEN_LIMIT_REACHED",
@@ -630,7 +703,7 @@ describe("AgentContentFileBuilder", (): void => {
       {
         isOk: true,
         value: {
-          content: cappedContent,
+          content: appendExpectedBuildFingerprintMarker(cappedContent),
           warnings: [
             {
               code: "LLMS_FULL_TXT_TOKEN_LIMIT_REACHED",

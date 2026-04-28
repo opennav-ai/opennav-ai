@@ -6,6 +6,14 @@ import type { RobotsTxtSourceFile } from "./robots-txt-source-file";
  */
 export interface AccessGuidanceBuildInput {
   /**
+   * Deterministic fingerprint for the current OpenNav build run.
+   *
+   * When OpenNav creates or updates its managed `robots.txt` block, this value
+   * is written into the block build fingerprint marker.
+   */
+  readonly buildFingerprint: string;
+
+  /**
    * Existing root `robots.txt` content from the built static output folder.
    *
    * When omitted and Content Signals are configured, OpenNav plans a new

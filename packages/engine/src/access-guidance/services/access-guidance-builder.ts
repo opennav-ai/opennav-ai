@@ -40,6 +40,7 @@ export class AccessGuidanceBuilder {
     });
 
     return this.#robotsTxtGuidanceBuilder.build({
+      buildFingerprint: input.buildFingerprint,
       robotsTxtFile: input.robotsTxtFile,
       contentSignalLine: contentSignalsResult.contentSignalLine,
     });

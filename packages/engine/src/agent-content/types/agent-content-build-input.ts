@@ -20,6 +20,23 @@ export interface AgentContentBuildInput {
   readonly baseUrl: string;
 
   /**
+   * Deterministic fingerprint for the current OpenNav build run.
+   *
+   * Every generated file receives this value in its bottom build fingerprint
+   * marker so later write planning can identify files from the same run.
+   */
+  readonly buildFingerprint: string;
+
+  /**
+   * Whether the same build run includes caller-configured Content Signals.
+   *
+   * When true, `/.well-known/opennav.json` reports the static
+   * `content_signals` capability. When omitted, the manifest leaves that
+   * capability false because OpenNav does not invent content-use policy.
+   */
+  readonly contentSignalsConfigured?: boolean | undefined;
+
+  /**
    * Optional short summary for the whole site.
    *
    * When populated, `llms.txt` and `llms-full.txt` include it under the site

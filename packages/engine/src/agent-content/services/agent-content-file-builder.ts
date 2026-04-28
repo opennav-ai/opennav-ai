@@ -8,12 +8,14 @@ import type { AgentContentBuildResult } from "../types/agent-content-build-resul
 import type { AgentContentFile } from "../types/agent-content-file";
 import type { AgentContentFileContent } from "../types/agent-content-file-content";
 import type { LlmsFullTxtPageContent } from "../types/llms-full-txt-page-content";
+import { AgentContentFileBuildFingerprintDecorator } from "./agent-content-file-build-fingerprint-decorator";
 import { LlmsFilePlacementBuilder } from "./llms-file-placement-builder";
 import { LlmsFullTxtGenerator } from "./llms-full-txt-generator";
 import { LlmsTxtGenerator } from "./llms-txt-generator";
 import { MarkdownPageArtifactGenerator } from "./markdown-page-artifact-generator";
 import { MarkdownPageArtifactPathBuilder } from "./markdown-page-artifact-path-builder";
 import { O200kBaseLlmsFullTxtTokenCounter } from "./o200k-base-llms-full-txt-token-counter";
+import { OpenNavManifestGenerator } from "./opennav-manifest-generator";
 
 const LLMS_FULL_TXT_OUTPUT_FILE_PATH: EngineFilePath = "llms-full.txt";
 
@@ -23,6 +25,8 @@ interface AgentContentFileBuilderDependencies {
   readonly llmsTxtGenerator?: LlmsTxtGenerator;
   readonly markdownPageArtifactGenerator?: MarkdownPageArtifactGenerator;
   readonly markdownPageArtifactPathBuilder?: MarkdownPageArtifactPathBuilder;
+  readonly buildFingerprintDecorator?: AgentContentFileBuildFingerprintDecorator;
+  readonly openNavManifestGenerator?: OpenNavManifestGenerator;
 }
 
 /**
@@ -32,9 +36,9 @@ interface AgentContentFileBuilderDependencies {
  * one lazy source-content reader per page. It returns an in-memory file plan
  * with output-directory-relative paths such as `llms.txt`, `index.md`,
  * `docs/api.md`, `llms-full.txt`, `.well-known/llms.txt`, and
- * `.well-known/llms-full.txt`. Each planned file exposes a `getContent`
- * callback so later write planning can inspect every path before any page body
- * is read or converted.
+ * `.well-known/opennav.json`. Each planned file exposes a `getContent`
+ * callback so later write planning can inspect every path before page bodies
+ * are read or converted.
  *
  * Responsibilities:
  *
@@ -50,11 +54,13 @@ interface AgentContentFileBuilderDependencies {
  * - Plan root and `.well-known` copies of `llms-full.txt` last and defer their
  *   shared page-body reads, Markdown conversion, and token-cap warnings until
  *   one of their `getContent` callbacks runs.
+ * - Plan `.well-known/opennav.json` as the static compatibility manifest that
+ *   points agents at the generated files and build fingerprint.
  *
  * This class does not discover files, validate site data, write to `dist/`,
- * inject HTML tags, create discovery metadata, or decide final filesystem
- * create/overwrite behavior. Later milestones consume this file plan and turn
- * it into concrete write operations.
+ * inject HTML tags, or decide final filesystem create/overwrite behavior.
+ * Later milestones consume this file plan and turn it into concrete write
+ * operations.
  */
 export class AgentContentFileBuilder {
   readonly #llmsFilePlacementBuilder: LlmsFilePlacementBuilder;
@@ -62,6 +68,8 @@ export class AgentContentFileBuilder {
   readonly #llmsTxtGenerator: LlmsTxtGenerator;
   readonly #markdownPageArtifactGenerator: MarkdownPageArtifactGenerator;
   readonly #markdownPageArtifactPathBuilder: MarkdownPageArtifactPathBuilder;
+  readonly #buildFingerprintDecorator: AgentContentFileBuildFingerprintDecorator;
+  readonly #openNavManifestGenerator: OpenNavManifestGenerator;
 
   /**
    * Creates a builder with default content generators.
@@ -82,6 +90,11 @@ export class AgentContentFileBuilder {
     this.#markdownPageArtifactPathBuilder =
       dependencies.markdownPageArtifactPathBuilder ??
       new MarkdownPageArtifactPathBuilder();
+    this.#buildFingerprintDecorator =
+      dependencies.buildFingerprintDecorator ??
+      new AgentContentFileBuildFingerprintDecorator();
+    this.#openNavManifestGenerator =
+      dependencies.openNavManifestGenerator ?? new OpenNavManifestGenerator();
   }
 
   /**
@@ -97,6 +110,7 @@ export class AgentContentFileBuilder {
     // Priority 1: the site map is always planned first at both root and
     // `.well-known` paths.
     this.addFiles(
+      input,
       files,
       reservedOutputFilePaths,
       this.#llmsFilePlacementBuilder.build(this.createLlmsTxtFile(input)),
@@ -119,9 +133,18 @@ export class AgentContentFileBuilder {
     // Priority 4: the full-context file has stable root and `.well-known`
     // paths and is capped lazily when either shared content callback runs.
     this.addFiles(
+      input,
       files,
       reservedOutputFilePaths,
       this.#llmsFilePlacementBuilder.build(this.createLlmsFullTxtFile(input)),
+    );
+
+    // Priority 5: the static compatibility manifest is valid JSON, so it
+    // carries the build fingerprint as a field rather than an appended comment.
+    this.addFileWithoutBuildFingerprintMarker(
+      files,
+      reservedOutputFilePaths,
+      this.createOpenNavManifestFile(input),
     );
 
     return {
@@ -132,6 +155,7 @@ export class AgentContentFileBuilder {
   }
 
   private addFile(
+    input: AgentContentBuildInput,
     files: AgentContentFile[],
     reservedOutputFilePaths: Set<EngineFilePath>,
     file: AgentContentFile,
@@ -143,17 +167,36 @@ export class AgentContentFileBuilder {
     }
 
     reservedOutputFilePaths.add(file.outputFilePath);
-    files.push(file);
+    files.push(
+      this.#buildFingerprintDecorator.decorate({
+        file,
+        buildFingerprint: input.buildFingerprint,
+      }),
+    );
   }
 
   private addFiles(
+    input: AgentContentBuildInput,
     files: AgentContentFile[],
     reservedOutputFilePaths: Set<EngineFilePath>,
     newFiles: readonly AgentContentFile[],
   ): void {
     for (const file of newFiles) {
-      this.addFile(files, reservedOutputFilePaths, file);
+      this.addFile(input, files, reservedOutputFilePaths, file);
     }
+  }
+
+  private addFileWithoutBuildFingerprintMarker(
+    files: AgentContentFile[],
+    reservedOutputFilePaths: Set<EngineFilePath>,
+    file: AgentContentFile,
+  ): void {
+    if (reservedOutputFilePaths.has(file.outputFilePath)) {
+      return;
+    }
+
+    reservedOutputFilePaths.add(file.outputFilePath);
+    files.push(file);
   }
 
   private addMarkdownPageArtifactFile(
@@ -167,6 +210,7 @@ export class AgentContentFileBuilder {
     }
 
     this.addFile(
+      input,
       files,
       reservedOutputFilePaths,
       this.createMarkdownPageArtifactFile(input, pageInput),
@@ -255,6 +299,31 @@ export class AgentContentFileBuilder {
           warnings: [],
         });
       },
+    };
+  }
+
+  private createOpenNavManifestFile(
+    input: AgentContentBuildInput,
+  ): AgentContentFile {
+    const generationResult = this.#openNavManifestGenerator.generate({
+      baseUrl: input.baseUrl,
+      buildFingerprint: input.buildFingerprint,
+      htmlResourceLinks: input.pages.some(
+        (pageInput: AgentContentBuildPage): boolean =>
+          pageInput.page.sourceContentType === "html",
+      ),
+      contentSignals: input.contentSignalsConfigured ?? false,
+    });
+
+    return {
+      outputFilePath: generationResult.outputFilePath,
+      getContent: async (): Promise<
+        Result<AgentContentFileContent, OpenNavError>
+      > =>
+        ok({
+          content: generationResult.content,
+          warnings: [],
+        }),
     };
   }
 

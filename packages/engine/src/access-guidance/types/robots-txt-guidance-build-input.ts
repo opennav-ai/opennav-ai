@@ -5,6 +5,14 @@ import type { RobotsTxtSourceFile } from "./robots-txt-source-file";
  */
 export interface RobotsTxtGuidanceBuildInput {
   /**
+   * Deterministic fingerprint for the current OpenNav build run.
+   *
+   * Managed `robots.txt` blocks include this value so later runs can identify
+   * the OpenNav-owned block without claiming ownership of the full file.
+   */
+  readonly buildFingerprint: string;
+
+  /**
    * Existing root `robots.txt` file from the built output folder.
    *
    * When omitted and `contentSignalLine` is populated, the planner returns a
