@@ -37,4 +37,14 @@ export interface MarkdownPageArtifactGenerateInput {
    * time so large sites do not need to keep every source file in memory.
    */
   readonly sourceContent: string;
+
+  /**
+   * Whether the generated Markdown artifact should include a root `llms.txt` backlink.
+   *
+   * Physical Markdown files generated from HTML pages set this to `true` so an
+   * agent reading the page can navigate back to the site index. Content reused
+   * inside `llms-full.txt` sets this to `false` so the full-context file does
+   * not repeat page footers.
+   */
+  readonly includeSiteIndexBacklink: boolean;
 }

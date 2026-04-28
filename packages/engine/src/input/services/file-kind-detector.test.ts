@@ -29,7 +29,7 @@ describe("FileKindDetector", (): void => {
       "html",
       "markdown",
       "robots",
-      "sitemap",
+      "unsupported",
       "unsupported",
     ]);
   });

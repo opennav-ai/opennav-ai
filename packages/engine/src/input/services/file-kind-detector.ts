@@ -8,7 +8,7 @@ import type { EngineFileKind } from "../types/engine-file-kind";
  */
 export class FileKindDetector {
   /**
-   * Detects whether a built file path is HTML, Markdown, robots.txt, sitemap.xml, or unsupported.
+   * Detects whether a built file path is HTML, Markdown, robots.txt, or unsupported.
    *
    * @param filePath - Built site file path passed into the engine.
    * @returns The detected file kind wrapped in a successful Result.
@@ -20,10 +20,6 @@ export class FileKindDetector {
 
     if (fileName === "robots.txt") {
       return ok("robots");
-    }
-
-    if (fileName === "sitemap.xml") {
-      return ok("sitemap");
     }
 
     if (fileName.endsWith(".html")) {

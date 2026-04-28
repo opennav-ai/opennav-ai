@@ -87,7 +87,6 @@ describe("PageListReader", (): void => {
     const outputDirectory = join(fixtureDirectory, "dist");
     const htmlFilePath = "docs/index.html";
     const robotsFilePath = "robots.txt";
-    const sitemapFilePath = "sitemap.xml";
     const htmlContent = "<html><head><title>Docs</title></head></html>";
     await mkdir(join(outputDirectory, "docs"), { recursive: true });
     await writeFile(join(outputDirectory, htmlFilePath), htmlContent, "utf8");
@@ -105,10 +104,6 @@ describe("PageListReader", (): void => {
           filePath: robotsFilePath,
           kind: "robots",
         },
-        {
-          filePath: sitemapFilePath,
-          kind: "sitemap",
-        },
       ],
     });
 
@@ -125,7 +120,7 @@ describe("PageListReader", (): void => {
             description: undefined,
           },
         ],
-        skippedFilePaths: [robotsFilePath, sitemapFilePath],
+        skippedFilePaths: [robotsFilePath],
       });
     }
   });

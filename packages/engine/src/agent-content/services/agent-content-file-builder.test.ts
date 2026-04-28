@@ -297,12 +297,12 @@ describe("AgentContentFileBuilder", (): void => {
       },
       homeMarkdown: {
         content:
-          "# Home\n\nStart with the [API](https://example.com/docs/api.md).\n",
+          "# Home\n\nStart with the [API](https://example.com/docs/api.md).\n\n---\n\nSite index: [llms.txt](https://example.com/llms.txt)\n",
         warnings: [],
       },
       apiMarkdown: {
         content:
-          "# API\n\nUse API features after reading [Home](https://example.com/index.md).\n",
+          "# API\n\nUse API features after reading [Home](https://example.com/index.md).\n\n---\n\nSite index: [llms.txt](https://example.com/llms.txt)\n",
         warnings: [],
       },
       llmsFullTxt: {
@@ -411,7 +411,7 @@ describe("AgentContentFileBuilder", (): void => {
       }).toEqual({
         fileContent: {
           content:
-            "# API\n\nUse the [guide](https://example.com/docs/guide.md).\n",
+            "# API\n\nUse the [guide](https://example.com/docs/guide.md).\n\n---\n\nSite index: [llms.txt](https://example.com/llms.txt)\n",
           warnings: [],
         },
         sourceReadCounts: {

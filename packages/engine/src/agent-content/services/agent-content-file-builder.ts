@@ -176,6 +176,7 @@ export class AgentContentFileBuilder {
   private async buildMarkdownPageContent(
     input: AgentContentBuildInput,
     pageInput: AgentContentBuildPage,
+    includeSiteIndexBacklink: boolean,
   ): Promise<Result<string, OpenNavError>> {
     const sourceContentResult = await pageInput.getSourceContent();
 
@@ -190,6 +191,7 @@ export class AgentContentFileBuilder {
         (candidate: AgentContentBuildPage): OpenNavPage => candidate.page,
       ),
       sourceContent: sourceContentResult.value,
+      includeSiteIndexBacklink,
     });
 
     if (artifactResult.isErr()) {
@@ -265,6 +267,7 @@ export class AgentContentFileBuilder {
       const markdownContentResult = await this.buildMarkdownPageContent(
         input,
         pageInput,
+        false,
       );
 
       if (markdownContentResult.isErr()) {
@@ -297,6 +300,7 @@ export class AgentContentFileBuilder {
         const markdownContentResult = await this.buildMarkdownPageContent(
           input,
           pageInput,
+          true,
         );
 
         if (markdownContentResult.isErr()) {

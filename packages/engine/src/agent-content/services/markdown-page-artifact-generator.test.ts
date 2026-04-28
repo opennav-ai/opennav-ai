@@ -30,6 +30,7 @@ describe("MarkdownPageArtifactGenerator", (): void => {
         page,
         pages: [page],
         sourceContent,
+        includeSiteIndexBacklink: true,
       });
 
     expect(result.isOk()).toEqual(true);
@@ -70,6 +71,7 @@ describe("MarkdownPageArtifactGenerator", (): void => {
         page,
         pages: [page],
         sourceContent,
+        includeSiteIndexBacklink: true,
       });
 
     expect(result.isOk()).toEqual(true);
@@ -78,7 +80,7 @@ describe("MarkdownPageArtifactGenerator", (): void => {
         outputFilePath: "reference/api.md",
         publicUrl: "https://example.com/docs/reference/api.md",
         content:
-          "# API Reference\n\nUse the [SDK](https://example.com/docs/sdk) from TypeScript.\n\n## Install\n\n```txt\nnpm install @opennav-ai/engine\n```\n",
+          "# API Reference\n\nUse the [SDK](https://example.com/docs/sdk) from TypeScript.\n\n## Install\n\n```txt\nnpm install @opennav-ai/engine\n```\n\n---\n\nSite index: [llms.txt](https://example.com/docs/llms.txt)\n",
       });
     }
   });
@@ -117,6 +119,7 @@ describe("MarkdownPageArtifactGenerator", (): void => {
         page: apiPage,
         pages: [apiPage, sdkPage],
         sourceContent,
+        includeSiteIndexBacklink: true,
       });
 
     expect(result.isOk()).toEqual(true);
@@ -125,7 +128,46 @@ describe("MarkdownPageArtifactGenerator", (): void => {
         outputFilePath: "reference/api.md",
         publicUrl: "https://example.com/docs/reference/api.md",
         content:
-          "# API Reference\n\nUse the [SDK](https://example.com/docs/reference/sdk.md) from TypeScript.\n",
+          "# API Reference\n\nUse the [SDK](https://example.com/docs/reference/sdk.md) from TypeScript.\n\n---\n\nSite index: [llms.txt](https://example.com/docs/llms.txt)\n",
+      });
+    }
+  });
+
+  it("omits the root llms.txt backlink when generated content is used outside a Markdown artifact file", (): void => {
+    const generator = new MarkdownPageArtifactGenerator();
+    const page = {
+      sourceFilePath: "reference/api.html",
+      sourceContentType: "html",
+      route: "/reference/api",
+      canonicalUrl: "https://example.com/docs/reference/api",
+      title: "API Reference",
+      description: "Use the SDK from TypeScript.",
+    } as const;
+    const sourceContent = [
+      "<!doctype html>",
+      "<html>",
+      "<body>",
+      "<h1>API Reference</h1>",
+      "<p>Use the SDK from TypeScript.</p>",
+      "</body>",
+      "</html>",
+    ].join("");
+
+    const result: Result<MarkdownPageArtifactGenerateResult, OpenNavError> =
+      generator.generate({
+        baseUrl: "https://example.com/docs/",
+        page,
+        pages: [page],
+        sourceContent,
+        includeSiteIndexBacklink: false,
+      });
+
+    expect(result.isOk()).toEqual(true);
+    if (result.isOk()) {
+      expect(result.value).toEqual({
+        outputFilePath: "reference/api.md",
+        publicUrl: "https://example.com/docs/reference/api.md",
+        content: "# API Reference\n\nUse the SDK from TypeScript.\n",
       });
     }
   });

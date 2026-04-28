@@ -53,7 +53,34 @@ export class MarkdownPageArtifactGenerator {
     return ok({
       outputFilePath: pathResult.outputFilePath,
       publicUrl: pathResult.publicUrl,
-      content: contentResult.value.content,
+      content: this.addSiteIndexBacklink(input, contentResult.value.content),
     });
+  }
+
+  private addSiteIndexBacklink(
+    input: MarkdownPageArtifactGenerateInput,
+    content: string,
+  ): string {
+    if (
+      !input.includeSiteIndexBacklink ||
+      input.page.sourceContentType !== "html"
+    ) {
+      return content;
+    }
+
+    const backlink = `Site index: [llms.txt](${this.buildSiteIndexUrl(
+      input.baseUrl,
+    )})`;
+    const trimmedContent = content.trimEnd();
+
+    if (trimmedContent === "") {
+      return `${backlink}\n`;
+    }
+
+    return `${trimmedContent}\n\n---\n\n${backlink}\n`;
+  }
+
+  private buildSiteIndexUrl(baseUrl: string): string {
+    return `${baseUrl.replace(/\/+$/, "")}/llms.txt`;
   }
 }

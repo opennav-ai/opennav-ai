@@ -17,7 +17,7 @@ export interface EngineFileReference {
    * Detected handling category for the referenced file.
    *
    * Later page readers and guidance builders use this value to decide whether
-   * to process the path as HTML, Markdown, `robots.txt`, or `sitemap.xml`.
+   * to process the path as HTML, Markdown, or `robots.txt`.
    */
   readonly kind: EngineFileKind;
 }

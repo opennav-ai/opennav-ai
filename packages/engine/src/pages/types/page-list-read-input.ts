@@ -24,7 +24,7 @@ export interface PageListReadInput {
    * Lightweight file references discovered under `outputDirectory`.
    *
    * HTML and Markdown references become `OpenNavPage` entries. Non-page
-   * references such as `robots.txt` and `sitemap.xml` are returned in
+   * references such as `robots.txt` are returned in
    * `skippedFilePaths` so later reports can say they were intentionally ignored
    * for page data.
    */

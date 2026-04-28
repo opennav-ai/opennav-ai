@@ -17,7 +17,7 @@ export interface PageListReadResult {
   /**
    * Output-directory-relative paths that were intentionally excluded from page data.
    *
-   * Crawler guidance files such as `robots.txt` and sitemap files can still be
+   * Crawler guidance files such as `robots.txt` can still be
    * used by later guidance builders, but they are not pages and therefore do
    * not appear in `pages`.
    */

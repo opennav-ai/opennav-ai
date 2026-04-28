@@ -13,8 +13,8 @@ export interface PageUrlBuildResult {
    * Absolute public URL for the page route.
    *
    * The value combines the configured site `baseUrl` with `route` and is used
-   * later in generated files and discovery annotations, such as `llms.txt`,
-   * Markdown artifacts, HTML head tags, and HTTP `Link` header guidance.
+   * later in generated files and resource links, such as `llms.txt`, Markdown
+   * artifacts, and HTML head tags.
    */
   readonly canonicalUrl: string;
 }

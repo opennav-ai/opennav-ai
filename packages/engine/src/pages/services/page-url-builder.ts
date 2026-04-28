@@ -10,8 +10,8 @@ import type { PageUrlBuildResult } from "../types/page-url-build-result";
  * public page addresses that agents can open. This class keeps that file path
  * to URL policy in one place so HTML and Markdown readers can focus on page
  * content while later generators can reuse stable `route` and `canonicalUrl`
- * values for outputs such as `llms.txt`, Markdown artifacts, discovery tags,
- * and HTTP `Link` header guidance.
+ * values for outputs such as `llms.txt`, Markdown artifacts, and HTML
+ * resource links.
  */
 export class PageUrlBuilder {
   /**
