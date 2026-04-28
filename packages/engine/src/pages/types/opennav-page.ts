@@ -34,8 +34,9 @@ export interface OpenNavPage {
   /**
    * Absolute public URL for the page.
    *
-   * Generated files such as `llms.txt` and `ai/tree.json` use this value when
-   * they need an agent-openable page address.
+   * Generated files and discovery annotations use this value when they need an
+   * agent-openable page address, such as links in `llms.txt`, Markdown
+   * artifacts, HTML head tags, or HTTP `Link` header guidance.
    */
   readonly canonicalUrl: string;
 
