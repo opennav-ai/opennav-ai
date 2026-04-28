@@ -8,6 +8,7 @@ import type { AgentContentBuildResult } from "../types/agent-content-build-resul
 import type { AgentContentFile } from "../types/agent-content-file";
 import type { AgentContentFileContent } from "../types/agent-content-file-content";
 import type { LlmsFullTxtPageContent } from "../types/llms-full-txt-page-content";
+import { LlmsFilePlacementBuilder } from "./llms-file-placement-builder";
 import { LlmsFullTxtGenerator } from "./llms-full-txt-generator";
 import { LlmsTxtGenerator } from "./llms-txt-generator";
 import { MarkdownPageArtifactGenerator } from "./markdown-page-artifact-generator";
@@ -17,6 +18,7 @@ import { O200kBaseLlmsFullTxtTokenCounter } from "./o200k-base-llms-full-txt-tok
 const LLMS_FULL_TXT_OUTPUT_FILE_PATH: EngineFilePath = "llms-full.txt";
 
 interface AgentContentFileBuilderDependencies {
+  readonly llmsFilePlacementBuilder?: LlmsFilePlacementBuilder;
   readonly llmsFullTxtGenerator?: LlmsFullTxtGenerator;
   readonly llmsTxtGenerator?: LlmsTxtGenerator;
   readonly markdownPageArtifactGenerator?: MarkdownPageArtifactGenerator;
@@ -29,14 +31,15 @@ interface AgentContentFileBuilderDependencies {
  * The builder receives already-validated site metadata and page metadata plus
  * one lazy source-content reader per page. It returns an in-memory file plan
  * with output-directory-relative paths such as `llms.txt`, `index.md`,
- * `docs/api.md`, and `llms-full.txt`. Each planned file exposes a `getContent`
+ * `docs/api.md`, `llms-full.txt`, `.well-known/llms.txt`, and
+ * `.well-known/llms-full.txt`. Each planned file exposes a `getContent`
  * callback so later write planning can inspect every path before any page body
  * is read or converted.
  *
  * Responsibilities:
  *
- * - Plan `llms.txt` first as the lightweight site map of generated Markdown
- *   endpoints.
+ * - Plan root and `.well-known` copies of `llms.txt` first as the lightweight
+ *   site map of generated Markdown endpoints.
  * - Reserve existing Markdown page paths so generated HTML mirrors do not
  *   overwrite source files such as `docs/api.md`.
  * - Plan mirrored Markdown artifacts for HTML pages, such as `index.html` to
@@ -44,8 +47,9 @@ interface AgentContentFileBuilderDependencies {
  * - Generate Markdown page bodies lazily, passing the full page list to the
  *   Markdown generator so internal links can be rewritten to known generated
  *   Markdown endpoints.
- * - Plan `llms-full.txt` last and defer its page-body reads, Markdown
- *   conversion, and token-cap warnings until its `getContent` callback runs.
+ * - Plan root and `.well-known` copies of `llms-full.txt` last and defer their
+ *   shared page-body reads, Markdown conversion, and token-cap warnings until
+ *   one of their `getContent` callbacks runs.
  *
  * This class does not discover files, validate site data, write to `dist/`,
  * inject HTML tags, create discovery metadata, or decide final filesystem
@@ -53,6 +57,7 @@ interface AgentContentFileBuilderDependencies {
  * it into concrete write operations.
  */
 export class AgentContentFileBuilder {
+  readonly #llmsFilePlacementBuilder: LlmsFilePlacementBuilder;
   readonly #llmsFullTxtGenerator: LlmsFullTxtGenerator;
   readonly #llmsTxtGenerator: LlmsTxtGenerator;
   readonly #markdownPageArtifactGenerator: MarkdownPageArtifactGenerator;
@@ -64,6 +69,8 @@ export class AgentContentFileBuilder {
    * @param dependencies - Optional generator overrides for focused tests.
    */
   public constructor(dependencies: AgentContentFileBuilderDependencies = {}) {
+    this.#llmsFilePlacementBuilder =
+      dependencies.llmsFilePlacementBuilder ?? new LlmsFilePlacementBuilder();
     this.#llmsFullTxtGenerator =
       dependencies.llmsFullTxtGenerator ??
       new LlmsFullTxtGenerator(new O200kBaseLlmsFullTxtTokenCounter());
@@ -87,8 +94,13 @@ export class AgentContentFileBuilder {
     const files: AgentContentFile[] = [];
     const reservedOutputFilePaths = new Set<EngineFilePath>();
 
-    // Priority 1: the site map is always planned first and owns `llms.txt`.
-    this.addFile(files, reservedOutputFilePaths, this.createLlmsTxtFile(input));
+    // Priority 1: the site map is always planned first at both root and
+    // `.well-known` paths.
+    this.addFiles(
+      files,
+      reservedOutputFilePaths,
+      this.#llmsFilePlacementBuilder.build(this.createLlmsTxtFile(input)),
+    );
 
     // Priority 2: existing Markdown pages already occupy their `.md` paths, so
     // generated HTML mirrors do not overwrite them.
@@ -104,12 +116,12 @@ export class AgentContentFileBuilder {
       );
     }
 
-    // Priority 4: the full-context file has a stable root path and is capped
-    // lazily when its content callback runs.
-    this.addFile(
+    // Priority 4: the full-context file has stable root and `.well-known`
+    // paths and is capped lazily when either shared content callback runs.
+    this.addFiles(
       files,
       reservedOutputFilePaths,
-      this.createLlmsFullTxtFile(input),
+      this.#llmsFilePlacementBuilder.build(this.createLlmsFullTxtFile(input)),
     );
 
     return {
@@ -132,6 +144,16 @@ export class AgentContentFileBuilder {
 
     reservedOutputFilePaths.add(file.outputFilePath);
     files.push(file);
+  }
+
+  private addFiles(
+    files: AgentContentFile[],
+    reservedOutputFilePaths: Set<EngineFilePath>,
+    newFiles: readonly AgentContentFile[],
+  ): void {
+    for (const file of newFiles) {
+      this.addFile(files, reservedOutputFilePaths, file);
+    }
   }
 
   private addMarkdownPageArtifactFile(

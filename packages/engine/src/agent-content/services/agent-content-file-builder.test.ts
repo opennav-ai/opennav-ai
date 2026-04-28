@@ -179,7 +179,14 @@ describe("AgentContentFileBuilder", (): void => {
         api: apiProbe.readCount(),
       },
     }).toEqual({
-      filePaths: ["llms.txt", "index.md", "docs/api.md", "llms-full.txt"],
+      filePaths: [
+        "llms.txt",
+        ".well-known/llms.txt",
+        "index.md",
+        "docs/api.md",
+        "llms-full.txt",
+        ".well-known/llms-full.txt",
+      ],
       skippedFilePaths: [],
       warnings: [],
       sourceReadCounts: {
@@ -217,7 +224,14 @@ describe("AgentContentFileBuilder", (): void => {
         api: apiProbe.readCount(),
       },
     }).toEqual({
-      filePaths: ["llms.txt", "index.md", "docs/api.md", "llms-full.txt"],
+      filePaths: [
+        "llms.txt",
+        ".well-known/llms.txt",
+        "index.md",
+        "docs/api.md",
+        "llms-full.txt",
+        ".well-known/llms-full.txt",
+      ],
       skippedFilePaths: [],
       warnings: [],
       sourceReadCounts: {
@@ -229,6 +243,10 @@ describe("AgentContentFileBuilder", (): void => {
     const llmsTxtContentResult = await findFileByPath(
       result.files,
       "llms.txt",
+    ).getContent();
+    const wellKnownLlmsTxtContentResult = await findFileByPath(
+      result.files,
+      ".well-known/llms.txt",
     ).getContent();
     const homeMarkdownContentResult = await findFileByPath(
       result.files,
@@ -242,11 +260,18 @@ describe("AgentContentFileBuilder", (): void => {
       result.files,
       "llms-full.txt",
     ).getContent();
+    const wellKnownLlmsFullTxtContentResult = await findFileByPath(
+      result.files,
+      ".well-known/llms-full.txt",
+    ).getContent();
 
     expect({
       llmsTxt: llmsTxtContentResult.isOk()
         ? llmsTxtContentResult.value
         : llmsTxtContentResult.error,
+      wellKnownLlmsTxt: wellKnownLlmsTxtContentResult.isOk()
+        ? wellKnownLlmsTxtContentResult.value
+        : wellKnownLlmsTxtContentResult.error,
       homeMarkdown: homeMarkdownContentResult.isOk()
         ? homeMarkdownContentResult.value
         : homeMarkdownContentResult.error,
@@ -256,8 +281,16 @@ describe("AgentContentFileBuilder", (): void => {
       llmsFullTxt: llmsFullTxtContentResult.isOk()
         ? llmsFullTxtContentResult.value
         : llmsFullTxtContentResult.error,
+      wellKnownLlmsFullTxt: wellKnownLlmsFullTxtContentResult.isOk()
+        ? wellKnownLlmsFullTxtContentResult.value
+        : wellKnownLlmsFullTxtContentResult.error,
     }).toEqual({
       llmsTxt: {
+        content:
+          "# Example Docs\n\n## Root\n\n- [Home](https://example.com/index.md): Project overview.\n\n## Docs\n\n- [API](https://example.com/docs/api.md): Use the API.\n",
+        warnings: [],
+      },
+      wellKnownLlmsTxt: {
         content:
           "# Example Docs\n\n## Root\n\n- [Home](https://example.com/index.md): Project overview.\n\n## Docs\n\n- [API](https://example.com/docs/api.md): Use the API.\n",
         warnings: [],
@@ -273,6 +306,11 @@ describe("AgentContentFileBuilder", (): void => {
         warnings: [],
       },
       llmsFullTxt: {
+        content:
+          "# Example Docs\n\n## Root\n\n### Home\n\nURL: https://example.com/index.md\n\nProject overview.\n\n# Home\n\nStart with the [API](https://example.com/docs/api.md).\n\n---\n\n## Docs\n\n### API\n\nURL: https://example.com/docs/api.md\n\nUse the API.\n\n# API\n\nUse API features after reading [Home](https://example.com/index.md).\n",
+        warnings: [],
+      },
+      wellKnownLlmsFullTxt: {
         content:
           "# Example Docs\n\n## Root\n\n### Home\n\nURL: https://example.com/index.md\n\nProject overview.\n\n# Home\n\nStart with the [API](https://example.com/docs/api.md).\n\n---\n\n## Docs\n\n### API\n\nURL: https://example.com/docs/api.md\n\nUse the API.\n\n# API\n\nUse API features after reading [Home](https://example.com/index.md).\n",
         warnings: [],
@@ -312,7 +350,12 @@ describe("AgentContentFileBuilder", (): void => {
         markdown: markdownProbe.readCount(),
       },
     }).toEqual({
-      filePaths: ["llms.txt", "llms-full.txt"],
+      filePaths: [
+        "llms.txt",
+        ".well-known/llms.txt",
+        "llms-full.txt",
+        ".well-known/llms-full.txt",
+      ],
       skippedFilePaths: [],
       warnings: [],
       sourceReadCounts: {
@@ -442,19 +485,43 @@ describe("AgentContentFileBuilder", (): void => {
       createBuildInput([homeProbe.buildPage, apiProbe.buildPage]),
     );
     const llmsFullFile = findFileByPath(result.files, "llms-full.txt");
+    const wellKnownLlmsFullFile = findFileByPath(
+      result.files,
+      ".well-known/llms-full.txt",
+    );
 
-    const contentResult = await llmsFullFile.getContent();
+    const contentResults = await Promise.all([
+      llmsFullFile.getContent(),
+      wellKnownLlmsFullFile.getContent(),
+    ]);
 
     expect({
-      isErr: contentResult.isErr(),
-      error: contentResult.isErr() ? contentResult.error : undefined,
+      contentResults: contentResults.map(
+        (
+          contentResult: Result<unknown, OpenNavError>,
+        ): {
+          readonly isErr: boolean;
+          readonly error: OpenNavError | undefined;
+        } => ({
+          isErr: contentResult.isErr(),
+          error: contentResult.isErr() ? contentResult.error : undefined,
+        }),
+      ),
       sourceReadCounts: {
         home: homeProbe.readCount(),
         api: apiProbe.readCount(),
       },
     }).toEqual({
-      isErr: true,
-      error: sourceReadError,
+      contentResults: [
+        {
+          isErr: true,
+          error: sourceReadError,
+        },
+        {
+          isErr: true,
+          error: sourceReadError,
+        },
+      ],
       sourceReadCounts: {
         home: 1,
         api: 1,
@@ -483,7 +550,13 @@ describe("AgentContentFileBuilder", (): void => {
         home: homeProbe.readCount(),
       },
     }).toEqual({
-      filePaths: ["llms.txt", "home.md", "llms-full.txt"],
+      filePaths: [
+        "llms.txt",
+        ".well-known/llms.txt",
+        "home.md",
+        "llms-full.txt",
+        ".well-known/llms-full.txt",
+      ],
       skippedFilePaths: [],
       warnings: [],
       sourceReadCounts: {
@@ -514,28 +587,66 @@ describe("AgentContentFileBuilder", (): void => {
       ),
     );
     const llmsFullFile = findFileByPath(result.files, "llms-full.txt");
+    const wellKnownLlmsFullFile = findFileByPath(
+      result.files,
+      ".well-known/llms-full.txt",
+    );
 
-    const contentResult = await llmsFullFile.getContent();
+    const contentResults = await Promise.all([
+      llmsFullFile.getContent(),
+      wellKnownLlmsFullFile.getContent(),
+    ]);
 
-    expect(contentResult.isOk()).toEqual(true);
-    if (contentResult.isOk()) {
-      expect(contentResult.value).toEqual({
-        content: cappedContent,
-        warnings: [
-          {
-            code: "LLMS_FULL_TXT_TOKEN_LIMIT_REACHED",
-            message:
-              "The generated llms-full.txt file stopped before adding content that would exceed the configured token limit.",
-            context: {
-              outputFilePath: "llms-full.txt",
-              maxContentTokens: tokenCounter.count(cappedContent),
-              actualContentTokens: tokenCounter.count(cappedContent),
-              omittedPageCount: 1,
-              omittedPageSourceFilePaths: ["docs/api.html"],
+    expect(
+      contentResults.map(
+        (
+          contentResult: Result<unknown, OpenNavError>,
+        ): { readonly isOk: boolean; readonly value: unknown } => ({
+          isOk: contentResult.isOk(),
+          value: contentResult.isOk() ? contentResult.value : undefined,
+        }),
+      ),
+    ).toEqual([
+      {
+        isOk: true,
+        value: {
+          content: cappedContent,
+          warnings: [
+            {
+              code: "LLMS_FULL_TXT_TOKEN_LIMIT_REACHED",
+              message:
+                "The generated llms-full.txt file stopped before adding content that would exceed the configured token limit.",
+              context: {
+                outputFilePath: "llms-full.txt",
+                maxContentTokens: tokenCounter.count(cappedContent),
+                actualContentTokens: tokenCounter.count(cappedContent),
+                omittedPageCount: 1,
+                omittedPageSourceFilePaths: ["docs/api.html"],
+              },
             },
-          },
-        ],
-      });
-    }
+          ],
+        },
+      },
+      {
+        isOk: true,
+        value: {
+          content: cappedContent,
+          warnings: [
+            {
+              code: "LLMS_FULL_TXT_TOKEN_LIMIT_REACHED",
+              message:
+                "The generated llms-full.txt file stopped before adding content that would exceed the configured token limit.",
+              context: {
+                outputFilePath: "llms-full.txt",
+                maxContentTokens: tokenCounter.count(cappedContent),
+                actualContentTokens: tokenCounter.count(cappedContent),
+                omittedPageCount: 1,
+                omittedPageSourceFilePaths: ["docs/api.html"],
+              },
+            },
+          ],
+        },
+      },
+    ]);
   });
 });
