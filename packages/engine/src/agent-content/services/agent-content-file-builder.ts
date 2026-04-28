@@ -24,10 +24,33 @@ interface AgentContentFileBuilderDependencies {
 }
 
 /**
- * Plans lazy agent-readable content files for a validated static site.
+ * Plans the Phase 1 files that agents can read directly from a static site.
  *
- * Existing Markdown page paths reserve their own `.md` endpoints. HTML page
- * paths then get mirrored Markdown files unless that `.md` path already exists.
+ * The builder receives already-validated site metadata and page metadata plus
+ * one lazy source-content reader per page. It returns an in-memory file plan
+ * with output-directory-relative paths such as `llms.txt`, `index.md`,
+ * `docs/api.md`, and `llms-full.txt`. Each planned file exposes a `getContent`
+ * callback so later write planning can inspect every path before any page body
+ * is read or converted.
+ *
+ * Responsibilities:
+ *
+ * - Plan `llms.txt` first as the lightweight site map of generated Markdown
+ *   endpoints.
+ * - Reserve existing Markdown page paths so generated HTML mirrors do not
+ *   overwrite source files such as `docs/api.md`.
+ * - Plan mirrored Markdown artifacts for HTML pages, such as `index.html` to
+ *   `index.md` and `docs/api.html` to `docs/api.md`.
+ * - Generate Markdown page bodies lazily, passing the full page list to the
+ *   Markdown generator so internal links can be rewritten to known generated
+ *   Markdown endpoints.
+ * - Plan `llms-full.txt` last and defer its page-body reads, Markdown
+ *   conversion, and token-cap warnings until its `getContent` callback runs.
+ *
+ * This class does not discover files, validate site data, write to `dist/`,
+ * inject HTML tags, create discovery metadata, or decide final filesystem
+ * create/overwrite behavior. Later milestones consume this file plan and turn
+ * it into concrete write operations.
  */
 export class AgentContentFileBuilder {
   readonly #llmsFullTxtGenerator: LlmsFullTxtGenerator;

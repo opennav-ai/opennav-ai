@@ -170,6 +170,97 @@ describe("AgentContentFileBuilder", (): void => {
     });
   });
 
+  it("builds exact lazy readable content files for a validated page set", async (): Promise<void> => {
+    const homeProbe = createSourcePageProbe(
+      createHtmlPage("index.html", "/", "Home", "Project overview."),
+      '<h1>Home</h1><p>Start with the <a href="/docs/api">API</a>.</p>',
+    );
+    const apiProbe = createSourcePageProbe(
+      createHtmlPage("docs/api.html", "/docs/api", "API", "Use the API."),
+      '<h1>API</h1><p>Use API features after reading <a href="/">Home</a>.</p>',
+    );
+    const builder = new AgentContentFileBuilder({
+      llmsFullTxtGenerator: new LlmsFullTxtGenerator(
+        new StaticLlmsFullTxtTokenCounter(),
+      ),
+    });
+
+    const result: AgentContentBuildResult = builder.build(
+      createBuildInput([homeProbe.buildPage, apiProbe.buildPage]),
+    );
+
+    expect({
+      filePaths: getFilePaths(result.files),
+      skippedFilePaths: result.skippedFilePaths,
+      warnings: result.warnings,
+      sourceReadCounts: {
+        home: homeProbe.readCount(),
+        api: apiProbe.readCount(),
+      },
+    }).toEqual({
+      filePaths: ["llms.txt", "index.md", "docs/api.md", "llms-full.txt"],
+      skippedFilePaths: [],
+      warnings: [],
+      sourceReadCounts: {
+        home: 0,
+        api: 0,
+      },
+    });
+
+    const llmsTxtContentResult = await findFileByPath(
+      result.files,
+      "llms.txt",
+    ).getContent();
+    const homeMarkdownContentResult = await findFileByPath(
+      result.files,
+      "index.md",
+    ).getContent();
+    const apiMarkdownContentResult = await findFileByPath(
+      result.files,
+      "docs/api.md",
+    ).getContent();
+    const llmsFullTxtContentResult = await findFileByPath(
+      result.files,
+      "llms-full.txt",
+    ).getContent();
+
+    expect({
+      llmsTxt: llmsTxtContentResult.isOk()
+        ? llmsTxtContentResult.value
+        : llmsTxtContentResult.error,
+      homeMarkdown: homeMarkdownContentResult.isOk()
+        ? homeMarkdownContentResult.value
+        : homeMarkdownContentResult.error,
+      apiMarkdown: apiMarkdownContentResult.isOk()
+        ? apiMarkdownContentResult.value
+        : apiMarkdownContentResult.error,
+      llmsFullTxt: llmsFullTxtContentResult.isOk()
+        ? llmsFullTxtContentResult.value
+        : llmsFullTxtContentResult.error,
+    }).toEqual({
+      llmsTxt: {
+        content:
+          "# Example Docs\n\n## Root\n\n- [Home](https://example.com/index.md): Project overview.\n\n## Docs\n\n- [API](https://example.com/docs/api.md): Use the API.\n",
+        warnings: [],
+      },
+      homeMarkdown: {
+        content:
+          "# Home\n\nStart with the [API](https://example.com/docs/api.md).\n",
+        warnings: [],
+      },
+      apiMarkdown: {
+        content:
+          "# API\n\nUse API features after reading [Home](https://example.com/index.md).\n",
+        warnings: [],
+      },
+      llmsFullTxt: {
+        content:
+          "# Example Docs\n\n## Root\n\n### Home\n\nURL: https://example.com/index.md\n\nProject overview.\n\n# Home\n\nStart with the [API](https://example.com/docs/api.md).\n\n---\n\n## Docs\n\n### API\n\nURL: https://example.com/docs/api.md\n\nUse the API.\n\n# API\n\nUse API features after reading [Home](https://example.com/index.md).\n",
+        warnings: [],
+      },
+    });
+  });
+
   it("does not plan a generated Markdown file when that Markdown path already exists", (): void => {
     const htmlProbe = createSourcePageProbe(
       createHtmlPage("docs/api.html", "/docs/api-html", "HTML API", undefined),
