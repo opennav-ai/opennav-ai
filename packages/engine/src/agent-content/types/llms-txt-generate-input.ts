@@ -1,4 +1,4 @@
-import type { OpenNavPage } from "../../pages/types/opennav-page";
+import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
 
 /**
  * Site and page metadata needed to create the root `llms.txt` file.
@@ -34,5 +34,5 @@ export interface LlmsTxtGenerateInput {
    * The generator groups these pages by route so large sites produce a
    * scan-friendly file. Each page should already have passed site validation.
    */
-  readonly pages: readonly OpenNavPage[];
+  readonly pages: readonly OpenNavPageMetadata[];
 }

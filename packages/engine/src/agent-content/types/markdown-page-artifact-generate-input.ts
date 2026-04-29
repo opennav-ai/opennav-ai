@@ -1,4 +1,4 @@
-import type { OpenNavPage } from "../../pages/types/opennav-page";
+import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
 
 /**
  * Site and source page data needed to create one Markdown page artifact.
@@ -19,7 +19,7 @@ export interface MarkdownPageArtifactGenerateInput {
    * content format decides whether the body is reused as Markdown or converted
    * from parsed HTML.
    */
-  readonly page: OpenNavPage;
+  readonly page: OpenNavPageMetadata;
 
   /**
    * Validated metadata-only page records for the current static site.
@@ -28,7 +28,7 @@ export interface MarkdownPageArtifactGenerateInput {
    * HTML-derived Markdown can point to generated `.md` endpoints for known
    * internal pages without reading any other page bodies.
    */
-  readonly pages: readonly OpenNavPage[];
+  readonly pages: readonly OpenNavPageMetadata[];
 
   /**
    * Exact UTF-8 body read from the page source file.

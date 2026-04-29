@@ -1,4 +1,4 @@
-import type { OpenNavPage } from "../../pages/types/opennav-page";
+import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
 import type { SiteValidationMode } from "./site-validation-mode";
 
 /**
@@ -27,7 +27,7 @@ export interface SiteValidationInput {
    * Validation checks these pages before generators rely on routes, canonical
    * URLs, titles, and descriptions.
    */
-  readonly pages: readonly OpenNavPage[];
+  readonly pages: readonly OpenNavPageMetadata[];
 
   /**
    * Validation behavior for recoverable missing data.

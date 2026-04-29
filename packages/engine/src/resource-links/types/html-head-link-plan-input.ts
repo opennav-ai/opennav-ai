@@ -1,4 +1,4 @@
-import type { OpenNavPage } from "../../pages/types/opennav-page";
+import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
 import type { ResourceLink } from "./resource-link";
 
 /**
@@ -11,7 +11,7 @@ export interface HtmlHeadLinkPlanInput {
    * The source file path is used in the returned page edit and in any warning
    * if the file has no safe source `<head>` insertion point.
    */
-  readonly page: OpenNavPage;
+  readonly page: OpenNavPageMetadata;
 
   /**
    * Exact UTF-8 HTML source body for the page.

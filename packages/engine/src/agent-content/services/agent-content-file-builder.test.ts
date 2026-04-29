@@ -1,7 +1,7 @@
 import { err, ok, type Result } from "neverthrow";
 import { describe, expect, it } from "vitest";
 import type { OpenNavError } from "../../common/types/opennav-error";
-import type { OpenNavPage } from "../../pages/types/opennav-page";
+import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
 import { DEFAULT_LLMS_FULL_MAX_CONTENT_TOKENS } from "../constants/default-llms-full-max-content-tokens";
 import type { AgentContentBuildInput } from "../types/agent-content-build-input";
 import type { AgentContentBuildPage } from "../types/agent-content-build-page";
@@ -70,7 +70,7 @@ function createHtmlPage(
   route: string,
   title: string,
   description: string | undefined,
-): OpenNavPage {
+): OpenNavPageMetadata {
   return {
     sourceFilePath,
     sourceContentType: "html",
@@ -86,7 +86,7 @@ function createMarkdownPage(
   route: string,
   title: string,
   description: string | undefined,
-): OpenNavPage {
+): OpenNavPageMetadata {
   return {
     sourceFilePath,
     sourceContentType: "markdown",
@@ -98,7 +98,7 @@ function createMarkdownPage(
 }
 
 function createSourcePageProbe(
-  page: OpenNavPage,
+  page: OpenNavPageMetadata,
   sourceContent: string,
 ): SourcePageProbe {
   let readCount = 0;
@@ -117,7 +117,7 @@ function createSourcePageProbe(
 }
 
 function createFailingSourcePageProbe(
-  page: OpenNavPage,
+  page: OpenNavPageMetadata,
   sourceReadError: OpenNavError,
 ): SourcePageProbe {
   let readCount = 0;

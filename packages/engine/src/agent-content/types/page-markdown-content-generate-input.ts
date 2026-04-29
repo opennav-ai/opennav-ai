@@ -1,4 +1,4 @@
-import type { OpenNavPage } from "../../pages/types/opennav-page";
+import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
 
 /**
  * Source page data needed to produce one in-memory Markdown page body.
@@ -20,7 +20,7 @@ export interface PageMarkdownContentGenerateInput {
    * is used only for structured errors and later diagnostics; this generator
    * does not read from or write to that path.
    */
-  readonly page: OpenNavPage;
+  readonly page: OpenNavPageMetadata;
 
   /**
    * Validated metadata-only page records for the current static site.
@@ -29,7 +29,7 @@ export interface PageMarkdownContentGenerateInput {
    * may be rewritten to generated Markdown endpoints. Unknown routes remain
    * unchanged in generated page content.
    */
-  readonly pages: readonly OpenNavPage[];
+  readonly pages: readonly OpenNavPageMetadata[];
 
   /**
    * Exact UTF-8 body read from the page source file.

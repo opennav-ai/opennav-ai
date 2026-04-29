@@ -1,4 +1,4 @@
-import type { OpenNavPage } from "../../pages/types/opennav-page";
+import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
 
 /**
  * Generated Markdown body tied to the page metadata that produced it.
@@ -11,7 +11,7 @@ export interface LlmsFullTxtPageContent {
    * The source content type can distinguish Markdown pages from HTML pages that
    * were converted before this generator received their body.
    */
-  readonly page: OpenNavPage;
+  readonly page: OpenNavPageMetadata;
 
   /**
    * Complete generated Markdown body for the page.

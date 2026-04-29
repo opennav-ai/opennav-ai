@@ -1,6 +1,6 @@
 import { err, ok, type Result } from "neverthrow";
 import type { OpenNavError } from "../../common/types/opennav-error";
-import type { OpenNavPage } from "../../pages/types/opennav-page";
+import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
 import type { EngineFilePath } from "../../types/engine-file-path";
 import type { AgentContentBuildInput } from "../types/agent-content-build-input";
 import type { AgentContentBuildPage } from "../types/agent-content-build-page";
@@ -232,7 +232,8 @@ export class AgentContentFileBuilder {
       baseUrl: input.baseUrl,
       page: pageInput.page,
       pages: input.pages.map(
-        (candidate: AgentContentBuildPage): OpenNavPage => candidate.page,
+        (candidate: AgentContentBuildPage): OpenNavPageMetadata =>
+          candidate.page,
       ),
       sourceContent: sourceContentResult.value,
       includeSiteIndexBacklink,
@@ -290,7 +291,8 @@ export class AgentContentFileBuilder {
           baseUrl: input.baseUrl,
           siteDescription: input.siteDescription,
           pages: input.pages.map(
-            (pageInput: AgentContentBuildPage): OpenNavPage => pageInput.page,
+            (pageInput: AgentContentBuildPage): OpenNavPageMetadata =>
+              pageInput.page,
           ),
         });
 

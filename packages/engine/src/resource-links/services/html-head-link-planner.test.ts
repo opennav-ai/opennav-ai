@@ -1,11 +1,11 @@
 import type { Result } from "neverthrow";
 import { describe, expect, it } from "vitest";
 import type { OpenNavError } from "../../common/types/opennav-error";
-import type { OpenNavPage } from "../../pages/types/opennav-page";
+import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
 import type { ResourceLinkPageEdit } from "../types/resource-link-page-edit";
 import { HtmlHeadLinkPlanner } from "./html-head-link-planner";
 
-function createHtmlPage(): OpenNavPage {
+function createHtmlPage(): OpenNavPageMetadata {
   return {
     sourceFilePath: "docs/api/index.html",
     sourceContentType: "html",

@@ -1,4 +1,4 @@
-import type { OpenNavPage } from "../../pages/types/opennav-page";
+import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
 import type { EngineFilePath } from "../../types/engine-file-path";
 import type { MarkdownLinkHrefRewriteInput } from "../types/markdown-link-href-rewrite-input";
 import type { MarkdownLinkHrefRewriteResult } from "../types/markdown-link-href-rewrite-result";
@@ -64,7 +64,7 @@ export class MarkdownLinkHrefRewriter {
 
   private buildPageComparableUrls(
     baseUrl: string,
-    page: OpenNavPage,
+    page: OpenNavPageMetadata,
   ): ReadonlySet<string> {
     const urls = new Set<string>();
 
@@ -139,7 +139,7 @@ export class MarkdownLinkHrefRewriter {
 
   private findMatchedPage(
     input: MarkdownLinkHrefRewriteInput,
-  ): OpenNavPage | undefined {
+  ): OpenNavPageMetadata | undefined {
     const resolvedUrl = this.resolveHref(input);
 
     if (resolvedUrl === undefined) {
@@ -148,7 +148,7 @@ export class MarkdownLinkHrefRewriter {
 
     const resolvedComparableUrl = this.toComparableUrl(resolvedUrl);
 
-    return input.pages.find((page: OpenNavPage): boolean =>
+    return input.pages.find((page: OpenNavPageMetadata): boolean =>
       this.buildPageComparableUrls(input.baseUrl, page).has(
         resolvedComparableUrl,
       ),

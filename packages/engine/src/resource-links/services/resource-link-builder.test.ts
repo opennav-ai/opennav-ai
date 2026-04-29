@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { OpenNavPage } from "../../pages/types/opennav-page";
+import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
 import type { ResourceLinkBuildResult } from "../types/resource-link-build-result";
 import { ResourceLinkBuilder } from "./resource-link-builder";
 
@@ -7,7 +7,7 @@ function createHtmlPage(
   sourceFilePath: string,
   route: string,
   canonicalUrl: string,
-): OpenNavPage {
+): OpenNavPageMetadata {
   return {
     sourceFilePath,
     sourceContentType: "html",
@@ -18,7 +18,7 @@ function createHtmlPage(
   };
 }
 
-function createMarkdownPage(): OpenNavPage {
+function createMarkdownPage(): OpenNavPageMetadata {
   return {
     sourceFilePath: "docs/guide.md",
     sourceContentType: "markdown",

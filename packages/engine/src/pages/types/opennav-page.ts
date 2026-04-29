@@ -4,7 +4,7 @@ import type { PageContentType } from "./page-content-type";
 /**
  * Lightweight internal page data used by OpenNav generators and validators.
  */
-export interface OpenNavPage {
+export interface OpenNavPageMetadata {
   /**
    * Output-directory-relative path for the source page file.
    *

@@ -1,4 +1,4 @@
-import type { OpenNavPage } from "../../pages/types/opennav-page";
+import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
 
 /**
  * Public site root and page route data needed to address a generated Markdown artifact.
@@ -18,5 +18,5 @@ export interface MarkdownPageArtifactPathBuildInput {
    * The source file itself is not read here. This path builder mirrors the
    * output-directory-relative page path and changes `.html` endings to `.md`.
    */
-  readonly page: OpenNavPage;
+  readonly page: OpenNavPageMetadata;
 }

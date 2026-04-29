@@ -4,7 +4,7 @@ import { join } from "node:path";
 import type { Result } from "neverthrow";
 import { afterEach, describe, expect, it } from "vitest";
 import type { OpenNavError } from "../../common/types/opennav-error";
-import type { OpenNavPage } from "../types/opennav-page";
+import type { OpenNavPageMetadata } from "../types/opennav-page";
 import { HtmlPageReader } from "./html-page-reader";
 
 describe("HtmlPageReader", (): void => {
@@ -35,14 +35,16 @@ describe("HtmlPageReader", (): void => {
     await writeFile(join(outputDirectory, filePath), content, "utf8");
 
     const reader = new HtmlPageReader();
-    const result: Result<OpenNavPage, OpenNavError> = await reader.read({
-      baseUrl: "https://example.com",
-      outputDirectory,
-      fileReference: {
-        filePath,
-        kind: "html",
+    const result: Result<OpenNavPageMetadata, OpenNavError> = await reader.read(
+      {
+        baseUrl: "https://example.com",
+        outputDirectory,
+        fileReference: {
+          filePath,
+          kind: "html",
+        },
       },
-    });
+    );
 
     expect(result.isOk()).toEqual(true);
     if (result.isOk()) {
@@ -76,14 +78,16 @@ describe("HtmlPageReader", (): void => {
     await writeFile(join(outputDirectory, filePath), content, "utf8");
 
     const reader = new HtmlPageReader();
-    const result: Result<OpenNavPage, OpenNavError> = await reader.read({
-      baseUrl: "https://example.com",
-      outputDirectory,
-      fileReference: {
-        filePath,
-        kind: "html",
+    const result: Result<OpenNavPageMetadata, OpenNavError> = await reader.read(
+      {
+        baseUrl: "https://example.com",
+        outputDirectory,
+        fileReference: {
+          filePath,
+          kind: "html",
+        },
       },
-    });
+    );
 
     expect(result.isOk()).toEqual(true);
     if (result.isOk()) {
@@ -112,14 +116,16 @@ describe("HtmlPageReader", (): void => {
     await writeFile(join(outputDirectory, filePath), content, "utf8");
 
     const reader = new HtmlPageReader();
-    const result: Result<OpenNavPage, OpenNavError> = await reader.read({
-      baseUrl: "https://example.com",
-      outputDirectory,
-      fileReference: {
-        filePath,
-        kind: "html",
+    const result: Result<OpenNavPageMetadata, OpenNavError> = await reader.read(
+      {
+        baseUrl: "https://example.com",
+        outputDirectory,
+        fileReference: {
+          filePath,
+          kind: "html",
+        },
       },
-    });
+    );
 
     expect(result.isOk()).toEqual(true);
     if (result.isOk()) {
@@ -143,14 +149,16 @@ describe("HtmlPageReader", (): void => {
     await writeFile(join(outputDirectory, filePath), content, "utf8");
 
     const reader = new HtmlPageReader();
-    const result: Result<OpenNavPage, OpenNavError> = await reader.read({
-      baseUrl: "https://example.com",
-      outputDirectory,
-      fileReference: {
-        filePath,
-        kind: "html",
+    const result: Result<OpenNavPageMetadata, OpenNavError> = await reader.read(
+      {
+        baseUrl: "https://example.com",
+        outputDirectory,
+        fileReference: {
+          filePath,
+          kind: "html",
+        },
       },
-    });
+    );
 
     expect(result.isOk()).toEqual(true);
     if (result.isOk()) {

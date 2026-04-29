@@ -1,4 +1,4 @@
-import type { OpenNavPage } from "../../pages/types/opennav-page";
+import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
 
 /**
  * Page metadata and source text available to the resource-link builder.
@@ -10,7 +10,7 @@ export interface ResourceLinkBuildPage {
    * HTML pages receive planned `<head>` links. Markdown source pages are
    * preserved as caller-owned content and are ignored by this milestone.
    */
-  readonly page: OpenNavPage;
+  readonly page: OpenNavPageMetadata;
 
   /**
    * Exact UTF-8 source file body for the page.

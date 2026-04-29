@@ -4,10 +4,10 @@ import { join } from "node:path";
 import type { Result } from "neverthrow";
 import { afterEach, describe, expect, it } from "vitest";
 import type { OpenNavError } from "../../common/types/opennav-error";
-import type { PageListReadResult } from "../types/page-list-read-result";
-import { PageListReader } from "./page-list-reader";
+import type { FileMetadataReadResult } from "../types/file-metadata-read-result";
+import { FileMetadataReader } from "./file-metadata-reader";
 
-describe("PageListReader", (): void => {
+describe("FileMetadataReader", (): void => {
   let fixtureDirectory: string | undefined;
 
   afterEach(async (): Promise<void> => {
@@ -18,7 +18,7 @@ describe("PageListReader", (): void => {
   });
 
   it("returns exact page data for HTML and Markdown references", async (): Promise<void> => {
-    fixtureDirectory = await mkdtemp(join(tmpdir(), "opennav-page-list-"));
+    fixtureDirectory = await mkdtemp(join(tmpdir(), "opennav-file-metadata-"));
     const outputDirectory = join(fixtureDirectory, "dist");
     const htmlFilePath = "index.html";
     const markdownFilePath = "docs/api.md";
@@ -40,26 +40,27 @@ describe("PageListReader", (): void => {
       "utf8",
     );
 
-    const reader = new PageListReader();
-    const result: Result<PageListReadResult, OpenNavError> = await reader.read({
-      baseUrl: "https://example.com",
-      outputDirectory,
-      fileReferences: [
-        {
-          filePath: htmlFilePath,
-          kind: "html",
-        },
-        {
-          filePath: markdownFilePath,
-          kind: "markdown",
-        },
-      ],
-    });
+    const reader = new FileMetadataReader();
+    const result: Result<FileMetadataReadResult, OpenNavError> =
+      await reader.read({
+        baseUrl: "https://example.com",
+        outputDirectory,
+        fileReferences: [
+          {
+            filePath: htmlFilePath,
+            kind: "html",
+          },
+          {
+            filePath: markdownFilePath,
+            kind: "markdown",
+          },
+        ],
+      });
 
     expect(result.isOk()).toEqual(true);
     if (result.isOk()) {
       expect(result.value).toEqual({
-        pages: [
+        pageMetadata: [
           {
             sourceFilePath: htmlFilePath,
             sourceContentType: "html",
@@ -77,13 +78,12 @@ describe("PageListReader", (): void => {
             description: "Use the OpenNav AI engine.",
           },
         ],
-        skippedFilePaths: [],
       });
     }
   });
 
-  it("skips exact non-page file references", async (): Promise<void> => {
-    fixtureDirectory = await mkdtemp(join(tmpdir(), "opennav-page-list-"));
+  it("ignores file references that cannot produce page metadata", async (): Promise<void> => {
+    fixtureDirectory = await mkdtemp(join(tmpdir(), "opennav-file-metadata-"));
     const outputDirectory = join(fixtureDirectory, "dist");
     const htmlFilePath = "docs/index.html";
     const robotsFilePath = "robots.txt";
@@ -91,26 +91,27 @@ describe("PageListReader", (): void => {
     await mkdir(join(outputDirectory, "docs"), { recursive: true });
     await writeFile(join(outputDirectory, htmlFilePath), htmlContent, "utf8");
 
-    const reader = new PageListReader();
-    const result: Result<PageListReadResult, OpenNavError> = await reader.read({
-      baseUrl: "https://example.com/base/",
-      outputDirectory,
-      fileReferences: [
-        {
-          filePath: htmlFilePath,
-          kind: "html",
-        },
-        {
-          filePath: robotsFilePath,
-          kind: "robots",
-        },
-      ],
-    });
+    const reader = new FileMetadataReader();
+    const result: Result<FileMetadataReadResult, OpenNavError> =
+      await reader.read({
+        baseUrl: "https://example.com/base/",
+        outputDirectory,
+        fileReferences: [
+          {
+            filePath: htmlFilePath,
+            kind: "html",
+          },
+          {
+            filePath: robotsFilePath,
+            kind: "robots",
+          },
+        ],
+      });
 
     expect(result.isOk()).toEqual(true);
     if (result.isOk()) {
       expect(result.value).toEqual({
-        pages: [
+        pageMetadata: [
           {
             sourceFilePath: htmlFilePath,
             sourceContentType: "html",
@@ -120,29 +121,29 @@ describe("PageListReader", (): void => {
             description: undefined,
           },
         ],
-        skippedFilePaths: [robotsFilePath],
       });
     }
   });
 
   it("returns the first typed page reader error", async (): Promise<void> => {
-    fixtureDirectory = await mkdtemp(join(tmpdir(), "opennav-page-list-"));
+    fixtureDirectory = await mkdtemp(join(tmpdir(), "opennav-file-metadata-"));
     const outputDirectory = join(fixtureDirectory, "dist");
     const filePath = "missing.html";
     const absoluteFilePath = join(outputDirectory, filePath);
     await mkdir(outputDirectory);
 
-    const reader = new PageListReader();
-    const result: Result<PageListReadResult, OpenNavError> = await reader.read({
-      baseUrl: "https://example.com",
-      outputDirectory,
-      fileReferences: [
-        {
-          filePath,
-          kind: "html",
-        },
-      ],
-    });
+    const reader = new FileMetadataReader();
+    const result: Result<FileMetadataReadResult, OpenNavError> =
+      await reader.read({
+        baseUrl: "https://example.com",
+        outputDirectory,
+        fileReferences: [
+          {
+            filePath,
+            kind: "html",
+          },
+        ],
+      });
 
     expect(result.isErr()).toEqual(true);
     if (result.isErr()) {

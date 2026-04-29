@@ -1,6 +1,6 @@
 import { err, ok, type Result } from "neverthrow";
 import type { OpenNavError } from "../../common/types/opennav-error";
-import type { OpenNavPage } from "../../pages/types/opennav-page";
+import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
 import type { SiteValidationInput } from "../types/site-validation-input";
 import type { SiteValidationMessage } from "../types/site-validation-message";
 import type { SiteValidationResult } from "../types/site-validation-result";
@@ -82,7 +82,7 @@ export class OpenNavSiteValidator {
 
   private createDuplicateCanonicalUrlError(
     input: SiteValidationInput,
-    pages: readonly [OpenNavPage, OpenNavPage],
+    pages: readonly [OpenNavPageMetadata, OpenNavPageMetadata],
   ): OpenNavError {
     const [firstPage, secondPage] = pages;
 
@@ -100,7 +100,7 @@ export class OpenNavSiteValidator {
 
   private createDuplicateRouteError(
     input: SiteValidationInput,
-    pages: readonly [OpenNavPage, OpenNavPage],
+    pages: readonly [OpenNavPageMetadata, OpenNavPageMetadata],
   ): OpenNavError {
     const [firstPage, secondPage] = pages;
 
@@ -129,7 +129,7 @@ export class OpenNavSiteValidator {
 
   private createInvalidCanonicalUrlError(
     input: SiteValidationInput,
-    page: OpenNavPage,
+    page: OpenNavPageMetadata,
   ): OpenNavError {
     return {
       code: "SITE_VALIDATION_PAGE_CANONICAL_URL_INVALID",
@@ -145,7 +145,7 @@ export class OpenNavSiteValidator {
 
   private createInvalidRouteError(
     input: SiteValidationInput,
-    page: OpenNavPage,
+    page: OpenNavPageMetadata,
   ): OpenNavError {
     return {
       code: "SITE_VALIDATION_PAGE_ROUTE_INVALID",
@@ -161,7 +161,7 @@ export class OpenNavSiteValidator {
 
   private createOutsideBaseUrlError(
     input: SiteValidationInput,
-    page: OpenNavPage,
+    page: OpenNavPageMetadata,
   ): OpenNavError {
     return {
       code: "SITE_VALIDATION_PAGE_CANONICAL_URL_OUTSIDE_BASE_URL",
@@ -188,7 +188,7 @@ export class OpenNavSiteValidator {
 
   private createMissingTitleError(
     input: SiteValidationInput,
-    page: OpenNavPage,
+    page: OpenNavPageMetadata,
   ): OpenNavError {
     return {
       code: "SITE_VALIDATION_PAGE_TITLE_MISSING",
@@ -203,7 +203,7 @@ export class OpenNavSiteValidator {
 
   private createMissingTitleWarning(
     input: SiteValidationInput,
-    page: OpenNavPage,
+    page: OpenNavPageMetadata,
   ): SiteValidationMessage {
     return {
       code: "SITE_VALIDATION_PAGE_TITLE_MISSING",
@@ -225,39 +225,42 @@ export class OpenNavSiteValidator {
     }
 
     return input.pages
-      .filter((page: OpenNavPage): boolean => page.title === undefined)
+      .filter((page: OpenNavPageMetadata): boolean => page.title === undefined)
       .map(
-        (page: OpenNavPage): SiteValidationMessage =>
+        (page: OpenNavPageMetadata): SiteValidationMessage =>
           this.createMissingTitleWarning(input, page),
       );
   }
 
   private findMissingTitlePage(
-    pages: readonly OpenNavPage[],
-  ): OpenNavPage | undefined {
-    return pages.find((page: OpenNavPage): boolean => page.title === undefined);
+    pages: readonly OpenNavPageMetadata[],
+  ): OpenNavPageMetadata | undefined {
+    return pages.find(
+      (page: OpenNavPageMetadata): boolean => page.title === undefined,
+    );
   }
 
   private findInvalidRoutePage(
-    pages: readonly OpenNavPage[],
-  ): OpenNavPage | undefined {
+    pages: readonly OpenNavPageMetadata[],
+  ): OpenNavPageMetadata | undefined {
     return pages.find(
-      (page: OpenNavPage): boolean => !this.isRoute(page.route),
+      (page: OpenNavPageMetadata): boolean => !this.isRoute(page.route),
     );
   }
 
   private findInvalidCanonicalUrlPage(
-    pages: readonly OpenNavPage[],
-  ): OpenNavPage | undefined {
+    pages: readonly OpenNavPageMetadata[],
+  ): OpenNavPageMetadata | undefined {
     return pages.find(
-      (page: OpenNavPage): boolean => !this.isHttpUrl(page.canonicalUrl),
+      (page: OpenNavPageMetadata): boolean =>
+        !this.isHttpUrl(page.canonicalUrl),
     );
   }
 
   private findDuplicateCanonicalUrlPages(
-    pages: readonly OpenNavPage[],
-  ): readonly [OpenNavPage, OpenNavPage] | undefined {
-    const pagesByCanonicalUrl = new Map<string, OpenNavPage>();
+    pages: readonly OpenNavPageMetadata[],
+  ): readonly [OpenNavPageMetadata, OpenNavPageMetadata] | undefined {
+    const pagesByCanonicalUrl = new Map<string, OpenNavPageMetadata>();
 
     for (const page of pages) {
       const firstPage = pagesByCanonicalUrl.get(page.canonicalUrl);
@@ -273,9 +276,9 @@ export class OpenNavSiteValidator {
   }
 
   private findDuplicateRoutePages(
-    pages: readonly OpenNavPage[],
-  ): readonly [OpenNavPage, OpenNavPage] | undefined {
-    const pagesByRoute = new Map<string, OpenNavPage>();
+    pages: readonly OpenNavPageMetadata[],
+  ): readonly [OpenNavPageMetadata, OpenNavPageMetadata] | undefined {
+    const pagesByRoute = new Map<string, OpenNavPageMetadata>();
 
     for (const page of pages) {
       const firstPage = pagesByRoute.get(page.route);
@@ -306,11 +309,11 @@ export class OpenNavSiteValidator {
 
   private findOutsideBaseUrlPage(
     input: SiteValidationInput,
-  ): OpenNavPage | undefined {
+  ): OpenNavPageMetadata | undefined {
     const baseUrl = new URL(input.baseUrl);
 
     return input.pages.find(
-      (page: OpenNavPage): boolean =>
+      (page: OpenNavPageMetadata): boolean =>
         !this.isInsideBaseUrl(new URL(page.canonicalUrl), baseUrl),
     );
   }

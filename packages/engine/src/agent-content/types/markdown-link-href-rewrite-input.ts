@@ -1,4 +1,4 @@
-import type { OpenNavPage } from "../../pages/types/opennav-page";
+import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
 
 /**
  * Site context and raw link data needed to rewrite one Markdown link href.
@@ -19,7 +19,7 @@ export interface MarkdownLinkHrefRewriteInput {
    * Document-relative hrefs are resolved against this page's canonical URL
    * before they are compared with known page routes and source URLs.
    */
-  readonly currentPage: OpenNavPage;
+  readonly currentPage: OpenNavPageMetadata;
 
   /**
    * Validated metadata-only page records for the current static site.
@@ -28,7 +28,7 @@ export interface MarkdownLinkHrefRewriteInput {
    * routes are preserved exactly so generated Markdown does not invent page
    * endpoints that OpenNav did not plan.
    */
-  readonly pages: readonly OpenNavPage[];
+  readonly pages: readonly OpenNavPageMetadata[];
 
   /**
    * Raw href value read from a source page link.

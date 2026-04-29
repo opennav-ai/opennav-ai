@@ -1,7 +1,7 @@
 import { MarkdownPageArtifactPathBuilder } from "../../agent-content/services/markdown-page-artifact-path-builder";
 import type { MarkdownPageArtifactPathBuildResult } from "../../agent-content/types/markdown-page-artifact-path-build-result";
 import type { OpenNavError } from "../../common/types/opennav-error";
-import type { OpenNavPage } from "../../pages/types/opennav-page";
+import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
 import type { ResourceLink } from "../types/resource-link";
 import type { ResourceLinkBuildInput } from "../types/resource-link-build-input";
 import type { ResourceLinkBuildResult } from "../types/resource-link-build-result";
@@ -74,7 +74,7 @@ export class ResourceLinkBuilder {
 
   private createLinks(
     baseUrl: string,
-    page: OpenNavPage,
+    page: OpenNavPageMetadata,
   ): readonly ResourceLink[] {
     const artifactPath: MarkdownPageArtifactPathBuildResult =
       this.#markdownPageArtifactPathBuilder.build({

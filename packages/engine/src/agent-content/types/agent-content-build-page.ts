@@ -1,6 +1,6 @@
 import type { Result } from "neverthrow";
 import type { OpenNavError } from "../../common/types/opennav-error";
-import type { OpenNavPage } from "../../pages/types/opennav-page";
+import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
 
 /**
  * One source page available to the lazy agent content builder.
@@ -13,7 +13,7 @@ export interface AgentContentBuildPage {
    * the source body. The content callback is used only when a generated file
    * actually needs the page body.
    */
-  readonly page: OpenNavPage;
+  readonly page: OpenNavPageMetadata;
 
   /**
    * Reads the exact UTF-8 source body for this page on demand.

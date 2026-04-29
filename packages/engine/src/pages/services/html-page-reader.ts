@@ -4,7 +4,7 @@ import type { OpenNavError } from "../../common/types/opennav-error";
 import { EngineFileReader } from "../../input/services/engine-file-reader";
 import type { EngineFileReference } from "../../input/types/engine-file-reference";
 import type { HtmlPageReadInput } from "../types/html-page-read-input";
-import type { OpenNavPage } from "../types/opennav-page";
+import type { OpenNavPageMetadata } from "../types/opennav-page";
 import { PageUrlBuilder } from "./page-url-builder";
 
 /**
@@ -13,7 +13,7 @@ import { PageUrlBuilder } from "./page-url-builder";
  * The reader loads and parses a single HTML file with `parse5` only long enough
  * to extract title and description metadata. It returns source path, route,
  * URL, and metadata, but it does not store the HTML body or parsed tree on
- * `OpenNavPage`; later content artifact generators can read and convert one
+ * `OpenNavPageMetadata`; later content artifact generators can read and convert one
  * page at a time when they actually need page content.
  */
 export class HtmlPageReader {
@@ -36,7 +36,7 @@ export class HtmlPageReader {
    */
   public async read(
     input: HtmlPageReadInput,
-  ): Promise<Result<OpenNavPage, OpenNavError>> {
+  ): Promise<Result<OpenNavPageMetadata, OpenNavError>> {
     if (input.fileReference.kind !== "html") {
       return err(this.createUnsupportedFileKindError(input.fileReference));
     }

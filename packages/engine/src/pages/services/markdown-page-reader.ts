@@ -3,7 +3,7 @@ import type { OpenNavError } from "../../common/types/opennav-error";
 import { EngineFileReader } from "../../input/services/engine-file-reader";
 import type { EngineFileReference } from "../../input/types/engine-file-reference";
 import type { MarkdownPageReadInput } from "../types/markdown-page-read-input";
-import type { OpenNavPage } from "../types/opennav-page";
+import type { OpenNavPageMetadata } from "../types/opennav-page";
 import { PageUrlBuilder } from "./page-url-builder";
 
 /**
@@ -11,7 +11,7 @@ import { PageUrlBuilder } from "./page-url-builder";
  *
  * The reader loads a single Markdown file only long enough to extract the page
  * title and description. It returns source path, route, URL, and metadata, but
- * it does not store the Markdown body on `OpenNavPage`; later content artifact
+ * it does not store the Markdown body on `OpenNavPageMetadata`; later content artifact
  * generators can read one page body at a time when they actually need it.
  */
 export class MarkdownPageReader {
@@ -34,7 +34,7 @@ export class MarkdownPageReader {
    */
   public async read(
     input: MarkdownPageReadInput,
-  ): Promise<Result<OpenNavPage, OpenNavError>> {
+  ): Promise<Result<OpenNavPageMetadata, OpenNavError>> {
     if (input.fileReference.kind !== "markdown") {
       return err(this.createUnsupportedFileKindError(input.fileReference));
     }

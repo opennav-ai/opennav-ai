@@ -1,4 +1,4 @@
-import type { OpenNavPage } from "../../pages/types/opennav-page";
+import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
 import type { LlmsTxtPageLink } from "../types/llms-txt-page-link";
 import type { LlmsTxtPageOrganizeInput } from "../types/llms-txt-page-organize-input";
 import type { LlmsTxtPageOrganizeResult } from "../types/llms-txt-page-organize-result";
@@ -30,7 +30,7 @@ export class LlmsTxtPageOrganizer {
   public organize(input: LlmsTxtPageOrganizeInput): LlmsTxtPageOrganizeResult {
     const assignments = input.pages
       .map(
-        (page: OpenNavPage): PageSectionAssignment =>
+        (page: OpenNavPageMetadata): PageSectionAssignment =>
           this.createAssignment(input.baseUrl, page),
       )
       .sort(
@@ -141,7 +141,7 @@ export class LlmsTxtPageOrganizer {
 
   private createAssignment(
     baseUrl: string,
-    page: OpenNavPage,
+    page: OpenNavPageMetadata,
   ): PageSectionAssignment {
     const artifactPath = this.artifactPathBuilder.build({
       baseUrl,

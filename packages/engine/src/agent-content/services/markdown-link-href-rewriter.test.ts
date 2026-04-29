@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
-import type { OpenNavPage } from "../../pages/types/opennav-page";
+import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
 import type { MarkdownLinkHrefRewriteResult } from "../types/markdown-link-href-rewrite-result";
 import { MarkdownLinkHrefRewriter } from "./markdown-link-href-rewriter";
 
 function createPage(
-  sourceFilePath: OpenNavPage["sourceFilePath"],
-  sourceContentType: OpenNavPage["sourceContentType"],
+  sourceFilePath: OpenNavPageMetadata["sourceFilePath"],
+  sourceContentType: OpenNavPageMetadata["sourceContentType"],
   route: string,
   canonicalUrl: string,
   title: string,
-): OpenNavPage {
+): OpenNavPageMetadata {
   return {
     sourceFilePath,
     sourceContentType,
@@ -56,7 +56,7 @@ describe("MarkdownLinkHrefRewriter", (): void => {
     "https://example.com/docs/cli/options",
     "CLI Options",
   );
-  const pages: readonly OpenNavPage[] = [
+  const pages: readonly OpenNavPageMetadata[] = [
     homePage,
     docsIndexPage,
     guidePage,
@@ -284,7 +284,7 @@ describe("MarkdownLinkHrefRewriter", (): void => {
       "https://example.com/base/docs/guides/install",
       "Install",
     );
-    const prefixedPages: readonly OpenNavPage[] = [
+    const prefixedPages: readonly OpenNavPageMetadata[] = [
       prefixedGuidePage,
       prefixedApiPage,
     ];
