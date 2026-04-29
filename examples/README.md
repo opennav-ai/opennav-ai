@@ -1,0 +1,22 @@
+# OpenNav Examples
+
+This folder contains small, pinned example projects that show how the public
+`@opennav-ai/opennav` package is meant to be used from real static-site builds.
+
+The Astro and Next examples are also compatibility checks. Running
+`npm run test:examples` from the repo root builds the local OpenNav package,
+installs each pinned example from its `package-lock.json`, runs the framework
+build, and verifies that the expected static HTML file exists.
+
+The CLI build-script example shows the package-script shape users will copy once
+the `opennav static` command behavior is implemented.
+
+## Examples
+
+- [Astro 6 static SDK](./astro-6-static/README.md)
+- [Astro 5 static SDK](./astro-5-static/README.md)
+- [Astro 4 static SDK](./astro-4-static/README.md)
+- [Next 16 static SDK](./next-16-static/README.md)
+- [Next 15 static SDK](./next-15-static/README.md)
+- [Next 14 static SDK](./next-14-static/README.md)
+- [CLI build-script shape](./cli-build-script/README.md)

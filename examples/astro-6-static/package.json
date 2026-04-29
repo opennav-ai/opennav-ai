@@ -1,0 +1,13 @@
+{
+  "name": "opennav-example-astro-6-static",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "astro build"
+  },
+  "dependencies": {
+    "@opennav-ai/opennav": "file:../../packages/opennav",
+    "astro": "6.1.10"
+  }
+}

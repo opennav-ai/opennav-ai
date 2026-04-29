@@ -1,0 +1,13 @@
+{
+  "name": "opennav-example-cli-build-script",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "your-framework-build && opennav static --output dist --site-url https://example.com --site-name \"Example Docs\" --full-run",
+    "opennav:dry-run": "opennav static --output dist --site-url https://example.com --site-name \"Example Docs\" --dry-run"
+  },
+  "devDependencies": {
+    "@opennav-ai/opennav": "file:../../packages/opennav"
+  }
+}

@@ -9,6 +9,8 @@
     "build": "npm run build --workspaces",
     "fixture:engine:phase1:write": "npx bun scripts/run-phase-1-fixture.ts",
     "test": "vitest run --reporter=default",
+    "test:examples": "node scripts/test-example-builds.mjs",
+    "test:frameworks": "npm run test:examples",
     "test:package:engine": "npm run test:package --workspace @opennav-ai/engine",
     "test:verbose": "vitest run --reporter=verbose",
     "lint": "biome check .",

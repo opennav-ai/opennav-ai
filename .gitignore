@@ -5,6 +5,10 @@ dist/
 !packages/engine/fixtures/**/dist/
 !packages/engine/fixtures/**/dist/**
 build/
+out/
+.astro/
+.next/
+examples/astro-*-static/src/env.d.ts
 coverage/
 *.log
 TODO.md

@@ -1,0 +1,60 @@
+{
+  "name": "@opennav-ai/opennav",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/index.d.cts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./astro": {
+      "types": "./dist/astro.d.cts",
+      "import": "./dist/astro.js",
+      "require": "./dist/astro.cjs"
+    },
+    "./next": {
+      "types": "./dist/next.d.cts",
+      "import": "./dist/next.js",
+      "require": "./dist/next.cjs"
+    }
+  },
+  "bin": {
+    "opennav": "./dist/cli.cjs",
+    "opennav-ai": "./dist/cli.cjs"
+  },
+  "files": [
+    "dist"
+  ],
+  "zshy": {
+    "exports": {
+      "./package.json": "./package.json",
+      ".": "./src/index.ts",
+      "./astro": "./src/astro.ts",
+      "./next": "./src/next.ts"
+    },
+    "bin": {
+      "opennav": "./src/cli.ts",
+      "opennav-ai": "./src/cli.ts"
+    }
+  },
+  "scripts": {
+    "build": "zshy --project tsconfig.build.json",
+    "pack:check": "npm pack --dry-run --cache ../../.npm-cache",
+    "test": "vitest run --reporter=default",
+    "test:package": "npm run build && node ../../scripts/check-opennav-package-exports.mjs"
+  },
+  "dependencies": {
+    "@opennav-ai/engine": "0.0.0",
+    "neverthrow": "^8.2.0"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.4",
+    "zshy": "^0.7.1"
+  }
+}
