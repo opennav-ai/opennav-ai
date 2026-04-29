@@ -13,3 +13,5 @@ TODO.md
 .env
 .env.local
 *.tgz
+
+PHASE*.md
