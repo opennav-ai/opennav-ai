@@ -1,3 +1,5 @@
+/// <reference path="../types/o200k-base-ranks-module.d.ts" />
+
 import { Tiktoken } from "js-tiktoken/lite";
 import o200kBase from "js-tiktoken/ranks/o200k_base";
 import type { LlmsFullTxtTokenCounter } from "../types/llms-full-txt-token-counter";
