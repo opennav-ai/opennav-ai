@@ -8,6 +8,7 @@
   "scripts": {
     "build": "npm run build --workspaces",
     "test": "vitest run --reporter=default",
+    "test:package:engine": "npm run test:package --workspace @opennav-ai/engine",
     "test:verbose": "vitest run --reporter=verbose",
     "lint": "biome check .",
     "format": "biome format --write .",

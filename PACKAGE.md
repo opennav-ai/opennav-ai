@@ -183,6 +183,16 @@ Each package also needs smoke tests against the packed artifact:
 Package smoke tests should exercise the package as an npm consumer sees it, not
 as the monorepo test runner sees it.
 
+`@opennav-ai/engine` has an automated packed-package type smoke test:
+
+```bash
+npm run test:package:engine
+```
+
+That command builds and packs the engine package, extracts the tarball into a
+temporary package install shape, and runs `tsc --noEmit` against temporary ESM
+and CommonJS TypeScript consumers.
+
 ## CLI Packages
 
 CLI packages follow the same package rules, plus CLI-specific rules:
@@ -216,13 +226,12 @@ Use this checklist for every new package:
 standard ESM plus CommonJS package shape. Before publishing, the remaining
 packaging work is:
 
-1. Add automated packed-package smoke tests for `@opennav-ai/engine`.
-2. Confirm those smoke tests install the tarball into temporary ESM and
-   CommonJS consumers.
-3. Apply the same package pattern to future packages, including
+1. Add runtime smoke assertions to the existing `@opennav-ai/engine` package
+   test so it verifies both type safety and runtime import/require behavior.
+2. Apply the same package pattern to future packages, including
    `@opennav-ai/cli`.
-4. Add package release checks before the first npm publish.
+3. Add package release checks before the first npm publish.
 
-Until the packed-package smoke tests are automated, manual `import` and
-`require` checks are useful but should not be treated as the full publishing
-contract.
+The current package smoke test proves type safety from the packed tarball.
+Runtime checks are still useful before the first npm publish because they prove
+the emitted JavaScript graph loads under both module systems.
