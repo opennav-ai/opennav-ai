@@ -33,4 +33,34 @@ describe("FileKindDetector", (): void => {
       "unsupported",
     ]);
   });
+
+  it("detects HTTP error pages as unsupported built site files", (): void => {
+    const detector = new FileKindDetector();
+    const filePaths: readonly EngineFilePath[] = [
+      "404.html",
+      "500.html",
+      "errors/403.html",
+      "docs/502.html",
+      "docs/404.md",
+      "docs/200.html",
+    ];
+
+    const results = filePaths.map(
+      (filePath: EngineFilePath): Result<EngineFileKind, OpenNavError> =>
+        detector.detect(filePath),
+    );
+    const detectedKinds = results.map(
+      (result: Result<EngineFileKind, OpenNavError>): EngineFileKind =>
+        result._unsafeUnwrap(),
+    );
+
+    expect(detectedKinds).toEqual([
+      "unsupported",
+      "unsupported",
+      "unsupported",
+      "unsupported",
+      "markdown",
+      "html",
+    ]);
+  });
 });

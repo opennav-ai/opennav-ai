@@ -22,6 +22,10 @@ export class FileKindDetector {
       return ok("robots");
     }
 
+    if (this.isHttpErrorPageFileName(fileName)) {
+      return ok("unsupported");
+    }
+
     if (fileName.endsWith(".html")) {
       return ok("html");
     }
@@ -38,5 +42,9 @@ export class FileKindDetector {
     const fileNameStartIndex = normalizedFilePath.lastIndexOf("/") + 1;
 
     return normalizedFilePath.slice(fileNameStartIndex);
+  }
+
+  private isHttpErrorPageFileName(fileName: string): boolean {
+    return /^[45]\d{2}\.html$/u.test(fileName);
   }
 }

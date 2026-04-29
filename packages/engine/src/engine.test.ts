@@ -107,6 +107,74 @@ describe("Engine", (): void => {
     }
   });
 
+  it("skips HTTP error pages instead of planning generated Markdown artifacts for them", async (): Promise<void> => {
+    fixtureDirectory = await mkdtemp(join(tmpdir(), "opennav-engine-"));
+    const outputDirectory = join(fixtureDirectory, "dist");
+    const homeFilePath = "index.html";
+    const notFoundFilePath = "404.html";
+    const serverErrorFilePath = "errors/500.html";
+    await mkdir(outputDirectory);
+    await mkdir(join(outputDirectory, "errors"));
+    await writeFile(
+      join(outputDirectory, homeFilePath),
+      "<html><head><title>Home</title></head><body><h1>Home</h1></body></html>",
+      "utf8",
+    );
+    await writeFile(
+      join(outputDirectory, notFoundFilePath),
+      "<html><head><title>Not Found</title></head><body><h1>Not Found</h1></body></html>",
+      "utf8",
+    );
+    await writeFile(
+      join(outputDirectory, serverErrorFilePath),
+      "<html><head><title>Server Error</title></head><body><h1>Server Error</h1></body></html>",
+      "utf8",
+    );
+    const input: EngineExecuteInput = {
+      siteName: "Example Docs",
+      baseUrl: "https://example.com",
+      outputDirectory,
+      filePaths: [homeFilePath, notFoundFilePath, serverErrorFilePath],
+    };
+
+    const result: Result<EngineExecuteResult, OpenNavError> =
+      await Engine.execute(input, { dryRun: true });
+
+    expect(result.isOk()).toEqual(true);
+    if (result.isOk()) {
+      expect(result.value).toEqual({
+        createdFilePaths: [
+          "llms.txt",
+          ".well-known/llms.txt",
+          "index.md",
+          "llms-full.txt",
+          ".well-known/llms-full.txt",
+          ".well-known/opennav.json",
+        ],
+        modifiedFilePaths: [homeFilePath],
+        skippedFilePaths: [notFoundFilePath, serverErrorFilePath],
+        warnings: [
+          {
+            code: "ENGINE_FILE_UNSUPPORTED",
+            message: "The engine skipped an unsupported built site file.",
+            context: {
+              filePath: notFoundFilePath,
+              kind: "unsupported",
+            },
+          },
+          {
+            code: "ENGINE_FILE_UNSUPPORTED",
+            message: "The engine skipped an unsupported built site file.",
+            context: {
+              filePath: serverErrorFilePath,
+              kind: "unsupported",
+            },
+          },
+        ],
+      });
+    }
+  });
+
   it("returns an exact typed error when a built file cannot be read", async (): Promise<void> => {
     fixtureDirectory = await mkdtemp(join(tmpdir(), "opennav-engine-"));
     const outputDirectory = join(fixtureDirectory, "dist");
