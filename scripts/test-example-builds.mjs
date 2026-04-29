@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { access, readFile, rm } from "node:fs/promises";
+import { access, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
@@ -17,10 +17,19 @@ const repoDirectory = resolve(scriptDirectory, "..");
 
 /**
  * @typedef {{
+ *   filePath: string;
+ *   expectedText: string;
+ * }} ExpectedOutputFile
+ */
+
+/**
+ * @typedef {{
  *   name: string;
  *   directory: string;
  *   outputDirectory: string;
  *   expectedHtmlPages: readonly ExpectedHtmlPage[];
+ *   expectedOutputFiles?: readonly ExpectedOutputFile[];
+ *   setup?: "static-site-sdk";
  * }} ExampleProject
  */
 
@@ -75,6 +84,7 @@ class ExampleBuildTestRunner {
     const outputDirectory = join(exampleDirectory, example.outputDirectory);
 
     await rm(outputDirectory, { force: true, recursive: true });
+    await this.setupExampleOutput(example);
     await this.runCommand({
       command: "npm",
       args: [
@@ -95,6 +105,89 @@ class ExampleBuildTestRunner {
       label: `${example.name} build`,
     });
     await this.assertHtmlOutput(example);
+    await this.assertOutputFiles(example);
+  }
+
+  /**
+   * Creates any ignored static output files a copyable example needs before its
+   * package build runs.
+   *
+   * @param {ExampleProject} example - Example project and optional setup mode.
+   * @returns {Promise<void>} Resolves after the example output is ready.
+   */
+  async setupExampleOutput(example) {
+    if (example.setup !== "static-site-sdk") {
+      return;
+    }
+
+    await this.writeExampleOutputFile(
+      example,
+      "dist/index.html",
+      `<!doctype html>
+<html lang="en">
+  <head>
+    <title>Static SDK Home</title>
+    <meta
+      name="description"
+      content="Plain static site root page for the OpenNav SDK."
+    />
+  </head>
+  <body>
+    <main>
+      <h1>Static SDK Home</h1>
+      <p>Plain static HTML can call OpenNav after files are built.</p>
+    </main>
+  </body>
+</html>
+`,
+    );
+    await this.writeExampleOutputFile(
+      example,
+      "dist/docs/about.html",
+      `<!doctype html>
+<html lang="en">
+  <head>
+    <title>Static SDK About</title>
+    <meta
+      name="description"
+      content="A second plain static route for the OpenNav SDK."
+    />
+  </head>
+  <body>
+    <main>
+      <h1>Static SDK About</h1>
+      <p>This page proves the SDK discovers nested static HTML files.</p>
+    </main>
+  </body>
+</html>
+`,
+    );
+    await this.writeExampleOutputFile(
+      example,
+      "dist/guides/setup.html",
+      `<!doctype html>
+<html lang="en">
+  <head>
+    <title>Static SDK Setup</title>
+    <meta
+      name="description"
+      content="A nested plain static route for the OpenNav SDK."
+    />
+  </head>
+  <body>
+    <main>
+      <h1>Static SDK Setup</h1>
+      <p>This setup page proves the SDK discovers deep static HTML files.</p>
+    </main>
+  </body>
+</html>
+`,
+    );
+    await this.writeExampleOutputFile(
+      example,
+      "dist/assets/logo.svg",
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" fill="#111827"/></svg>\n',
+    );
   }
 
   /**
@@ -128,6 +221,62 @@ class ExampleBuildTestRunner {
         `${example.name} did not emit expected HTML text in ${page.filePath}: ${page.expectedText}`,
       );
     }
+  }
+
+  /**
+   * Checks optional generated output files for an example build.
+   *
+   * @param {ExampleProject} example - Example project and optional output files.
+   * @returns {Promise<void>} Resolves after every expected output file is found.
+   */
+  async assertOutputFiles(example) {
+    if (example.expectedOutputFiles === undefined) {
+      return;
+    }
+
+    for (const outputFile of example.expectedOutputFiles) {
+      await this.assertOutputFile(example, outputFile);
+    }
+  }
+
+  /**
+   * Checks one expected generated output file.
+   *
+   * @param {ExampleProject} example - Example project that owns the file.
+   * @param {ExpectedOutputFile} outputFile - Expected file and identifying text.
+   * @returns {Promise<void>} Resolves after the expected output file is found.
+   */
+  async assertOutputFile(example, outputFile) {
+    const outputFilePath = join(
+      repoDirectory,
+      example.directory,
+      outputFile.filePath,
+    );
+
+    await access(outputFilePath);
+
+    const content = await readFile(outputFilePath, "utf8");
+
+    if (!content.includes(outputFile.expectedText)) {
+      throw new Error(
+        `${example.name} did not emit expected output text in ${outputFile.filePath}: ${outputFile.expectedText}`,
+      );
+    }
+  }
+
+  /**
+   * Writes one ignored fixture file used only by the example compatibility test.
+   *
+   * @param {ExampleProject} example - Example project that owns the file.
+   * @param {string} filePath - Project-relative output path to write.
+   * @param {string} content - Exact UTF-8 file content.
+   * @returns {Promise<void>} Resolves after the file exists on disk.
+   */
+  async writeExampleOutputFile(example, filePath, content) {
+    const outputFilePath = join(repoDirectory, example.directory, filePath);
+
+    await mkdir(dirname(outputFilePath), { recursive: true });
+    await writeFile(outputFilePath, content, "utf8");
   }
 
   /**
@@ -169,6 +318,40 @@ class ExampleBuildTestRunner {
 }
 
 const runner = new ExampleBuildTestRunner([
+  {
+    name: "Static site SDK",
+    directory: "examples/static-site-sdk",
+    outputDirectory: "dist",
+    setup: "static-site-sdk",
+    expectedHtmlPages: [
+      {
+        filePath: "dist/index.html",
+        expectedText: "Static SDK Home",
+      },
+      {
+        filePath: "dist/docs/about.html",
+        expectedText: "Static SDK About",
+      },
+      {
+        filePath: "dist/guides/setup.html",
+        expectedText: "Static SDK Setup",
+      },
+    ],
+    expectedOutputFiles: [
+      {
+        filePath: "dist/llms.txt",
+        expectedText: "OpenNav Static SDK Example",
+      },
+      {
+        filePath: "dist/llms-full.txt",
+        expectedText: "Static SDK Home",
+      },
+      {
+        filePath: "dist/.well-known/opennav.json",
+        expectedText: "https://static-sdk.example.com",
+      },
+    ],
+  },
   {
     name: "Astro 6 static",
     directory: "examples/astro-6-static",
@@ -292,6 +475,7 @@ console.log(
     {
       ok: true,
       examples: [
+        "static-site-sdk",
         "astro-6-static",
         "astro-5-static",
         "astro-4-static",

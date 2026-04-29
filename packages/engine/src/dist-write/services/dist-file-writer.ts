@@ -10,7 +10,9 @@ import {
 } from "node:fs/promises";
 import { basename, dirname, isAbsolute, relative, resolve } from "node:path";
 import { err, ok, type Result, ResultAsync } from "neverthrow";
+import { type DefaultTreeAdapterTypes, parse } from "parse5";
 import type { OpenNavError } from "../../common/types/opennav-error";
+import type { ResourceLink } from "../../resource-links/types/resource-link";
 import type { EngineFilePath } from "../../types/engine-file-path";
 import type { WriteFileOperation } from "../../write-plan/types/write-file-operation";
 import type { WriteHtmlPageEditOperation } from "../../write-plan/types/write-html-page-edit-operation";
@@ -32,6 +34,16 @@ interface PathOperationFailure {
 interface ResolvedOperationTarget {
   readonly outputFilePath: EngineFilePath;
   readonly resolvedFilePath: string;
+}
+
+interface SourceRange {
+  readonly startOffset: number;
+  readonly endOffset: number;
+}
+
+interface HtmlAttribute {
+  readonly name: string;
+  readonly value: string;
 }
 
 /**
@@ -219,12 +231,10 @@ export class DistFileWriter {
       );
     }
 
-    const updatedContent = `${contentResult.value.slice(
-      0,
-      operation.headInsertionOffset,
-    )}${operation.headLinkMarkup}${contentResult.value.slice(
-      operation.headInsertionOffset,
-    )}`;
+    const updatedContent = this.buildUpdatedHtmlPageContent(
+      contentResult.value,
+      operation,
+    );
 
     const replaceResult = await this.replaceExistingFileContent(
       input,
@@ -243,6 +253,32 @@ export class DistFileWriter {
       },
       warnings: [],
     });
+  }
+
+  private buildUpdatedHtmlPageContent(
+    content: string,
+    operation: WriteHtmlPageEditOperation,
+  ): string {
+    const existingResourceLinkRanges = this.findExistingResourceLinkRanges(
+      content,
+      operation,
+    );
+    const contentWithoutExistingLinks = this.removeSourceRanges(
+      content,
+      existingResourceLinkRanges,
+    );
+    const contentAfterHead = contentWithoutExistingLinks.slice(
+      operation.headInsertionOffset,
+    );
+    const normalizedContentAfterHead =
+      existingResourceLinkRanges.length === 0
+        ? contentAfterHead
+        : contentAfterHead.replace(/^(?:[ \t]*\r?\n)+/u, "");
+
+    return `${contentWithoutExistingLinks.slice(
+      0,
+      operation.headInsertionOffset,
+    )}${operation.headLinkMarkup}${normalizedContentAfterHead}`;
   }
 
   private async ensureCreateTargetIsMissing(
@@ -433,6 +469,254 @@ export class DistFileWriter {
     }
 
     return /<head\b[^>]*>$/i.test(content.slice(0, headInsertionOffset));
+  }
+
+  private findExistingResourceLinkRanges(
+    content: string,
+    operation: WriteHtmlPageEditOperation,
+  ): readonly SourceRange[] {
+    const document = parse(content, {
+      sourceCodeLocationInfo: true,
+    });
+    const headElement = this.findFirstElement(
+      document,
+      (element: DefaultTreeAdapterTypes.Element): boolean =>
+        element.tagName === "head",
+    );
+
+    if (headElement === undefined) {
+      return [];
+    }
+
+    const ranges: SourceRange[] = [];
+
+    for (const linkElement of this.findElements(
+      headElement,
+      (element: DefaultTreeAdapterTypes.Element): boolean =>
+        element.tagName === "link",
+    )) {
+      if (
+        !this.shouldRemoveExistingResourceLink(linkElement, operation.links)
+      ) {
+        continue;
+      }
+
+      const location = linkElement.sourceCodeLocation;
+
+      if (location === undefined || location === null) {
+        continue;
+      }
+
+      if (location.startOffset < operation.headInsertionOffset) {
+        continue;
+      }
+
+      ranges.push(
+        this.expandRangeToWholeLine(content, {
+          startOffset: location.startOffset,
+          endOffset: location.endOffset,
+        }),
+      );
+    }
+
+    return this.mergeSourceRanges(ranges);
+  }
+
+  private shouldRemoveExistingResourceLink(
+    element: DefaultTreeAdapterTypes.Element,
+    links: readonly ResourceLink[],
+  ): boolean {
+    return (
+      this.isOpenNavManagedResourceLink(element) ||
+      this.matchesPlannedResourceLink(element, links)
+    );
+  }
+
+  private isOpenNavManagedResourceLink(
+    element: DefaultTreeAdapterTypes.Element,
+  ): boolean {
+    return (
+      this.getHtmlAttribute(element, "data-opennav") === "resource-link" ||
+      this.getHtmlAttribute(element, "data-opennav-sha")?.startsWith(
+        "sha256:",
+      ) === true
+    );
+  }
+
+  private matchesPlannedResourceLink(
+    element: DefaultTreeAdapterTypes.Element,
+    links: readonly ResourceLink[],
+  ): boolean {
+    const relation = this.getHtmlAttribute(element, "rel");
+    const mediaType = this.getHtmlAttribute(element, "type");
+    const href = this.getHtmlAttribute(element, "href");
+    const title = this.getHtmlAttribute(element, "title");
+
+    return links.some(
+      (link: ResourceLink): boolean =>
+        relation === link.relation &&
+        mediaType === link.mediaType &&
+        href === link.href &&
+        title === link.title,
+    );
+  }
+
+  private getHtmlAttribute(
+    element: DefaultTreeAdapterTypes.Element,
+    name: string,
+  ): string | undefined {
+    return element.attrs.find(
+      (attribute: HtmlAttribute): boolean =>
+        attribute.name.toLowerCase() === name,
+    )?.value;
+  }
+
+  private findElements(
+    node: DefaultTreeAdapterTypes.Node,
+    predicate: (element: DefaultTreeAdapterTypes.Element) => boolean,
+  ): readonly DefaultTreeAdapterTypes.Element[] {
+    const elements: DefaultTreeAdapterTypes.Element[] = [];
+    this.collectElements(node, predicate, elements);
+
+    return elements;
+  }
+
+  private collectElements(
+    node: DefaultTreeAdapterTypes.Node,
+    predicate: (element: DefaultTreeAdapterTypes.Element) => boolean,
+    elements: DefaultTreeAdapterTypes.Element[],
+  ): void {
+    if (this.isElement(node) && predicate(node)) {
+      elements.push(node);
+    }
+
+    if (!this.isParentNode(node)) {
+      return;
+    }
+
+    for (const childNode of node.childNodes) {
+      this.collectElements(childNode, predicate, elements);
+    }
+  }
+
+  private findFirstElement(
+    node: DefaultTreeAdapterTypes.Node,
+    predicate: (element: DefaultTreeAdapterTypes.Element) => boolean,
+  ): DefaultTreeAdapterTypes.Element | undefined {
+    if (this.isElement(node) && predicate(node)) {
+      return node;
+    }
+
+    if (!this.isParentNode(node)) {
+      return undefined;
+    }
+
+    for (const childNode of node.childNodes) {
+      const foundElement = this.findFirstElement(childNode, predicate);
+
+      if (foundElement !== undefined) {
+        return foundElement;
+      }
+    }
+
+    return undefined;
+  }
+
+  private isElement(
+    node: DefaultTreeAdapterTypes.Node,
+  ): node is DefaultTreeAdapterTypes.Element {
+    return "tagName" in node;
+  }
+
+  private isParentNode(
+    node: DefaultTreeAdapterTypes.Node,
+  ): node is DefaultTreeAdapterTypes.ParentNode {
+    return "childNodes" in node;
+  }
+
+  private expandRangeToWholeLine(
+    content: string,
+    range: SourceRange,
+  ): SourceRange {
+    let startOffset = range.startOffset;
+    let endOffset = range.endOffset;
+
+    while (
+      startOffset > 0 &&
+      this.isHorizontalWhitespace(content[startOffset - 1])
+    ) {
+      startOffset -= 1;
+    }
+
+    while (
+      endOffset < content.length &&
+      this.isHorizontalWhitespace(content[endOffset])
+    ) {
+      endOffset += 1;
+    }
+
+    if (content.slice(endOffset, endOffset + 2) === "\r\n") {
+      endOffset += 2;
+    } else if (content[endOffset] === "\n") {
+      endOffset += 1;
+    }
+
+    return {
+      startOffset,
+      endOffset,
+    };
+  }
+
+  private isHorizontalWhitespace(character: string | undefined): boolean {
+    return character === " " || character === "\t";
+  }
+
+  private mergeSourceRanges(
+    ranges: readonly SourceRange[],
+  ): readonly SourceRange[] {
+    const sortedRanges = [...ranges].sort(
+      (first: SourceRange, second: SourceRange): number =>
+        first.startOffset - second.startOffset,
+    );
+    const mergedRanges: SourceRange[] = [];
+
+    for (const range of sortedRanges) {
+      const previousRange = mergedRanges.at(-1);
+
+      if (
+        previousRange !== undefined &&
+        range.startOffset <= previousRange.endOffset
+      ) {
+        mergedRanges[mergedRanges.length - 1] = {
+          startOffset: previousRange.startOffset,
+          endOffset: Math.max(previousRange.endOffset, range.endOffset),
+        };
+        continue;
+      }
+
+      mergedRanges.push(range);
+    }
+
+    return mergedRanges;
+  }
+
+  private removeSourceRanges(
+    content: string,
+    ranges: readonly SourceRange[],
+  ): string {
+    let updatedContent = content;
+
+    for (const range of [...ranges].sort(
+      (first: SourceRange, second: SourceRange): number =>
+        second.startOffset - first.startOffset,
+    )) {
+      updatedContent = `${updatedContent.slice(
+        0,
+        range.startOffset,
+      )}${updatedContent.slice(range.endOffset)}`;
+    }
+
+    return updatedContent;
   }
 
   private resolveOperationTarget(

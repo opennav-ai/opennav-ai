@@ -1,5 +1,13 @@
-import type { EngineExecuteResult, OpenNavError } from "@opennav-ai/engine";
-import { err, type Result } from "neverthrow";
+import type { Dirent } from "node:fs";
+import { readdir } from "node:fs/promises";
+import { join, relative, sep } from "node:path";
+import {
+  Engine,
+  type EngineExecuteResult,
+  type EngineFilePath,
+  type OpenNavError,
+} from "@opennav-ai/engine";
+import { err, ok, type Result, ResultAsync } from "neverthrow";
 import type { OpenNavConfigOptions } from "./types/open-nav-config";
 import type { OpenNavStaticSiteBuildOptions } from "./types/open-nav-static-site-build-options";
 import type { OpenNavStaticSiteOptions } from "./types/open-nav-static-site-options";
@@ -35,20 +43,127 @@ export class OpenNavStaticSite {
    * @param options - Optional build settings such as dry-run mode.
    * @returns A typed engine report or a typed OpenNav error.
    */
-  public build(
+  public async build(
     options: OpenNavStaticSiteBuildOptions = {},
   ): Promise<Result<EngineExecuteResult, OpenNavError>> {
-    return Promise.resolve(
-      err({
-        code: "OPENNAV_STATIC_SITE_NOT_IMPLEMENTED",
-        message:
-          "OpenNavStaticSite.build is stubbed until static directory scanning is implemented.",
-        context: {
-          dryRun: options.dryRun === true,
-          outputDirectory: this.options.outputDirectory,
-        },
-      }),
+    const filePathsResult = await this.collectFilePaths(
+      this.options.outputDirectory,
+      this.options.outputDirectory,
     );
+
+    if (filePathsResult.isErr()) {
+      return err(filePathsResult.error);
+    }
+
+    const filePaths = filePathsResult.value.filter(
+      (filePath: EngineFilePath): boolean =>
+        this.isEngineInputFilePath(filePath),
+    );
+
+    return await Engine.execute(
+      {
+        siteName: this.options.siteName,
+        baseUrl: this.options.siteUrl,
+        outputDirectory: this.options.outputDirectory,
+        filePaths,
+        accessGuidance: this.options.accessGuidance,
+      },
+      {
+        dryRun: options.dryRun === true,
+      },
+    );
+  }
+
+  private async collectFilePaths(
+    outputDirectory: string,
+    directory: string,
+  ): Promise<Result<readonly EngineFilePath[], OpenNavError>> {
+    const entriesResult = await ResultAsync.fromPromise(
+      readdir(directory, { withFileTypes: true }),
+      (cause: unknown): OpenNavError =>
+        this.createDirectoryReadError(outputDirectory, directory, cause),
+    );
+
+    if (entriesResult.isErr()) {
+      return err(entriesResult.error);
+    }
+
+    const filePaths: EngineFilePath[] = [];
+    const entries = [...entriesResult.value].sort(
+      (first: Dirent, second: Dirent): number =>
+        first.name.localeCompare(second.name),
+    );
+
+    for (const entry of entries) {
+      const absoluteFilePath = join(directory, entry.name);
+
+      if (entry.isDirectory()) {
+        const nestedFilePathsResult = await this.collectFilePaths(
+          outputDirectory,
+          absoluteFilePath,
+        );
+
+        if (nestedFilePathsResult.isErr()) {
+          return err(nestedFilePathsResult.error);
+        }
+
+        filePaths.push(...nestedFilePathsResult.value);
+        continue;
+      }
+
+      if (!entry.isFile()) {
+        continue;
+      }
+
+      filePaths.push(this.toOutputFilePath(outputDirectory, absoluteFilePath));
+    }
+
+    return ok(
+      filePaths.sort((first: EngineFilePath, second: EngineFilePath): number =>
+        first.localeCompare(second),
+      ),
+    );
+  }
+
+  private createDirectoryReadError(
+    outputDirectory: string,
+    directory: string,
+    cause: unknown,
+  ): OpenNavError {
+    return {
+      code: "OPENNAV_STATIC_SITE_DIRECTORY_READ_FAILED",
+      message: "OpenNav could not read the static output directory.",
+      context: {
+        outputDirectory,
+        directory,
+        cause: this.describeCause(cause),
+      },
+    };
+  }
+
+  private describeCause(cause: unknown): string {
+    if (cause instanceof Error) {
+      return cause.message;
+    }
+
+    return String(cause);
+  }
+
+  private isEngineInputFilePath(filePath: EngineFilePath): boolean {
+    return (
+      filePath === "robots.txt" ||
+      filePath.endsWith(".html") ||
+      filePath.endsWith(".md")
+    );
+  }
+
+  private toOutputFilePath(
+    outputDirectory: string,
+    absoluteFilePath: string,
+  ): EngineFilePath {
+    return relative(outputDirectory, absoluteFilePath)
+      .split(sep)
+      .join("/") as EngineFilePath;
   }
 }
 

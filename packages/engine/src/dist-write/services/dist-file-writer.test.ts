@@ -40,6 +40,8 @@ const CONTENT_ERROR: OpenNavError = {
     outputFilePath: "broken.txt",
   },
 };
+const INDEX_HEAD_LINK_MARKUP =
+  '\n  <link rel="alternate" type="text/markdown" href="https://example.com/index.md" data-opennav="resource-link" data-opennav-sha="sha256:a348c8e1fc75f62942dc28432e57f8efc98268c0e1cdf0701f7c6621f39a47f0">\n  <link rel="index" type="text/plain" href="https://example.com/llms.txt" title="LLMs text site index" data-opennav="resource-link" data-opennav-sha="sha256:0b40d257efac082b8fcf31d9b81e3629d67a80f2d8e659da0ec321869c09ed9c">\n';
 
 function createContentProviderProbe(
   content: string,
@@ -90,8 +92,7 @@ function createHtmlEditOperation(): WriteHtmlPageEditOperation {
     kind: "edit-html-page",
     outputFilePath: "index.html",
     headInsertionOffset: htmlBeforeHeadInsertion.length,
-    headLinkMarkup:
-      '\n  <link rel="alternate" type="text/markdown" href="https://example.com/index.md">\n  <link rel="index" type="text/plain" href="https://example.com/llms.txt" title="LLMs text site index">\n',
+    headLinkMarkup: INDEX_HEAD_LINK_MARKUP,
     links: [
       {
         relation: "alternate",
@@ -315,7 +316,7 @@ describe("DistFileWriter", (): void => {
               '{\n  "opennav": true,\n  "profile": "static-agent-ready",\n  "build_fingerprint": "sha256:build"\n}\n',
             robots:
               'User-agent: *\nAllow: /\n\n# Begin OpenNav AI\n# opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:build" manifest="/.well-known/opennav.json"\nContent-signal: ai-train=no\n# End OpenNav AI\n',
-            html: '<!doctype html><html><head>\n  <link rel="alternate" type="text/markdown" href="https://example.com/index.md">\n  <link rel="index" type="text/plain" href="https://example.com/llms.txt" title="LLMs text site index">\n<title>Home</title></head><body>Hi</body></html>',
+            html: `<!doctype html><html><head>${INDEX_HEAD_LINK_MARKUP}<title>Home</title></head><body>Hi</body></html>`,
           },
           readCounts: {
             llmsTxt: 1,
@@ -482,7 +483,7 @@ describe("DistFileWriter", (): void => {
           },
           files: {
             llmsFull: "# New Full\n",
-            html: '<html><head>\n  <link rel="alternate" type="text/markdown" href="https://example.com/index.md">\n  <link rel="index" type="text/plain" href="https://example.com/llms.txt" title="LLMs text site index">\n</head></html>',
+            html: `<html><head>${INDEX_HEAD_LINK_MARKUP}</head></html>`,
             llms: "# Index\n",
           },
           readCounts: {
@@ -530,7 +531,48 @@ describe("DistFileWriter", (): void => {
             ],
             warnings: [],
           },
-          html: '<!doctype html><html><HEAD data-page="home">\n  <link rel="alternate" type="text/markdown" href="https://example.com/index.md">\n  <link rel="index" type="text/plain" href="https://example.com/llms.txt" title="LLMs text site index">\n<title>Home</title></HEAD></html>',
+          html: `<!doctype html><html><HEAD data-page="home">${INDEX_HEAD_LINK_MARKUP}<title>Home</title></HEAD></html>`,
+        });
+      }
+    });
+
+    it("replaces existing matching HTML resource links instead of appending duplicates", async (): Promise<void> => {
+      const outputDirectory = await createOutputDirectory();
+      const htmlBeforeHeadInsertion = "<!doctype html><html><head>";
+      await writeOutputFile(
+        outputDirectory,
+        "index.html",
+        `${htmlBeforeHeadInsertion}
+  <link rel="alternate" type="text/markdown" href="https://example.com/index.md">
+  <link rel="index" type="text/plain" href="https://example.com/llms.txt" title="LLMs text site index">
+
+<title>Home</title></head><body>Hi</body></html>`,
+      );
+      const writer = new DistFileWriter();
+
+      const result: Result<DistWriteResult, OpenNavError> = await writer.write({
+        outputDirectory,
+        plan: {
+          operations: [createHtmlEditOperation()],
+        },
+      });
+
+      expect(result.isOk()).toEqual(true);
+      if (result.isOk()) {
+        expect({
+          result: result.value,
+          html: await readOutputFile(outputDirectory, "index.html"),
+        }).toEqual({
+          result: {
+            records: [
+              {
+                kind: "edited-html-page",
+                outputFilePath: "index.html",
+              },
+            ],
+            warnings: [],
+          },
+          html: `<!doctype html><html><head>${INDEX_HEAD_LINK_MARKUP}<title>Home</title></head><body>Hi</body></html>`,
         });
       }
     });
@@ -615,7 +657,7 @@ describe("DistFileWriter", (): void => {
           },
           markdown: largeMarkdown,
           llmsFull: `# Full\n\n${largeMarkdown}`,
-          html: `${htmlBeforeHeadInsertion}\n  <link rel="alternate" type="text/markdown" href="https://example.com/index.md">\n  <link rel="index" type="text/plain" href="https://example.com/llms.txt" title="LLMs text site index">\n\n<title>Docs</title>\n</head>\n<body>\n${largeHtmlBody}\n</body>\n</html>\n`,
+          html: `${htmlBeforeHeadInsertion}${INDEX_HEAD_LINK_MARKUP}\n<title>Docs</title>\n</head>\n<body>\n${largeHtmlBody}\n</body>\n</html>\n`,
           readCounts: {
             markdown: 1,
             llmsFull: 1,

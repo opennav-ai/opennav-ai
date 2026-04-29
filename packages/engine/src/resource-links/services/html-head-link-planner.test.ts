@@ -58,7 +58,7 @@ describe("HtmlHeadLinkPlanner", (): void => {
           },
         ],
         headLinkMarkup:
-          '\n  <link rel="alternate" type="text/markdown" href="https://example.com/docs/api/index.md">\n  <link rel="index" type="text/plain" href="https://example.com/llms.txt" title="LLMs text site index">\n',
+          '\n  <link rel="alternate" type="text/markdown" href="https://example.com/docs/api/index.md" data-opennav="resource-link" data-opennav-sha="sha256:3cb051ea6fe6de557f6d606b6416c89a1e63e9a22a45b1275c4d6829201d3f08">\n  <link rel="index" type="text/plain" href="https://example.com/llms.txt" title="LLMs text site index" data-opennav="resource-link" data-opennav-sha="sha256:0b40d257efac082b8fcf31d9b81e3629d67a80f2d8e659da0ec321869c09ed9c">\n',
       });
     }
   });

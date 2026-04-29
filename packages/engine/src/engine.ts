@@ -67,10 +67,26 @@ export class Engine {
       return err(fileListResult.error);
     }
 
+    const sourceFilesResult = await Engine.readSourceFilesForPlanning({
+      outputDirectory: input.outputDirectory,
+      fileReferences: fileListResult.value.fileReferences,
+      fileReader,
+      buildFingerprintBuilder,
+    });
+
+    if (sourceFilesResult.isErr()) {
+      return err(sourceFilesResult.error);
+    }
+
+    const sourceFilesForPlanning = Engine.filterSourceFilesForPlanning(
+      sourceFilesResult.value,
+    );
     const fileMetadataResult = await fileMetadataReader.read({
       baseUrl: input.baseUrl,
       outputDirectory: input.outputDirectory,
-      fileReferences: fileListResult.value.fileReferences,
+      fileReferences: Engine.createFileReferences(
+        sourceFilesForPlanning.sourceFiles,
+      ),
     });
 
     if (fileMetadataResult.isErr()) {
@@ -88,21 +104,10 @@ export class Engine {
       return err(validationResult.error);
     }
 
-    const sourceFilesResult = await Engine.readSourceFilesForPlanning({
-      outputDirectory: input.outputDirectory,
-      fileReferences: fileListResult.value.fileReferences,
-      fileReader,
-      buildFingerprintBuilder,
-    });
-
-    if (sourceFilesResult.isErr()) {
-      return err(sourceFilesResult.error);
-    }
-
     const buildFingerprint = buildFingerprintBuilder.buildBuildFingerprint({
       siteName: input.siteName,
       baseUrl: input.baseUrl,
-      sourceFiles: sourceFilesResult.value.fingerprintFiles,
+      sourceFiles: sourceFilesForPlanning.fingerprintFiles,
       contentSignals: Engine.serializeContentSignals(input.accessGuidance),
     });
 
@@ -118,7 +123,7 @@ export class Engine {
           page,
           getSourceContent: async (): Promise<Result<string, OpenNavError>> =>
             Engine.readPageSourceContent({
-              sourceFiles: sourceFilesResult.value.sourceFiles,
+              sourceFiles: sourceFilesForPlanning.sourceFiles,
               sourceFilePath: page.sourceFilePath,
             }),
         }),
@@ -127,7 +132,7 @@ export class Engine {
 
     const resourceLinkPagesResult = Engine.createResourceLinkPages({
       pages: fileMetadataResult.value.pageMetadata,
-      sourceFiles: sourceFilesResult.value.sourceFiles,
+      sourceFiles: sourceFilesForPlanning.sourceFiles,
     });
 
     if (resourceLinkPagesResult.isErr()) {
@@ -141,7 +146,7 @@ export class Engine {
     const accessGuidanceResult = accessGuidanceBuilder.build({
       buildFingerprint,
       robotsTxtFile: Engine.findRobotsTxtSourceFile(
-        sourceFilesResult.value.sourceFiles,
+        sourceFilesForPlanning.sourceFiles,
       ),
       contentSignals: input.accessGuidance?.contentSignals,
     });
@@ -228,6 +233,49 @@ export class Engine {
     }
 
     return ok(buildPages);
+  }
+
+  private static createFileReferences(
+    sourceFiles: readonly EngineFile[],
+  ): readonly EngineFileReference[] {
+    return sourceFiles.map(
+      (sourceFile: EngineFile): EngineFileReference => ({
+        filePath: sourceFile.filePath,
+        kind: sourceFile.kind,
+      }),
+    );
+  }
+
+  private static filterSourceFilesForPlanning(
+    input: SourceFilesForPlanning,
+  ): SourceFilesForPlanning {
+    const sourceFiles = input.sourceFiles.filter(
+      (sourceFile: EngineFile): boolean =>
+        !Engine.isOpenNavManagedMarkdownSourceFile(sourceFile),
+    );
+    const sourceFilePaths = new Set(
+      sourceFiles.map(
+        (sourceFile: EngineFile): EngineFilePath => sourceFile.filePath,
+      ),
+    );
+
+    return {
+      sourceFiles,
+      fingerprintFiles: input.fingerprintFiles.filter(
+        (fingerprintFile: BuildFingerprintFileInput): boolean =>
+          sourceFilePaths.has(fingerprintFile.filePath),
+      ),
+    };
+  }
+
+  private static isOpenNavManagedMarkdownSourceFile(
+    sourceFile: EngineFile,
+  ): boolean {
+    return (
+      sourceFile.kind === "markdown" &&
+      sourceFile.content.includes('opennav compatible="true"') &&
+      sourceFile.content.includes('manifest="/.well-known/opennav.json"')
+    );
   }
 
   private static findRobotsTxtSourceFile(

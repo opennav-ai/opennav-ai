@@ -1,0 +1,12 @@
+{
+  "name": "opennav-example-static-site-sdk",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node --experimental-strip-types scripts/build.ts"
+  },
+  "dependencies": {
+    "@opennav-ai/opennav": "file:../../packages/opennav"
+  }
+}

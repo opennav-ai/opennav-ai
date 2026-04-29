@@ -8,6 +8,9 @@ The Astro and Next examples are also compatibility checks. Running
 installs each pinned example from its `package-lock.json`, runs the framework
 build, and verifies that the expected static HTML file exists.
 
+The static-site SDK example shows the root `OpenNavStaticSite` class running
+against plain HTML without a framework.
+
 The CLI build-script example shows the package-script shape users will copy once
 the `opennav static` command behavior is implemented.
 
@@ -19,4 +22,5 @@ the `opennav static` command behavior is implemented.
 - [Next 16 static SDK](./next-16-static/README.md)
 - [Next 15 static SDK](./next-15-static/README.md)
 - [Next 14 static SDK](./next-14-static/README.md)
+- [Static site SDK](./static-site-sdk/README.md)
 - [CLI build-script shape](./cli-build-script/README.md)

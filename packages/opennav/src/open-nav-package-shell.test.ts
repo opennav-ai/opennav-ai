@@ -1,5 +1,3 @@
-import type { EngineExecuteResult, OpenNavError } from "@opennav-ai/engine";
-import type { Result } from "neverthrow";
 import { describe, expect, it } from "vitest";
 import { OpenNavAstro } from "./astro";
 import { OpenNavConfig, OpenNavStaticSite } from "./index";
@@ -8,7 +6,7 @@ import type { OpenNavAstroIntegration } from "./types/open-nav-astro-integration
 import type { OpenNavNextConfig } from "./types/open-nav-next-config";
 
 describe("OpenNav public package shell", (): void => {
-  it("exports the root static-site SDK and config helper", async (): Promise<void> => {
+  it("exports the root static-site SDK and config helper", (): void => {
     const config = OpenNavConfig({
       siteName: "Example Docs",
       siteUrl: "https://example.com",
@@ -19,26 +17,11 @@ describe("OpenNav public package shell", (): void => {
       outputDirectory: "dist",
     });
 
-    const result: Result<EngineExecuteResult, OpenNavError> =
-      await staticSite.build({ dryRun: true });
-
     expect(config).toEqual({
       siteName: "Example Docs",
       siteUrl: "https://example.com",
     });
-    expect(result.isErr()).toEqual(true);
-
-    if (result.isErr()) {
-      expect(result.error).toEqual({
-        code: "OPENNAV_STATIC_SITE_NOT_IMPLEMENTED",
-        message:
-          "OpenNavStaticSite.build is stubbed until static directory scanning is implemented.",
-        context: {
-          dryRun: true,
-          outputDirectory: "dist",
-        },
-      });
-    }
+    expect(staticSite).toBeInstanceOf(OpenNavStaticSite);
   });
 
   it("exports an Astro-compatible integration-shaped stub", (): void => {
