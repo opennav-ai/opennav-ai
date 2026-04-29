@@ -1,16 +1,80 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <title>Home</title>
-    <meta name="description" content="Start here for the OpenNav fixture docs.">
-  </head>
-  <body>
-    <main>
-      <h1>Home</h1>
-      <p>Start here for the OpenNav fixture docs.</p>
-      <a href="/docs/getting-started/">Getting Started</a>
-      <a href="/docs/api/">API</a>
-    </main>
-  </body>
+	<head>
+		<meta charset="utf-8" />
+		<title>Home</title>
+		<meta
+			name="description"
+			content="Start here for the OpenNav fixture docs."
+		/>
+	</head>
+	<body>
+		<main>
+			<h1>Home</h1>
+			<p>
+				Start here for the OpenNav fixture docs.
+			</p>
+			<section>
+				<h2>Explore the fixture</h2>
+				<p>
+					Use this page to inspect heading and
+					paragraph conversion.
+				</p>
+				<div>
+					<h3>Nested navigation</h3>
+					<p>
+						These links sit inside nested div
+						elements.
+					</p>
+					<div>
+						<div>
+							<a href="/docs/getting-started/"
+								>Getting Started</a
+							>
+							<a href="/docs/api">API Route</a>
+							<a href="/docs/api/"
+								>API Reference</a
+							>
+						</div>
+					</div>
+				</div>
+			</section>
+			<div>
+				<h4>Inline examples</h4>
+				<p>
+					Common tags include
+					<span>span text</span>,
+					<strong>strong text</strong>, and
+					<code>inline code</code>.
+				</p>
+				<ul>
+					<li>
+						Open the
+						<a href="/docs/reference/"
+							>reference notes</a
+						>.
+					</li>
+					<li>
+						Compare nested links with generated
+						Markdown paths.
+					</li>
+				</ul>
+				<h4>Code blocks</h4>
+				<p>
+					The fixture includes source-style and
+					shell-style blocks.
+				</p>
+				<pre><code class="language-ts">const result = await Engine.execute(input, {
+  dryRun: false,
+});
+
+if (result.isOk()) {
+  console.log(result.value.createdFilePaths);
+}</code></pre>
+				<pre><code class="language-bash">npm run fixture:engine:phase1:write
+find packages/engine/.manual-runs/phase-1-small-site/dist -maxdepth 3 -type f | sort
+cat packages/engine/.manual-runs/phase-1-small-site/build-result.json</code></pre>
+			</div>
+		</main>
+	</body>
 </html>

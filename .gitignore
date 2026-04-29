@@ -1,4 +1,5 @@
 node_modules/
+.manual-runs/
 .npm-cache/
 dist/
 !packages/engine/fixtures/**/dist/

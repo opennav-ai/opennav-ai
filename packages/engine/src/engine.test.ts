@@ -38,7 +38,7 @@ const OPENNAV_MANAGED_TEXT_FILE_CONTENT =
 const OPENNAV_MANAGED_MANIFEST_CONTENT =
   '{\n  "opennav": true,\n  "build_fingerprint": "sha256:stale"\n}\n';
 const REAL_WRITE_BUILD_FINGERPRINT =
-  "sha256:72b3983a64ddafeb6875f248f4a686e2e765d7cbd8035c45c7a090c08eb9e125";
+  "sha256:c8b50fb2887b07d3a6b8624ee872f5eefdd50ab342b5226a2c5d3dfc292f1a24";
 
 describe("Engine", (): void => {
   let fixtureDirectory: string | undefined;
@@ -347,6 +347,7 @@ describe("Engine", (): void => {
       filePaths: [
         "index.html",
         "docs/getting-started/index.html",
+        "docs/api.html",
         "docs/api/index.html",
         "docs/reference/index.md",
         "robots.txt",
@@ -382,6 +383,9 @@ describe("Engine", (): void => {
           gettingStartedMarkdown: await pathExists(
             join(outputDirectory, "docs/getting-started/index.md"),
           ),
+          apiRouteMarkdown: await pathExists(
+            join(outputDirectory, "docs/api.md"),
+          ),
           apiMarkdown: await pathExists(
             join(outputDirectory, "docs/api/index.md"),
           ),
@@ -400,6 +404,7 @@ describe("Engine", (): void => {
             ".well-known/llms.txt",
             "index.md",
             "docs/getting-started/index.md",
+            "docs/api.md",
             "docs/api/index.md",
             "llms-full.txt",
             ".well-known/llms-full.txt",
@@ -408,6 +413,7 @@ describe("Engine", (): void => {
           modifiedFilePaths: [
             "index.html",
             "docs/getting-started/index.html",
+            "docs/api.html",
             "docs/api/index.html",
             "robots.txt",
           ],
@@ -430,6 +436,7 @@ describe("Engine", (): void => {
           wellKnownLlmsTxt: false,
           indexMarkdown: false,
           gettingStartedMarkdown: false,
+          apiRouteMarkdown: false,
           apiMarkdown: false,
           llmsFullTxt: false,
           wellKnownLlmsFullTxt: false,
@@ -452,6 +459,7 @@ describe("Engine", (): void => {
       filePaths: [
         "index.html",
         "docs/getting-started/index.html",
+        "docs/api.html",
         "docs/api/index.html",
         "docs/reference/index.md",
         "robots.txt",
@@ -481,6 +489,7 @@ describe("Engine", (): void => {
             ".well-known/llms.txt",
             "index.md",
             "docs/getting-started/index.md",
+            "docs/api.md",
             "docs/api/index.md",
             "llms-full.txt",
             ".well-known/llms-full.txt",
@@ -489,6 +498,7 @@ describe("Engine", (): void => {
           modifiedFilePaths: [
             "index.html",
             "docs/getting-started/index.html",
+            "docs/api.html",
             "docs/api/index.html",
             "robots.txt",
           ],
@@ -520,6 +530,7 @@ describe("Engine", (): void => {
       ".well-known/llms.txt",
       "index.md",
       "docs/getting-started/index.md",
+      "docs/api.md",
       "docs/api/index.md",
       "llms-full.txt",
       ".well-known/llms-full.txt",
@@ -532,6 +543,7 @@ describe("Engine", (): void => {
       filePaths: [
         "index.html",
         "docs/getting-started/index.html",
+        "docs/api.html",
         "docs/api/index.html",
         "docs/reference/index.md",
         "robots.txt",
@@ -562,12 +574,14 @@ describe("Engine", (): void => {
             ".well-known/llms.txt",
             "index.md",
             "docs/getting-started/index.md",
+            "docs/api.md",
             "docs/api/index.md",
             "llms-full.txt",
             ".well-known/llms-full.txt",
             ".well-known/opennav.json",
             "index.html",
             "docs/getting-started/index.html",
+            "docs/api.html",
             "docs/api/index.html",
             "robots.txt",
           ],
@@ -599,6 +613,7 @@ describe("Engine", (): void => {
       ".well-known/llms.txt",
       "index.md",
       "docs/getting-started/index.md",
+      "docs/api.md",
       "docs/api/index.md",
       "llms-full.txt",
       ".well-known/llms-full.txt",
@@ -611,6 +626,7 @@ describe("Engine", (): void => {
       filePaths: [
         "index.html",
         "docs/getting-started/index.html",
+        "docs/api.html",
         "docs/api/index.html",
         "docs/reference/index.md",
         "robots.txt",
@@ -642,12 +658,14 @@ describe("Engine", (): void => {
             ".well-known/llms.txt",
             "index.md",
             "docs/getting-started/index.md",
+            "docs/api.md",
             "docs/api/index.md",
             "llms-full.txt",
             ".well-known/llms-full.txt",
             ".well-known/opennav.json",
             "index.html",
             "docs/getting-started/index.html",
+            "docs/api.html",
             "docs/api/index.html",
             "robots.txt",
           ],
@@ -677,23 +695,36 @@ function createExpectedApiHtmlContent(): string {
   return '<!doctype html>\n<html lang="en">\n  <head>\n  <link rel="alternate" type="text/markdown" href="https://example.com/docs/api/index.md">\n  <link rel="index" type="text/plain" href="https://example.com/llms.txt" title="LLMs text site index">\n\n    <meta charset="utf-8">\n    <title>API Reference</title>\n    <meta name="description" content="Use the engine from TypeScript.">\n  </head>\n  <body>\n    <main>\n      <h1>API Reference</h1>\n      <p>Use the engine from TypeScript.</p>\n      <a href="/docs/reference/">Reference Notes</a>\n    </main>\n  </body>\n</html>\n';
 }
 
+function createExpectedApiRouteHtmlContent(): string {
+  return '<!doctype html>\n<html lang="en">\n  <head>\n  <link rel="alternate" type="text/markdown" href="https://example.com/docs/api.md">\n  <link rel="index" type="text/plain" href="https://example.com/llms.txt" title="LLMs text site index">\n\n    <meta charset="utf-8">\n    <title>API</title>\n    <meta name="description" content="Top-level API route for clients that do not use trailing slashes.">\n  </head>\n  <body>\n    <main>\n      <h1>API</h1>\n      <p>Top-level API route for clients that do not use trailing slashes.</p>\n      <div>\n        <p>Continue to the <a href="/docs/api/">API Reference</a> or read <a href="/docs/reference/">Reference Notes</a>.</p>\n      </div>\n    </main>\n  </body>\n</html>\n';
+}
+
 function createExpectedGettingStartedHtmlContent(): string {
   return '<!doctype html>\n<html lang="en">\n  <head>\n  <link rel="alternate" type="text/markdown" href="https://example.com/docs/getting-started/index.md">\n  <link rel="index" type="text/plain" href="https://example.com/llms.txt" title="LLMs text site index">\n\n    <meta charset="utf-8">\n    <title>Getting Started</title>\n    <meta name="description" content="Install and run OpenNav on a static site.">\n  </head>\n  <body>\n    <main>\n      <h1>Getting Started</h1>\n      <p>Install and run OpenNav on a static site.</p>\n      <a href="../api/">API Reference</a>\n    </main>\n  </body>\n</html>\n';
 }
 
 function createExpectedHomeHtmlContent(): string {
-  return '<!doctype html>\n<html lang="en">\n  <head>\n  <link rel="alternate" type="text/markdown" href="https://example.com/index.md">\n  <link rel="index" type="text/plain" href="https://example.com/llms.txt" title="LLMs text site index">\n\n    <meta charset="utf-8">\n    <title>Home</title>\n    <meta name="description" content="Start here for the OpenNav fixture docs.">\n  </head>\n  <body>\n    <main>\n      <h1>Home</h1>\n      <p>Start here for the OpenNav fixture docs.</p>\n      <a href="/docs/getting-started/">Getting Started</a>\n      <a href="/docs/api/">API</a>\n    </main>\n  </body>\n</html>\n';
+  return createExpectedHomeHtmlContentWithoutLanguageClasses()
+    .replace(
+      "<pre><code>const result",
+      '<pre><code class="language-ts">const result',
+    )
+    .replace("<pre><code>npm run", '<pre><code class="language-bash">npm run');
+}
+
+function createExpectedHomeHtmlContentWithoutLanguageClasses(): string {
+  return '<!doctype html>\n<html lang="en">\n\t<head>\n  <link rel="alternate" type="text/markdown" href="https://example.com/index.md">\n  <link rel="index" type="text/plain" href="https://example.com/llms.txt" title="LLMs text site index">\n\n\t\t<meta charset="utf-8" />\n\t\t<title>Home</title>\n\t\t<meta\n\t\t\tname="description"\n\t\t\tcontent="Start here for the OpenNav fixture docs."\n\t\t/>\n\t</head>\n\t<body>\n\t\t<main>\n\t\t\t<h1>Home</h1>\n\t\t\t<p>\n\t\t\t\tStart here for the OpenNav fixture docs.\n\t\t\t</p>\n\t\t\t<section>\n\t\t\t\t<h2>Explore the fixture</h2>\n\t\t\t\t<p>\n\t\t\t\t\tUse this page to inspect heading and\n\t\t\t\t\tparagraph conversion.\n\t\t\t\t</p>\n\t\t\t\t<div>\n\t\t\t\t\t<h3>Nested navigation</h3>\n\t\t\t\t\t<p>\n\t\t\t\t\t\tThese links sit inside nested div\n\t\t\t\t\t\telements.\n\t\t\t\t\t</p>\n\t\t\t\t\t<div>\n\t\t\t\t\t\t<div>\n\t\t\t\t\t\t\t<a href="/docs/getting-started/"\n\t\t\t\t\t\t\t\t>Getting Started</a\n\t\t\t\t\t\t\t>\n\t\t\t\t\t\t\t<a href="/docs/api">API Route</a>\n\t\t\t\t\t\t\t<a href="/docs/api/"\n\t\t\t\t\t\t\t\t>API Reference</a\n\t\t\t\t\t\t\t>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</section>\n\t\t\t<div>\n\t\t\t\t<h4>Inline examples</h4>\n\t\t\t\t<p>\n\t\t\t\t\tCommon tags include\n\t\t\t\t\t<span>span text</span>,\n\t\t\t\t\t<strong>strong text</strong>, and\n\t\t\t\t\t<code>inline code</code>.\n\t\t\t\t</p>\n\t\t\t\t<ul>\n\t\t\t\t\t<li>\n\t\t\t\t\t\tOpen the\n\t\t\t\t\t\t<a href="/docs/reference/"\n\t\t\t\t\t\t\t>reference notes</a\n\t\t\t\t\t\t>.\n\t\t\t\t\t</li>\n\t\t\t\t\t<li>\n\t\t\t\t\t\tCompare nested links with generated\n\t\t\t\t\t\tMarkdown paths.\n\t\t\t\t\t</li>\n\t\t\t\t</ul>\n\t\t\t\t<h4>Code blocks</h4>\n\t\t\t\t<p>\n\t\t\t\t\tThe fixture includes source-style and\n\t\t\t\t\tshell-style blocks.\n\t\t\t\t</p>\n\t\t\t\t<pre><code>const result = await Engine.execute(input, {\n  dryRun: false,\n});\n\nif (result.isOk()) {\n  console.log(result.value.createdFilePaths);\n}</code></pre>\n\t\t\t\t<pre><code>npm run fixture:engine:phase1:write\nfind packages/engine/.manual-runs/phase-1-small-site/dist -maxdepth 3 -type f | sort\ncat packages/engine/.manual-runs/phase-1-small-site/build-result.json</code></pre>\n\t\t\t</div>\n\t\t</main>\n\t</body>\n</html>\n';
 }
 
 function createExpectedLlmsFullTxtContent(): string {
   return appendRealWriteHtmlMarker(
-    "# Example Docs\n\n## Root\n\n### Home\n\nURL: https://example.com/index.md\n\nStart here for the OpenNav fixture docs.\n\n# Home\n\nStart here for the OpenNav fixture docs.\n\n[Getting Started](https://example.com/docs/getting-started/index.md)\n\n[API](https://example.com/docs/api/index.md)\n\n---\n\n## Docs\n\n### API Reference\n\nURL: https://example.com/docs/api/index.md\n\nUse the engine from TypeScript.\n\n# API Reference\n\nUse the engine from TypeScript.\n\n[Reference Notes](https://example.com/docs/reference/index.md)\n\n---\n\n### Getting Started\n\nURL: https://example.com/docs/getting-started/index.md\n\nInstall and run OpenNav on a static site.\n\n# Getting Started\n\nInstall and run OpenNav on a static site.\n\n[API Reference](https://example.com/docs/api/index.md)\n\n---\n\n### Reference Notes\n\nURL: https://example.com/docs/reference/index.md\n\nThese notes are already available as Markdown.\n\n# Reference Notes\n\nThese notes are already available as Markdown.",
+    "# Example Docs\n\n## Root\n\n### Home\n\nURL: https://example.com/index.md\n\nStart here for the OpenNav fixture docs.\n\n# Home\n\nStart here for the OpenNav fixture docs.\n\n## Explore the fixture\n\nUse this page to inspect heading and paragraph conversion.\n\n### Nested navigation\n\nThese links sit inside nested div elements.\n\n[Getting Started](https://example.com/docs/getting-started/index.md)\n\n[API Route](https://example.com/docs/api.md)\n\n[API Reference](https://example.com/docs/api/index.md)\n\n#### Inline examples\n\nCommon tags include span text, strong text, and `inline code`.\n\n- Open the [reference notes](https://example.com/docs/reference/index.md).\n- Compare nested links with generated Markdown paths.\n\n#### Code blocks\n\nThe fixture includes source-style and shell-style blocks.\n\n```txt\nconst result = await Engine.execute(input, {\n  dryRun: false,\n});\n\nif (result.isOk()) {\n  console.log(result.value.createdFilePaths);\n}\n```\n\n```txt\nnpm run fixture:engine:phase1:write\nfind packages/engine/.manual-runs/phase-1-small-site/dist -maxdepth 3 -type f | sort\ncat packages/engine/.manual-runs/phase-1-small-site/build-result.json\n```\n\n---\n\n## Docs\n\n### API\n\nURL: https://example.com/docs/api.md\n\nTop-level API route for clients that do not use trailing slashes.\n\n# API\n\nTop-level API route for clients that do not use trailing slashes.\n\nContinue to the [API Reference](https://example.com/docs/api/index.md) or read [Reference Notes](https://example.com/docs/reference/index.md).\n\n---\n\n### API Reference\n\nURL: https://example.com/docs/api/index.md\n\nUse the engine from TypeScript.\n\n# API Reference\n\nUse the engine from TypeScript.\n\n[Reference Notes](https://example.com/docs/reference/index.md)\n\n---\n\n### Getting Started\n\nURL: https://example.com/docs/getting-started/index.md\n\nInstall and run OpenNav on a static site.\n\n# Getting Started\n\nInstall and run OpenNav on a static site.\n\n[API Reference](https://example.com/docs/api/index.md)\n\n---\n\n### Reference Notes\n\nURL: https://example.com/docs/reference/index.md\n\nThese notes are already available as Markdown.\n\n# Reference Notes\n\nThese notes are already available as Markdown.",
   );
 }
 
 function createExpectedLlmsTxtContent(): string {
   return appendRealWriteHtmlMarker(
-    "# Example Docs\n\n## Root\n\n- [Home](https://example.com/index.md): Start here for the OpenNav fixture docs.\n\n## Docs\n\n- [API Reference](https://example.com/docs/api/index.md): Use the engine from TypeScript.\n- [Getting Started](https://example.com/docs/getting-started/index.md): Install and run OpenNav on a static site.\n- [Reference Notes](https://example.com/docs/reference/index.md): These notes are already available as Markdown.",
+    "# Example Docs\n\n## Root\n\n- [Home](https://example.com/index.md): Start here for the OpenNav fixture docs.\n\n## Docs\n\n- [API](https://example.com/docs/api.md): Top-level API route for clients that do not use trailing slashes.\n- [API Reference](https://example.com/docs/api/index.md): Use the engine from TypeScript.\n- [Getting Started](https://example.com/docs/getting-started/index.md): Install and run OpenNav on a static site.\n- [Reference Notes](https://example.com/docs/reference/index.md): These notes are already available as Markdown.",
   );
 }
 
@@ -741,6 +772,16 @@ function createExpectedRealWriteOutputTree(): OutputTree {
     "docs/api": {
       kind: "directory",
     },
+    "docs/api.html": {
+      content: createExpectedApiRouteHtmlContent(),
+      kind: "file",
+    },
+    "docs/api.md": {
+      content: createExpectedMarkdownPageContent(
+        "# API\n\nTop-level API route for clients that do not use trailing slashes.\n\nContinue to the [API Reference](https://example.com/docs/api/index.md) or read [Reference Notes](https://example.com/docs/reference/index.md).",
+      ),
+      kind: "file",
+    },
     "docs/api/index.html": {
       content: createExpectedApiHtmlContent(),
       kind: "file",
@@ -778,7 +819,7 @@ function createExpectedRealWriteOutputTree(): OutputTree {
     },
     "index.md": {
       content: createExpectedMarkdownPageContent(
-        "# Home\n\nStart here for the OpenNav fixture docs.\n\n[Getting Started](https://example.com/docs/getting-started/index.md)\n\n[API](https://example.com/docs/api/index.md)",
+        "# Home\n\nStart here for the OpenNav fixture docs.\n\n## Explore the fixture\n\nUse this page to inspect heading and paragraph conversion.\n\n### Nested navigation\n\nThese links sit inside nested div elements.\n\n[Getting Started](https://example.com/docs/getting-started/index.md)\n\n[API Route](https://example.com/docs/api.md)\n\n[API Reference](https://example.com/docs/api/index.md)\n\n#### Inline examples\n\nCommon tags include span text, strong text, and `inline code`.\n\n- Open the [reference notes](https://example.com/docs/reference/index.md).\n- Compare nested links with generated Markdown paths.\n\n#### Code blocks\n\nThe fixture includes source-style and shell-style blocks.\n\n```txt\nconst result = await Engine.execute(input, {\n  dryRun: false,\n});\n\nif (result.isOk()) {\n  console.log(result.value.createdFilePaths);\n}\n```\n\n```txt\nnpm run fixture:engine:phase1:write\nfind packages/engine/.manual-runs/phase-1-small-site/dist -maxdepth 3 -type f | sort\ncat packages/engine/.manual-runs/phase-1-small-site/build-result.json\n```",
       ),
       kind: "file",
     },
