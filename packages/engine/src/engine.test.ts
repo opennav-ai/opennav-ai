@@ -509,6 +509,85 @@ describe("Engine", (): void => {
     }
   });
 
+  it("overwrites existing OpenNav-managed generated files during a real write", async (): Promise<void> => {
+    fixtureDirectory = await mkdtemp(join(tmpdir(), "opennav-engine-"));
+    const outputDirectory = join(fixtureDirectory, "dist");
+    await cp(PHASE_1_SMALL_SITE_FIXTURE_DIRECTORY, outputDirectory, {
+      recursive: true,
+    });
+    await writeExistingOpenNavGeneratedFiles(outputDirectory, [
+      "llms.txt",
+      ".well-known/llms.txt",
+      "index.md",
+      "docs/getting-started/index.md",
+      "docs/api/index.md",
+      "llms-full.txt",
+      ".well-known/llms-full.txt",
+      ".well-known/opennav.json",
+    ]);
+    const input: EngineExecuteInput = {
+      siteName: "Example Docs",
+      baseUrl: "https://example.com",
+      outputDirectory,
+      filePaths: [
+        "index.html",
+        "docs/getting-started/index.html",
+        "docs/api/index.html",
+        "docs/reference/index.md",
+        "robots.txt",
+        "assets/logo.svg",
+      ],
+      accessGuidance: {
+        contentSignals: {
+          search: "allow",
+          aiInput: "allow",
+          aiTrain: "disallow",
+        },
+      },
+    };
+
+    const result: Result<EngineExecuteResult, OpenNavError> =
+      await Engine.execute(input, { dryRun: false });
+
+    expect(result.isOk()).toEqual(true);
+    if (result.isOk()) {
+      expect({
+        result: result.value,
+        outputTree: await readOutputTree(outputDirectory),
+      }).toEqual({
+        result: {
+          createdFilePaths: [],
+          modifiedFilePaths: [
+            "llms.txt",
+            ".well-known/llms.txt",
+            "index.md",
+            "docs/getting-started/index.md",
+            "docs/api/index.md",
+            "llms-full.txt",
+            ".well-known/llms-full.txt",
+            ".well-known/opennav.json",
+            "index.html",
+            "docs/getting-started/index.html",
+            "docs/api/index.html",
+            "robots.txt",
+          ],
+          skippedFilePaths: ["assets/logo.svg"],
+          warnings: [
+            {
+              code: "ENGINE_FILE_UNSUPPORTED",
+              message: "The engine skipped an unsupported built site file.",
+              context: {
+                filePath: "assets/logo.svg",
+                kind: "unsupported",
+              },
+            },
+          ],
+        },
+        outputTree: createExpectedRealWriteOutputTree(),
+      });
+    }
+  });
+
   it("returns exact dry-run overwrite planning for an existing OpenNav-managed output folder", async (): Promise<void> => {
     fixtureDirectory = await mkdtemp(join(tmpdir(), "opennav-engine-"));
     const outputDirectory = join(fixtureDirectory, "dist");
