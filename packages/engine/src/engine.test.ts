@@ -265,6 +265,73 @@ describe("Engine", (): void => {
     }
   });
 
+  it("returns exact dry-run Content Signals conflict warning context", async (): Promise<void> => {
+    fixtureDirectory = await mkdtemp(join(tmpdir(), "opennav-engine-"));
+    const outputDirectory = join(fixtureDirectory, "dist");
+    const htmlFilePath = "index.html";
+    const robotsFilePath = "robots.txt";
+    await mkdir(outputDirectory);
+    await writeFile(
+      join(outputDirectory, htmlFilePath),
+      "<html><head><title>Home</title></head><body><h1>Home</h1></body></html>",
+      "utf8",
+    );
+    await writeFile(
+      join(outputDirectory, robotsFilePath),
+      "User-agent: *\nContent-signal: search=no\n",
+      "utf8",
+    );
+    const beforeTree = await readOutputTree(outputDirectory);
+    const input: EngineExecuteInput = {
+      siteName: "Example Docs",
+      baseUrl: "https://example.com",
+      outputDirectory,
+      filePaths: [htmlFilePath, robotsFilePath],
+      accessGuidance: {
+        contentSignals: {
+          search: "allow",
+        },
+      },
+    };
+
+    const result: Result<EngineExecuteResult, OpenNavError> =
+      await Engine.execute(input, { dryRun: true });
+
+    expect(result.isOk()).toEqual(true);
+    if (result.isOk()) {
+      expect({
+        result: result.value,
+        afterTree: await readOutputTree(outputDirectory),
+      }).toEqual({
+        result: {
+          createdFilePaths: [
+            "llms.txt",
+            ".well-known/llms.txt",
+            "index.md",
+            "llms-full.txt",
+            ".well-known/llms-full.txt",
+            ".well-known/opennav.json",
+          ],
+          modifiedFilePaths: [htmlFilePath],
+          skippedFilePaths: [],
+          warnings: [
+            {
+              code: "ACCESS_GUIDANCE_CONTENT_SIGNALS_CONFLICT",
+              message:
+                "Existing robots.txt Content Signals differ from the configured policy.",
+              context: {
+                filePath: robotsFilePath,
+                configuredContentSignalLine: "Content-signal: search=yes",
+                existingContentSignalLines: ["Content-signal: search=no"],
+              },
+            },
+          ],
+        },
+        afterTree: beforeTree,
+      });
+    }
+  });
+
   it("returns an exact dry-run report for a small static site without writing files", async (): Promise<void> => {
     fixtureDirectory = await mkdtemp(join(tmpdir(), "opennav-engine-"));
     const outputDirectory = join(fixtureDirectory, "dist");
