@@ -1,5 +1,13 @@
+/// <reference path="../types/turndown-module.d.ts" />
+/// <reference path="../types/turndown-plugin-gfm-module.d.ts" />
+
 import { ok, type Result } from "neverthrow";
-import { type DefaultTreeAdapterTypes, parse } from "parse5";
+import { type DefaultTreeAdapterTypes, parse, serialize } from "parse5";
+import TurndownService, {
+  type TurndownElement,
+  type TurndownOptions,
+} from "turndown";
+import { gfm } from "turndown-plugin-gfm";
 import type { OpenNavError } from "../../common/types/opennav-error";
 import type { PageMarkdownContentGenerateInput } from "../types/page-markdown-content-generate-input";
 import type { PageMarkdownContentGenerateResult } from "../types/page-markdown-content-generate-result";
@@ -42,211 +50,130 @@ export class PageMarkdownContentGenerator {
     });
   }
 
+  private addCodeBlockRule(service: TurndownService): void {
+    service.addRule("opennavCodeBlock", {
+      filter: (node: TurndownElement): boolean =>
+        node.nodeName === "PRE" && this.isCodeElement(node.firstChild),
+      replacement: (
+        _content: string,
+        node: TurndownElement,
+        options: TurndownOptions,
+      ): string => this.convertCodeBlock(node, options),
+    });
+  }
+
+  private addLinkRule(
+    service: TurndownService,
+    input: PageMarkdownContentGenerateInput,
+  ): void {
+    service.addRule("opennavInlineLink", {
+      filter: (node: TurndownElement): boolean => node.nodeName === "A",
+      replacement: (content: string, node: TurndownElement): string =>
+        this.convertLink(content, node, input),
+    });
+  }
+
+  private addListItemRule(service: TurndownService): void {
+    service.addRule("opennavListItem", {
+      filter: "li",
+      replacement: (
+        content: string,
+        node: TurndownElement,
+        options: TurndownOptions,
+      ): string => this.convertListItem(content, node, options),
+    });
+  }
+
+  private addStrikethroughRule(service: TurndownService): void {
+    service.addRule("opennavStrikethrough", {
+      filter: ["del", "s", "strike"],
+      replacement: (content: string): string => {
+        if (content.trim() === "") {
+          return "";
+        }
+
+        return `~~${content}~~`;
+      },
+    });
+  }
+
+  private buildCodeFence(
+    configuredFence: string | undefined,
+    code: string,
+  ): string {
+    const fenceCharacter = configuredFence?.charAt(0) === "~" ? "~" : "`";
+    const fenceInCodeRegex = new RegExp(
+      `^${this.escapeRegExp(fenceCharacter)}{3,}`,
+      "gmu",
+    );
+    let fenceSize = 3;
+    let match = fenceInCodeRegex.exec(code);
+
+    while (match !== null) {
+      const matchedFence = match[0];
+
+      if (matchedFence.length >= fenceSize) {
+        fenceSize = matchedFence.length + 1;
+      }
+
+      match = fenceInCodeRegex.exec(code);
+    }
+
+    return fenceCharacter.repeat(fenceSize);
+  }
+
+  private convertCodeBlock(
+    element: TurndownElement,
+    options: TurndownOptions,
+  ): string {
+    const codeElement = this.getFirstCodeElement(element);
+
+    if (codeElement === undefined) {
+      return "";
+    }
+
+    const codeText = this.normalizeCodeBlockText(codeElement.textContent);
+
+    if (codeText === undefined) {
+      return "";
+    }
+
+    const language = this.getCodeBlockLanguage(codeElement) ?? "txt";
+    const fence = this.buildCodeFence(options.fence, codeText);
+
+    return `\n\n${fence}${language}\n${codeText}\n${fence}\n\n`;
+  }
+
   private convertHtmlToMarkdown(
     input: PageMarkdownContentGenerateInput,
   ): string {
-    const document = parse(input.sourceContent);
-    const bodyElement =
-      this.findFirstElement(
-        document,
-        (element: DefaultTreeAdapterTypes.Element): boolean =>
-          element.tagName === "body",
-      ) ?? document;
-    const blocks = this.convertChildBlocks(bodyElement, input);
+    const markdown = this.normalizeMarkdownWhitespace(
+      this.createTurndownService(input).turndown(
+        this.getConvertibleHtml(input.sourceContent),
+      ),
+    ).trimEnd();
 
-    if (blocks.length === 0) {
+    if (markdown === "") {
       return "";
     }
 
-    return `${blocks.join("\n\n")}\n`;
-  }
-
-  private convertBlock(
-    node: DefaultTreeAdapterTypes.Node,
-    input: PageMarkdownContentGenerateInput,
-  ): string | undefined {
-    if (this.isTextNode(node)) {
-      return this.normalizeText(node.value);
-    }
-
-    if (!this.isElement(node)) {
-      return undefined;
-    }
-
-    if (this.isIgnoredElement(node)) {
-      return undefined;
-    }
-
-    if (this.isHeadingElement(node)) {
-      const headingText = this.normalizeText(
-        this.convertInlineChildren(node, input),
-      );
-
-      if (headingText === undefined) {
-        return undefined;
-      }
-
-      return `${"#".repeat(this.getHeadingLevel(node))} ${headingText}`;
-    }
-
-    if (node.tagName === "p") {
-      return this.normalizeText(this.convertInlineChildren(node, input));
-    }
-
-    if (node.tagName === "a") {
-      return this.normalizeText(this.convertLink(node, input));
-    }
-
-    if (node.tagName === "ul" || node.tagName === "ol") {
-      return this.convertList(node, input);
-    }
-
-    if (node.tagName === "li") {
-      return this.normalizeText(this.convertInlineChildren(node, input));
-    }
-
-    if (node.tagName === "pre") {
-      return this.convertPreformattedBlock(node);
-    }
-
-    const childBlocks = this.convertChildBlocks(node, input);
-
-    if (childBlocks.length > 0) {
-      return childBlocks.join("\n\n");
-    }
-
-    return this.normalizeText(this.convertInlineChildren(node, input));
-  }
-
-  private convertChildBlocks(
-    node: DefaultTreeAdapterTypes.Node,
-    input: PageMarkdownContentGenerateInput,
-  ): readonly string[] {
-    if (!this.isParentNode(node)) {
-      return [];
-    }
-
-    const blocks: string[] = [];
-
-    for (const childNode of node.childNodes) {
-      const block = this.convertBlock(childNode, input);
-
-      if (block !== undefined) {
-        blocks.push(block);
-      }
-    }
-
-    return blocks;
-  }
-
-  private convertInline(
-    node: DefaultTreeAdapterTypes.Node,
-    input: PageMarkdownContentGenerateInput,
-  ): string | undefined {
-    if (this.isTextNode(node)) {
-      return node.value;
-    }
-
-    if (!this.isElement(node) || this.isIgnoredElement(node)) {
-      return undefined;
-    }
-
-    if (node.tagName === "a") {
-      return this.convertLink(node, input);
-    }
-
-    if (node.tagName === "code") {
-      return this.convertInlineCode(node);
-    }
-
-    if (node.tagName === "br") {
-      return "\n";
-    }
-
-    return this.convertInlineChildren(node, input);
-  }
-
-  private convertInlineCode(
-    element: DefaultTreeAdapterTypes.Element,
-  ): string | undefined {
-    const codeText = this.normalizeText(this.getTextContent(element));
-
-    if (codeText === undefined) {
-      return undefined;
-    }
-
-    return `\`${codeText}\``;
-  }
-
-  private convertInlineChildren(
-    node: DefaultTreeAdapterTypes.Node,
-    input: PageMarkdownContentGenerateInput,
-  ): string {
-    if (!this.isParentNode(node)) {
-      return "";
-    }
-
-    return node.childNodes
-      .map(
-        (childNode: DefaultTreeAdapterTypes.ChildNode): string =>
-          this.convertInline(childNode, input) ?? "",
-      )
-      .join("");
-  }
-
-  private convertList(
-    element: DefaultTreeAdapterTypes.Element,
-    input: PageMarkdownContentGenerateInput,
-  ): string | undefined {
-    if (!this.isParentNode(element)) {
-      return undefined;
-    }
-
-    const listItems: string[] = [];
-    let orderedItemNumber = 1;
-
-    for (const childNode of element.childNodes) {
-      if (!this.isElement(childNode) || childNode.tagName !== "li") {
-        continue;
-      }
-
-      const itemText = this.normalizeText(
-        this.convertInlineChildren(childNode, input),
-      );
-
-      if (itemText === undefined) {
-        continue;
-      }
-
-      if (element.tagName === "ul") {
-        listItems.push(`- ${itemText}`);
-        continue;
-      }
-
-      listItems.push(`${orderedItemNumber}. ${itemText}`);
-      orderedItemNumber += 1;
-    }
-
-    if (listItems.length === 0) {
-      return undefined;
-    }
-
-    return listItems.join("\n");
+    return `${markdown}\n`;
   }
 
   private convertLink(
-    element: DefaultTreeAdapterTypes.Element,
+    content: string,
+    element: TurndownElement,
     input: PageMarkdownContentGenerateInput,
-  ): string | undefined {
-    const linkText = this.normalizeText(
-      this.convertInlineChildren(element, input),
-    );
+  ): string {
+    const linkText = this.normalizeText(content);
 
     if (linkText === undefined) {
-      return undefined;
+      return "";
     }
 
-    const href = this.normalizeText(this.getAttributeValue(element, "href"));
+    const href = this.normalizeText(
+      this.getTurndownAttributeValue(element, "href"),
+    );
 
     if (href === undefined) {
       return linkText;
@@ -258,20 +185,60 @@ export class PageMarkdownContentGenerator {
       pages: input.pages,
       href,
     });
+    const markdownLink = `[${linkText}](${rewrittenHref.href})`;
 
-    return `[${linkText}](${rewrittenHref.href})`;
-  }
-
-  private convertPreformattedBlock(
-    element: DefaultTreeAdapterTypes.Element,
-  ): string | undefined {
-    const codeText = this.normalizeCodeBlockText(this.getTextContent(element));
-
-    if (codeText === undefined) {
-      return undefined;
+    if (this.isStandaloneLinkBlock(element)) {
+      return `\n\n${markdownLink}\n\n`;
     }
 
-    return `\`\`\`txt\n${codeText}\n\`\`\``;
+    return markdownLink;
+  }
+
+  private convertListItem(
+    content: string,
+    element: TurndownElement,
+    options: TurndownOptions,
+  ): string {
+    const prefix = this.getListItemPrefix(element, options);
+    const contentEndsWithNewline = /\n$/u.test(content);
+    const trimmedContent = this.trimNewlines(content);
+    const paragraphContent = contentEndsWithNewline
+      ? `${trimmedContent}\n`
+      : trimmedContent;
+    const indentedContent = paragraphContent.replaceAll(
+      "\n",
+      `\n${" ".repeat(prefix.length)}`,
+    );
+
+    return `${prefix}${indentedContent}${element.nextSibling === null ? "" : "\n"}`;
+  }
+
+  private createTurndownService(
+    input: PageMarkdownContentGenerateInput,
+  ): TurndownService {
+    const service = new TurndownService({
+      bulletListMarker: "-",
+      codeBlockStyle: "fenced",
+      emDelimiter: "*",
+      fence: "```",
+      headingStyle: "atx",
+      hr: "---",
+      linkStyle: "inlined",
+      strongDelimiter: "**",
+    });
+
+    service.use(gfm);
+    service.remove(["head", "meta", "script", "style", "title"]);
+    this.addLinkRule(service, input);
+    this.addCodeBlockRule(service);
+    this.addStrikethroughRule(service);
+    this.addListItemRule(service);
+
+    return service;
+  }
+
+  private escapeRegExp(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
   }
 
   private findFirstElement(
@@ -297,37 +264,132 @@ export class PageMarkdownContentGenerator {
     return undefined;
   }
 
-  private getAttributeValue(
-    element: DefaultTreeAdapterTypes.Element,
-    attributeName: string,
+  private getChildElementIndex(
+    parent: TurndownElement,
+    child: TurndownElement,
+  ): number {
+    return Array.from(parent.children).findIndex(
+      (candidate: TurndownElement): boolean => candidate === child,
+    );
+  }
+
+  private getCodeBlockLanguage(element: TurndownElement): string | undefined {
+    const classAttribute = this.getTurndownAttributeValue(element, "class");
+    const classLanguage = this.getCodeBlockLanguageFromClass(classAttribute);
+
+    if (classLanguage !== undefined) {
+      return classLanguage;
+    }
+
+    return (
+      this.normalizeText(
+        this.getTurndownAttributeValue(element, "data-language"),
+      ) ??
+      this.normalizeText(this.getTurndownAttributeValue(element, "data-lang"))
+    );
+  }
+
+  private getCodeBlockLanguageFromClass(
+    classAttribute: string | undefined,
   ): string | undefined {
-    const normalizedAttributeName = attributeName.toLowerCase();
-    const attribute = element.attrs.find(
-      (candidate): boolean =>
-        candidate.name.toLowerCase() === normalizedAttributeName,
+    if (classAttribute === undefined) {
+      return undefined;
+    }
+
+    const classes = classAttribute.split(/\s+/u);
+
+    for (const className of classes) {
+      const languageMatch = /^(?:language|lang)-(.+)$/u.exec(className);
+
+      if (languageMatch === null) {
+        continue;
+      }
+
+      return languageMatch[1];
+    }
+
+    return undefined;
+  }
+
+  private getConvertibleHtml(sourceContent: string): string {
+    const document = parse(sourceContent);
+    const bodyElement = this.findFirstElement(
+      document,
+      (element: DefaultTreeAdapterTypes.Element): boolean =>
+        element.tagName === "body",
     );
 
-    return attribute?.value;
-  }
-
-  private getHeadingLevel(element: DefaultTreeAdapterTypes.Element): number {
-    return Number(element.tagName.slice(1));
-  }
-
-  private getTextContent(node: DefaultTreeAdapterTypes.Node): string {
-    if (this.isTextNode(node)) {
-      return node.value;
+    if (bodyElement === undefined) {
+      return sourceContent;
     }
 
-    if (!this.isParentNode(node)) {
-      return "";
+    return serialize(bodyElement);
+  }
+
+  private getFirstCodeElement(
+    element: TurndownElement,
+  ): TurndownElement | undefined {
+    const firstChild = element.firstChild;
+
+    if (!this.isCodeElement(firstChild)) {
+      return undefined;
     }
 
-    return node.childNodes
-      .map((childNode: DefaultTreeAdapterTypes.ChildNode): string =>
-        this.getTextContent(childNode),
-      )
-      .join("");
+    return firstChild;
+  }
+
+  private getListItemPrefix(
+    element: TurndownElement,
+    options: TurndownOptions,
+  ): string {
+    const parent = element.parentNode;
+
+    if (parent?.nodeName !== "OL") {
+      return `${options.bulletListMarker ?? "-"} `;
+    }
+
+    const startAttribute = this.getTurndownAttributeValue(parent, "start");
+    const parsedStart =
+      startAttribute === undefined ? Number.NaN : Number(startAttribute);
+    const listStart = Number.isFinite(parsedStart) ? parsedStart : 1;
+    const childIndex = this.getChildElementIndex(parent, element);
+    const itemIndex = childIndex === -1 ? 0 : childIndex;
+
+    return `${listStart + itemIndex}. `;
+  }
+
+  private getTurndownAttributeValue(
+    element: TurndownElement,
+    attributeName: string,
+  ): string | undefined {
+    return element.getAttribute(attributeName) ?? undefined;
+  }
+
+  private isCodeElement(
+    element: TurndownElement | null,
+  ): element is TurndownElement {
+    return element?.nodeName === "CODE";
+  }
+
+  private isStandaloneLinkBlock(element: TurndownElement): boolean {
+    const parent = element.parentNode;
+
+    if (parent === null) {
+      return false;
+    }
+
+    return [
+      "ARTICLE",
+      "ASIDE",
+      "BODY",
+      "DIV",
+      "FOOTER",
+      "HEADER",
+      "MAIN",
+      "NAV",
+      "SECTION",
+      "X-TURNDOWN",
+    ].includes(parent.nodeName);
   }
 
   private isElement(
@@ -336,30 +398,23 @@ export class PageMarkdownContentGenerator {
     return "tagName" in node;
   }
 
-  private isHeadingElement(element: DefaultTreeAdapterTypes.Element): boolean {
-    return /^h[1-6]$/u.test(element.tagName);
-  }
-
-  private isIgnoredElement(element: DefaultTreeAdapterTypes.Element): boolean {
-    return (
-      element.tagName === "head" ||
-      element.tagName === "meta" ||
-      element.tagName === "script" ||
-      element.tagName === "style" ||
-      element.tagName === "title"
-    );
-  }
-
   private isParentNode(
     node: DefaultTreeAdapterTypes.Node,
   ): node is DefaultTreeAdapterTypes.ParentNode {
     return "childNodes" in node;
   }
 
-  private isTextNode(
-    node: DefaultTreeAdapterTypes.Node,
-  ): node is DefaultTreeAdapterTypes.TextNode {
-    return node.nodeName === "#text";
+  private normalizeCodeBlockText(value: string): string | undefined {
+    const normalizedValue = value
+      .replace(/\r\n?/gu, "\n")
+      .replace(/^\n+/u, "")
+      .replace(/\n+$/u, "");
+
+    if (normalizedValue.trim() === "") {
+      return undefined;
+    }
+
+    return normalizedValue;
   }
 
   private normalizeText(value: string | undefined): string | undefined {
@@ -376,16 +431,56 @@ export class PageMarkdownContentGenerator {
     return normalizedValue;
   }
 
-  private normalizeCodeBlockText(value: string): string | undefined {
-    const normalizedValue = value
-      .replace(/\r\n?/gu, "\n")
-      .replace(/^\n+/u, "")
-      .replace(/\n+$/u, "");
+  private normalizeMarkdownWhitespace(value: string): string {
+    const normalizedLines: string[] = [];
+    let activeFence: string | undefined;
+    let previousLineWasBlank = false;
 
-    if (normalizedValue.trim() === "") {
-      return undefined;
+    for (const line of value.replace(/\r\n?/gu, "\n").split("\n")) {
+      if (activeFence !== undefined) {
+        normalizedLines.push(line);
+        previousLineWasBlank = false;
+
+        if (line.trim() === activeFence) {
+          activeFence = undefined;
+        }
+
+        continue;
+      }
+
+      const trimmedLine = line.trimEnd();
+      const fenceMarker = this.getMarkdownFenceMarker(trimmedLine);
+
+      if (fenceMarker !== undefined) {
+        activeFence = fenceMarker;
+        normalizedLines.push(trimmedLine);
+        previousLineWasBlank = false;
+        continue;
+      }
+
+      if (trimmedLine.trim() === "") {
+        if (!previousLineWasBlank) {
+          normalizedLines.push("");
+        }
+
+        previousLineWasBlank = true;
+        continue;
+      }
+
+      normalizedLines.push(trimmedLine);
+      previousLineWasBlank = false;
     }
 
-    return normalizedValue;
+    return normalizedLines.join("\n");
+  }
+
+  private getMarkdownFenceMarker(line: string): string | undefined {
+    const fenceMatch = /^(`{3,}|~{3,})/u.exec(line);
+
+    return fenceMatch?.[1];
+  }
+
+  private trimNewlines(value: string): string {
+    return value.replace(/^\n+/u, "").replace(/\n+$/u, "");
   }
 }

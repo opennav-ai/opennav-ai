@@ -272,6 +272,96 @@ describe("PageMarkdownContentGenerator", (): void => {
     }
   });
 
+  it("converts HTML code block language hints into exact fenced Markdown content", (): void => {
+    const generator = new PageMarkdownContentGenerator();
+    const page = {
+      sourceFilePath: "docs/code.html",
+      sourceContentType: "html",
+      route: "/docs/code",
+      canonicalUrl: "https://example.com/docs/code",
+      title: "Code",
+      description: "Review code examples.",
+    } as const;
+    const sourceContent = [
+      "<html>",
+      "<body>",
+      "<h1>Code</h1>",
+      '<pre><code class="language-ts">const result = await Engine.execute(input);</code></pre>',
+      '<pre><code class="lang-bash">npm run build</code></pre>',
+      '<pre><code data-language="tsx">export const App = () =&gt; null;</code></pre>',
+      '<pre><code data-lang="sh">echo done</code></pre>',
+      "<pre><code>plain text</code></pre>",
+      "</body>",
+      "</html>",
+    ].join("");
+
+    const result: Result<PageMarkdownContentGenerateResult, OpenNavError> =
+      generator.generate({
+        baseUrl: "https://example.com",
+        page,
+        pages: [page],
+        sourceContent,
+      });
+
+    expect(result.isOk()).toEqual(true);
+    if (result.isOk()) {
+      expect(result.value).toEqual({
+        content:
+          "# Code\n\n```ts\nconst result = await Engine.execute(input);\n```\n\n```bash\nnpm run build\n```\n\n```tsx\nexport const App = () => null;\n```\n\n```sh\necho done\n```\n\n```txt\nplain text\n```\n",
+      });
+    }
+  });
+
+  it("converts common HTML elements into exact Markdown content", (): void => {
+    const generator = new PageMarkdownContentGenerator();
+    const page = {
+      sourceFilePath: "docs/formatting.html",
+      sourceContentType: "html",
+      route: "/docs/formatting",
+      canonicalUrl: "https://example.com/docs/formatting",
+      title: "Formatting",
+      description: "Inspect common HTML formatting.",
+    } as const;
+    const sourceContent = [
+      "<html>",
+      "<body>",
+      "<h1>Formatting</h1>",
+      "<p>Use <strong>strong text</strong>, <em>em text</em>, and <del>deleted text</del>.</p>",
+      "<blockquote><p>Agents need readable docs.</p></blockquote>",
+      "<hr>",
+      "<ul>",
+      "<li>Generate files<ul><li>Run unit tests</li><li>Run integration tests</li></ul></li>",
+      "<li>Review output</li>",
+      "</ul>",
+      "<table>",
+      "<thead><tr><th>Name</th><th>Output</th></tr></thead>",
+      "<tbody>",
+      "<tr><td>Home</td><td>index.md</td></tr>",
+      "<tr><td>API</td><td>docs/api.md</td></tr>",
+      "</tbody>",
+      "</table>",
+      '<p><img src="/assets/logo.svg" alt="Fixture Logo"></p>',
+      "</body>",
+      "</html>",
+    ].join("");
+
+    const result: Result<PageMarkdownContentGenerateResult, OpenNavError> =
+      generator.generate({
+        baseUrl: "https://example.com",
+        page,
+        pages: [page],
+        sourceContent,
+      });
+
+    expect(result.isOk()).toEqual(true);
+    if (result.isOk()) {
+      expect(result.value).toEqual({
+        content:
+          "# Formatting\n\nUse **strong text**, *em text*, and ~~deleted text~~.\n\n> Agents need readable docs.\n\n---\n\n- Generate files\n  - Run unit tests\n  - Run integration tests\n- Review output\n\n| Name | Output |\n| --- | --- |\n| Home | index.md |\n| API | docs/api.md |\n\n![Fixture Logo](/assets/logo.svg)\n",
+      });
+    }
+  });
+
   it("converts HTML lists and code blocks into exact Markdown content", (): void => {
     const generator = new PageMarkdownContentGenerator();
     const page = {
