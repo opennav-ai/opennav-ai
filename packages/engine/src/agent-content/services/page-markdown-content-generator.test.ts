@@ -172,6 +172,52 @@ describe("PageMarkdownContentGenerator", (): void => {
     }
   });
 
+  it("rewrites standalone HTML link blocks to Markdown artifact URLs", (): void => {
+    const generator = new PageMarkdownContentGenerator();
+    const homePage = {
+      sourceFilePath: "index.html",
+      sourceContentType: "html",
+      route: "/",
+      canonicalUrl: "https://example.com/",
+      title: "Home",
+      description: "Start here.",
+    } as const;
+    const docsPage = {
+      sourceFilePath: "docs/index.html",
+      sourceContentType: "html",
+      route: "/docs/",
+      canonicalUrl: "https://example.com/docs/",
+      title: "Docs",
+      description: "Read the docs.",
+    } as const;
+    const sourceContent = [
+      "<!doctype html>",
+      "<html>",
+      "<body>",
+      "<h1>Home</h1>",
+      '<a href="/docs/">Docs</a>',
+      '<a href="https://anotherdomain.com/docs/">External Docs</a>',
+      "</body>",
+      "</html>",
+    ].join("");
+
+    const result: Result<PageMarkdownContentGenerateResult, OpenNavError> =
+      generator.generate({
+        baseUrl: "https://example.com",
+        page: homePage,
+        pages: [homePage, docsPage],
+        sourceContent,
+      });
+
+    expect(result.isOk()).toEqual(true);
+    if (result.isOk()) {
+      expect(result.value).toEqual({
+        content:
+          "# Home\n\n[Docs](https://example.com/docs/index.md)\n\n[External Docs](https://anotherdomain.com/docs/)\n",
+      });
+    }
+  });
+
   it("rewrites and preserves additional HTML link shapes through the site page map", (): void => {
     const generator = new PageMarkdownContentGenerator();
     const currentPage = {

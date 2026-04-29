@@ -93,6 +93,10 @@ export class PageMarkdownContentGenerator {
       return this.normalizeText(this.convertInlineChildren(node, input));
     }
 
+    if (node.tagName === "a") {
+      return this.normalizeText(this.convertLink(node, input));
+    }
+
     if (node.tagName === "ul" || node.tagName === "ol") {
       return this.convertList(node, input);
     }
