@@ -207,6 +207,94 @@ describe("BuildResultReporter", (): void => {
     }
   });
 
+  it("preserves dry-run operation order exactly without deduplicating paths", (): void => {
+    const llmsFullTxtProbe = createContentProviderProbe("# Full\n");
+    const repeatedLlmsFullTxtProbe = createContentProviderProbe("# Full\n");
+    const robotsTxtProbe = createContentProviderProbe(
+      "User-agent: *\nAllow: /\n",
+    );
+    const reporter = new BuildResultReporter();
+
+    const result: Result<EngineExecuteResult, OpenNavError> =
+      reporter.reportDryRun({
+        writePlan: {
+          operations: [
+            {
+              kind: "create-file",
+              outputFilePath: "llms-full.txt",
+              contentProvider: llmsFullTxtProbe.contentProvider,
+            },
+            {
+              kind: "create-file",
+              outputFilePath: "llms-full.txt",
+              contentProvider: repeatedLlmsFullTxtProbe.contentProvider,
+            },
+            {
+              kind: "overwrite-file",
+              outputFilePath: "robots.txt",
+              contentProvider: robotsTxtProbe.contentProvider,
+            },
+            {
+              kind: "edit-html-page",
+              outputFilePath: "index.html",
+              headInsertionOffset: 12,
+              headLinkMarkup:
+                '\n  <link rel="index" type="text/plain" href="https://example.com/llms.txt" title="LLMs text site index">\n',
+              links: [
+                {
+                  relation: "index",
+                  mediaType: "text/plain",
+                  href: "https://example.com/llms.txt",
+                  title: "LLMs text site index",
+                },
+              ],
+            },
+            {
+              kind: "edit-html-page",
+              outputFilePath: "index.html",
+              headInsertionOffset: 12,
+              headLinkMarkup:
+                '\n  <link rel="index" type="text/plain" href="https://example.com/llms.txt" title="LLMs text site index">\n',
+              links: [
+                {
+                  relation: "index",
+                  mediaType: "text/plain",
+                  href: "https://example.com/llms.txt",
+                  title: "LLMs text site index",
+                },
+              ],
+            },
+          ],
+        },
+        skippedFilePaths: ["docs/omitted.md", "docs/omitted.md"],
+        warnings: [UNSUPPORTED_FILE_WARNING, OPTIONAL_LINK_WARNING],
+      });
+
+    expect(result.isOk()).toEqual(true);
+    if (result.isOk()) {
+      expect({
+        result: result.value,
+        readCounts: {
+          llmsFullTxt: llmsFullTxtProbe.readCount(),
+          repeatedLlmsFullTxt: repeatedLlmsFullTxtProbe.readCount(),
+          robotsTxt: robotsTxtProbe.readCount(),
+        },
+      }).toEqual({
+        result: {
+          createdFilePaths: ["llms-full.txt", "llms-full.txt"],
+          modifiedFilePaths: ["robots.txt", "index.html", "index.html"],
+          skippedFilePaths: ["docs/omitted.md", "docs/omitted.md"],
+          warnings: [UNSUPPORTED_FILE_WARNING, OPTIONAL_LINK_WARNING],
+        },
+        readCounts: {
+          llmsFullTxt: 0,
+          repeatedLlmsFullTxt: 0,
+          robotsTxt: 0,
+        },
+      });
+    }
+  });
+
   it("preserves write record and warning order exactly without deduplicating paths", (): void => {
     const firstWarning: OpenNavError = {
       code: "FIRST_WARNING",
