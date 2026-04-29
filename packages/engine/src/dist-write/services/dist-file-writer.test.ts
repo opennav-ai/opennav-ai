@@ -2,6 +2,7 @@ import {
   lstat,
   mkdir,
   mkdtemp,
+  readdir,
   readFile,
   rm,
   writeFile,
@@ -161,6 +162,33 @@ describe("DistFileWriter", (): void => {
   }
 
   describe("success", (): void => {
+    it("returns empty records and leaves files untouched when the approved plan has no operations", async (): Promise<void> => {
+      const outputDirectory = await createOutputDirectory();
+      await writeOutputFile(outputDirectory, "llms.txt", "# Caller File\n");
+      const writer = new DistFileWriter();
+
+      const result: Result<DistWriteResult, OpenNavError> = await writer.write({
+        outputDirectory,
+        plan: {
+          operations: [],
+        },
+      });
+
+      expect(result.isOk()).toEqual(true);
+      if (result.isOk()) {
+        expect({
+          result: result.value,
+          content: await readOutputFile(outputDirectory, "llms.txt"),
+        }).toEqual({
+          result: {
+            records: [],
+            warnings: [],
+          },
+          content: "# Caller File\n",
+        });
+      }
+    });
+
     it("writes exact Phase 1 file shapes for generated text, markdown, manifest, robots guidance, and HTML edits", async (): Promise<void> => {
       const outputDirectory = await createOutputDirectory();
       const htmlBeforeHeadInsertion = "<!doctype html><html><head>";
@@ -464,6 +492,137 @@ describe("DistFileWriter", (): void => {
         });
       }
     });
+
+    it("applies exact HTML insertion for uppercase head tags with attributes", async (): Promise<void> => {
+      const outputDirectory = await createOutputDirectory();
+      const htmlBeforeHeadInsertion =
+        '<!doctype html><html><HEAD data-page="home">';
+      await writeOutputFile(
+        outputDirectory,
+        "index.html",
+        `${htmlBeforeHeadInsertion}<title>Home</title></HEAD></html>`,
+      );
+      const editOperation: WriteHtmlPageEditOperation = {
+        ...createHtmlEditOperation(),
+        headInsertionOffset: htmlBeforeHeadInsertion.length,
+      };
+      const writer = new DistFileWriter();
+
+      const result: Result<DistWriteResult, OpenNavError> = await writer.write({
+        outputDirectory,
+        plan: {
+          operations: [editOperation],
+        },
+      });
+
+      expect(result.isOk()).toEqual(true);
+      if (result.isOk()) {
+        expect({
+          result: result.value,
+          html: await readOutputFile(outputDirectory, "index.html"),
+        }).toEqual({
+          result: {
+            records: [
+              {
+                kind: "edited-html-page",
+                outputFilePath: "index.html",
+              },
+            ],
+            warnings: [],
+          },
+          html: '<!doctype html><html><HEAD data-page="home">\n  <link rel="alternate" type="text/markdown" href="https://example.com/index.md">\n  <link rel="index" type="text/plain" href="https://example.com/llms.txt" title="LLMs text site index">\n<title>Home</title></HEAD></html>',
+        });
+      }
+    });
+
+    it("writes large multiline generated files and HTML edits exactly", async (): Promise<void> => {
+      const outputDirectory = await createOutputDirectory();
+      const htmlBeforeHeadInsertion =
+        '<!doctype html>\n<html>\n<head class="docs">';
+      const largeMarkdown = Array.from(
+        { length: 250 },
+        (_value: unknown, index: number): string =>
+          `### Section ${index}\n\n- item ${index}\n- route /docs/${index}\n`,
+      ).join("\n");
+      const largeHtmlBody = Array.from(
+        { length: 120 },
+        (_value: unknown, index: number): string => `<p>Paragraph ${index}</p>`,
+      ).join("\n");
+      await writeOutputFile(
+        outputDirectory,
+        "docs/index.html",
+        `${htmlBeforeHeadInsertion}\n<title>Docs</title>\n</head>\n<body>\n${largeHtmlBody}\n</body>\n</html>\n`,
+      );
+      await writeOutputFile(outputDirectory, "llms-full.txt", "old full\n");
+      const markdownProvider = createContentProviderProbe(largeMarkdown);
+      const llmsFullProvider = createContentProviderProbe(
+        `# Full\n\n${largeMarkdown}`,
+      );
+      const editOperation: WriteHtmlPageEditOperation = {
+        ...createHtmlEditOperation(),
+        outputFilePath: "docs/index.html",
+        headInsertionOffset: htmlBeforeHeadInsertion.length,
+      };
+      const writer = new DistFileWriter();
+
+      const result: Result<DistWriteResult, OpenNavError> = await writer.write({
+        outputDirectory,
+        plan: {
+          operations: [
+            {
+              kind: "create-file",
+              outputFilePath: "docs/index.md",
+              contentProvider: markdownProvider.contentProvider,
+            },
+            {
+              kind: "overwrite-file",
+              outputFilePath: "llms-full.txt",
+              contentProvider: llmsFullProvider.contentProvider,
+            },
+            editOperation,
+          ],
+        },
+      });
+
+      expect(result.isOk()).toEqual(true);
+      if (result.isOk()) {
+        expect({
+          result: result.value,
+          markdown: await readOutputFile(outputDirectory, "docs/index.md"),
+          llmsFull: await readOutputFile(outputDirectory, "llms-full.txt"),
+          html: await readOutputFile(outputDirectory, "docs/index.html"),
+          readCounts: {
+            markdown: markdownProvider.readCount(),
+            llmsFull: llmsFullProvider.readCount(),
+          },
+        }).toEqual({
+          result: {
+            records: [
+              {
+                kind: "created-file",
+                outputFilePath: "docs/index.md",
+              },
+              {
+                kind: "overwritten-file",
+                outputFilePath: "llms-full.txt",
+              },
+              {
+                kind: "edited-html-page",
+                outputFilePath: "docs/index.html",
+              },
+            ],
+            warnings: [],
+          },
+          markdown: largeMarkdown,
+          llmsFull: `# Full\n\n${largeMarkdown}`,
+          html: `${htmlBeforeHeadInsertion}\n  <link rel="alternate" type="text/markdown" href="https://example.com/index.md">\n  <link rel="index" type="text/plain" href="https://example.com/llms.txt" title="LLMs text site index">\n\n<title>Docs</title>\n</head>\n<body>\n${largeHtmlBody}\n</body>\n</html>\n`,
+          readCounts: {
+            markdown: 1,
+            llmsFull: 1,
+          },
+        });
+      }
+    });
   });
 
   describe("failure", (): void => {
@@ -692,6 +851,43 @@ describe("DistFileWriter", (): void => {
       }
     });
 
+    it("returns an exact stale-plan edit error for a negative HTML head offset", async (): Promise<void> => {
+      const outputDirectory = await createOutputDirectory();
+      await writeOutputFile(outputDirectory, "index.html", "<head>z");
+      const editOperation: WriteHtmlPageEditOperation = {
+        ...createHtmlEditOperation(),
+        headInsertionOffset: -1,
+      };
+      const writer = new DistFileWriter();
+
+      const result: Result<DistWriteResult, OpenNavError> = await writer.write({
+        outputDirectory,
+        plan: {
+          operations: [editOperation],
+        },
+      });
+
+      expect(result.isErr()).toEqual(true);
+      if (result.isErr()) {
+        expect({
+          error: result.error,
+          html: await readOutputFile(outputDirectory, "index.html"),
+        }).toEqual({
+          error: {
+            code: "DIST_WRITE_STALE_HTML_PAGE_EDIT",
+            message:
+              "A planned HTML page edit no longer matches the current file content.",
+            context: {
+              outputDirectory,
+              outputFilePath: "index.html",
+              headInsertionOffset: -1,
+            },
+          },
+          html: "<head>z",
+        });
+      }
+    });
+
     it("returns the lazy content error before writing that file", async (): Promise<void> => {
       const outputDirectory = await createOutputDirectory();
       const provider = createFailingContentProviderProbe(CONTENT_ERROR);
@@ -775,6 +971,109 @@ describe("DistFileWriter", (): void => {
             first: 0,
             later: 0,
           },
+        });
+      }
+    });
+
+    it("does not overwrite a create target that appears while lazy content is generated", async (): Promise<void> => {
+      const outputDirectory = await createOutputDirectory();
+      const contentProvider: WriteFileContentProvider = {
+        getContent: async (): Promise<
+          Result<AgentContentFileContent, OpenNavError>
+        > => {
+          await writeOutputFile(
+            outputDirectory,
+            "race.txt",
+            "caller-created during content generation\n",
+          );
+
+          return ok({
+            content: "generated content\n",
+            warnings: [],
+          });
+        },
+      };
+      const writer = new DistFileWriter();
+
+      const result: Result<DistWriteResult, OpenNavError> = await writer.write({
+        outputDirectory,
+        plan: {
+          operations: [
+            {
+              kind: "create-file",
+              outputFilePath: "race.txt",
+              contentProvider,
+            },
+          ],
+        },
+      });
+
+      expect(result.isErr()).toEqual(true);
+      if (result.isErr()) {
+        expect({
+          error: result.error,
+          content: await readOutputFile(outputDirectory, "race.txt"),
+        }).toEqual({
+          error: {
+            code: "DIST_WRITE_STALE_CREATE_TARGET",
+            message:
+              "A create-file operation target already exists at write time.",
+            context: {
+              outputDirectory,
+              outputFilePath: "race.txt",
+            },
+          },
+          content: "caller-created during content generation\n",
+        });
+      }
+    });
+
+    it("removes temporary overwrite content when the target becomes a directory before replacement", async (): Promise<void> => {
+      const outputDirectory = await createOutputDirectory();
+      await writeOutputFile(outputDirectory, "llms.txt", "# Old\n");
+      const contentProvider: WriteFileContentProvider = {
+        getContent: async (): Promise<
+          Result<AgentContentFileContent, OpenNavError>
+        > => {
+          await rm(join(outputDirectory, "llms.txt"), { force: true });
+          await mkdir(join(outputDirectory, "llms.txt"));
+
+          return ok({
+            content: "# New\n",
+            warnings: [],
+          });
+        },
+      };
+      const writer = new DistFileWriter();
+
+      const result: Result<DistWriteResult, OpenNavError> = await writer.write({
+        outputDirectory,
+        plan: {
+          operations: [
+            {
+              kind: "overwrite-file",
+              outputFilePath: "llms.txt",
+              contentProvider,
+            },
+          ],
+        },
+      });
+
+      expect(result.isErr()).toEqual(true);
+      if (result.isErr()) {
+        expect({
+          error: result.error,
+          directoryEntries: await readdir(outputDirectory),
+        }).toEqual({
+          error: {
+            code: "DIST_WRITE_PATH_KIND_CONFLICT",
+            message: "A planned output path is not writable as a file.",
+            context: {
+              outputDirectory,
+              outputFilePath: "llms.txt",
+            },
+          },
+          directoryEntries: ["llms.txt"],
         });
       }
     });
