@@ -110,48 +110,19 @@ The package exposes:
 Use `opennav` in docs and scripts. Use `opennav-ai` as the fallback binary if
 another package already owns the `opennav` command in a project.
 
-The examples below describe the current Phase 1 package shape. The engine and
-public `@opennav-ai/opennav` package exist in this repo today; the generic
-`opennav static` command remains the main missing launch surface.
+The examples in [`examples/`](./examples/README.md) are quick-start guides. The
+reference below is the canonical place for option behavior and file outcomes.
 
 ## Quick Start
 
-Build your static site first, then run OpenNav against the generated folder.
+Run OpenNav after your existing static build command:
 
 ```bash
-npm run build
-npx opennav static --output dist --site-url https://example.com --site-name "Example Docs" --dry-run
+opennav build --static --output dist --site-url https://example.com --site-name "Example Docs"
 ```
 
-The dry run reports the files OpenNav would create or edit without writing to
-the folder. When the report looks right, run the real write:
-
-```bash
-npx opennav static --output dist --site-url https://example.com --site-name "Example Docs" --full-run
-```
-
-Typical package script:
-
-```json
-{
-  "scripts": {
-    "build:static": "npm run build && opennav static --output dist --site-url https://example.com --site-name \"Example Docs\" --full-run"
-  }
-}
-```
-
-For Next.js static export:
-
-```json
-{
-  "scripts": {
-    "build": "next build && opennav static --preset next-export --output out --site-url https://example.com --site-name \"Example Docs\" --full-run"
-  }
-}
-```
-
-Phase 1 requires real static output. It works best when the build folder
-contains prerendered route HTML such as `index.html`,
+The command expects real static output. It works best when the output folder
+already contains prerendered route HTML such as `index.html`,
 `docs/getting-started/index.html`, and `docs/api/index.html`.
 
 ## SDK Usage
@@ -166,14 +137,7 @@ const result = await new OpenNavStaticSite({
   siteName: "Example Docs",
   siteUrl: "https://example.com",
   outputDirectory: "dist",
-  accessGuidance: {
-    contentSignals: {
-      search: "allow",
-      aiInput: "allow",
-      aiTrain: "disallow"
-    }
-  }
-}).build({ dryRun: true });
+}).build();
 
 if (result.isErr()) {
   console.error(result.error.message);
@@ -195,7 +159,7 @@ Successful runs return exact output-directory-relative file paths:
     ".well-known/llms-full.txt",
     ".well-known/opennav.json"
   ],
-  modifiedFilePaths: ["index.html", "robots.txt"],
+  modifiedFilePaths: ["index.html"],
   skippedFilePaths: ["assets/logo.svg"],
   warnings: []
 }
@@ -225,8 +189,8 @@ export default defineConfig({
 });
 ```
 
-If `siteUrl` is omitted, the integration uses Astro's `site` value. Phase 1
-supports only `mode: "static"` and defaults to that mode when omitted.
+If `siteUrl` is omitted, the integration uses Astro's `site` value. Static mode
+is the supported Astro integration mode and is used when `mode` is omitted.
 
 ## Next.js Usage
 
@@ -247,60 +211,42 @@ export default OpenNavNext({
 })(nextConfig);
 ```
 
-When a Next adapter hook is unavailable or another adapter already owns the
-build lifecycle, use the CLI after `next build`:
+## Entrypoints And Options Reference
+
+All entrypoints run the same static output-folder workflow. They differ only in
+where the options come from.
+
+| Entrypoint | Use it when | Output folder |
+|------------|-------------|---------------|
+| CLI `opennav build --static` | You already have a shell build command and want the smallest setup. | `--output` |
+| `OpenNavStaticSite` | You want to call OpenNav from your own Node script. | `outputDirectory` |
+| `OpenNavAstro` | You want Astro to run OpenNav after `astro build`. | Astro's build `dir`, normally `dist` |
+| `OpenNavNext` | You want Next static export to run OpenNav after `next build`. | `outputDirectory`, default `out` |
+
+### CLI Options
 
 ```bash
-opennav static --preset next-export --output out --site-url https://example.com --site-name "Example Docs" --full-run
-```
-
-## Options Reference
-
-The planned CLI is the fastest way to add OpenNav after a static build. Once
-implemented, pass `--dry-run` to preview the files OpenNav would create or edit,
-then pass `--full-run` when you are ready to write those changes into the build
-folder.
-
-```bash
-opennav static \
+opennav build --static \
   --output dist \
   --site-url https://example.com \
-  --site-name "Example Docs" \
-  --preset generic \
-  --dry-run
+  --site-name "Example Docs"
 ```
 
-```bash
-opennav static \
-  --output dist \
-  --site-url https://example.com \
-  --site-name "Example Docs" \
-  --preset generic \
-  --full-run
-```
+Add `--dry-run` to preview without writing.
 
-| CLI option | Default | What it does | Built-file outcome |
-|------------|---------|--------------|--------------------|
-| `static` | Required subcommand | Selects the static output-folder workflow. | OpenNav scans files that already exist in the built folder. |
-| `--output <dir>` | Required for generic runs | Points OpenNav at the folder your site build produced. | All created and modified files stay inside this folder. |
-| `--site-url <url>` | Required unless provided by config or framework integration | Sets the public URL used for canonical links. | Generated Markdown, `llms` files, HTML resource links, and `.well-known/opennav.json` point at the correct public site. |
-| `--site-name <name>` | Required unless provided by config or framework integration | Sets the human-readable site name agents see. | Used as the title in `llms.txt`, `llms-full.txt`, and related generated metadata. |
-| `--preset <name>` | `generic` | Applies framework-aware output and scan behavior. Planned values include `generic`, `astro`, `next-export`, `docusaurus`, `vitepress`, and `eleventy`. | Keeps framework assets out of the engine input and focuses generation on HTML, Markdown, and `robots.txt`. |
-| `--config <path>` | Auto-discovery when supported | Loads shared OpenNav settings from a config file instead of repeating every value in the command. | Can provide the same site settings used by the SDK, including structured access guidance that affects `robots.txt`. |
-| `--dry-run` | `false` | Plans the run without writing. | Reports `createdFilePaths`, `modifiedFilePaths`, `skippedFilePaths`, and `warnings`; leaves the build folder unchanged. |
-| `--full-run` | `false` | Confirms that OpenNav should write files. | Creates files such as `llms.txt`, `.well-known/opennav.json`, and Markdown page artifacts, then safely edits HTML pages and configured `robots.txt` guidance. |
+| CLI option | Required | What it means | File outcome |
+|------------|----------|---------------|--------------|
+| `build` | Yes | Runs the build command. This is the only CLI command currently supported. | Starts the static OpenNav workflow. |
+| `--static` | Yes | Treats `--output` as a finished static-site folder. | OpenNav scans existing HTML, Markdown, and `robots.txt` files in the folder. |
+| `--output <directory>` | Yes | Built output folder, such as `dist`, `out`, or `build`. | All created and modified files stay inside this folder. |
+| `--site-url <url>` | Yes | Public deployed site URL, including protocol and host. | Generated Markdown, `llms` files, HTML resource links, and `/.well-known/opennav.json` use this URL. |
+| `--site-name <name>` | Yes | Human-readable site or docs name. | Appears in `llms.txt`, `llms-full.txt`, and generated metadata. |
+| `--preset <preset>` | No | Framework hint. Supported values are `astro` and `next-export`. | Passes the same preset to the static SDK; leave it off for a plain static folder. |
+| `--dry-run` | No | Preview mode. | Reports planned created, modified, skipped, and warning paths without changing files. |
 
-For write safety, the CLI should use one execution intent at a time:
-`--dry-run` to inspect the plan or `--full-run` to apply it.
+The CLI writes files by default. There is no `--full-run` flag.
 
-Structured policies such as Content Signals are better represented in config or
-SDK code than as long shell flags. When configured, they have the same file
-outcome in every entrypoint: OpenNav creates or updates its managed
-`robots.txt` guidance block without taking over the rest of the file.
-
-The SDK exposes the same static workflow for scripts and framework hooks. This
-example passes every supported option explicitly and notes the default next to
-each optional value.
+### OpenNavStaticSite Options
 
 ```ts
 import { OpenNavStaticSite } from "@opennav-ai/opennav";
@@ -309,19 +255,15 @@ const result = await new OpenNavStaticSite({
   siteName: "Example Docs",
   siteUrl: "https://example.com",
   outputDirectory: "dist",
-  preset: "generic", // default: "generic"
+  preset: "astro",
   accessGuidance: {
-    // default: undefined, so OpenNav does not create or edit robots.txt for
-    // Content Signals unless you explicitly configure this policy.
     contentSignals: {
       search: "allow",
       aiInput: "allow",
       aiTrain: "disallow"
     }
   }
-}).build({
-  dryRun: true // default: false
-});
+}).build({ dryRun: true });
 
 if (result.isErr()) {
   console.error(result.error.message);
@@ -331,16 +273,115 @@ if (result.isErr()) {
 console.log(result.value);
 ```
 
-| SDK option | Default | What it does | Built-file outcome |
-|------------|---------|--------------|--------------------|
-| `siteName` | Required | Sets the name agents see when they inspect the generated site index. | Appears in `llms.txt`, `llms-full.txt`, and generated metadata. |
-| `siteUrl` | Required | Sets the public origin used to build canonical URLs. | Controls links in Markdown artifacts, `llms` files, HTML resource links, and `.well-known/opennav.json`. |
-| `outputDirectory` | Required | Points the SDK at the built static folder. | OpenNav reads from and writes to this folder only. |
-| `preset` | `generic` | Tunes scanning for a known framework output shape. | Helps skip framework assets and process the page-like files agents can use. |
-| `accessGuidance.contentSignals.search` | Omitted | Expresses whether search indexing and snippets are allowed. | When configured, writes `search=yes` or `search=no` into OpenNav-managed `robots.txt` Content Signals guidance. |
-| `accessGuidance.contentSignals.aiInput` | Omitted | Expresses whether real-time AI input use, such as grounding or retrieval, is allowed. | When configured, writes `ai-input=yes` or `ai-input=no` into `robots.txt`. |
-| `accessGuidance.contentSignals.aiTrain` | Omitted | Expresses whether model training or fine-tuning use is allowed. | When configured, writes `ai-train=yes` or `ai-train=no` into `robots.txt`. |
-| `build({ dryRun })` | `false` | Chooses whether to preview or write the plan. | `true` reports planned changes only; `false` writes generated files and safe edits. |
+| SDK option | Required | What it means | File outcome |
+|------------|----------|---------------|--------------|
+| `siteName` | Yes | Human-readable site or docs name. | Appears in `llms.txt`, `llms-full.txt`, and generated metadata. |
+| `siteUrl` | Yes | Public deployed site URL, including protocol and host. | Controls links in Markdown artifacts, `llms` files, HTML resource links, and `/.well-known/opennav.json`. |
+| `outputDirectory` | Yes | Built static folder to read and modify. | OpenNav reads from and writes to this folder only. |
+| `preset` | No | Framework hint. Supported values are `"astro"` and `"next-export"`. | Uses framework-specific static folder conventions when available. |
+| `accessGuidance` | No | Site-owner access preferences for generated policy guidance. | Only affects `robots.txt`, and only when configured. See the dedicated section below. |
+| `build({ dryRun })` | No | Preview mode when `dryRun: true`. | `true` leaves files unchanged; omitted or `false` writes generated files and safe edits. |
+
+### OpenNavAstro Options
+
+```ts
+OpenNavAstro({
+  siteName: "Example Docs",
+  siteUrl: "https://example.com",
+  mode: "static",
+  accessGuidance: {
+    contentSignals: {
+      aiTrain: "disallow"
+    }
+  }
+});
+```
+
+| Astro option | Required | What it means | File outcome |
+|--------------|----------|---------------|--------------|
+| `siteName` | Yes | Human-readable site or docs name. | Appears in generated OpenNav files. |
+| `siteUrl` | No when Astro `site` is set | Public deployed site URL. If omitted, OpenNav uses Astro's top-level `site`. | Controls generated links and manifest URLs. |
+| `mode` | No | Static mode. Defaults to `"static"`. | OpenNav runs only for Astro static output. |
+| `accessGuidance` | No | Same access policy object used by the SDK. | Only affects `dist/robots.txt`, and only when configured. |
+
+### OpenNavNext Options
+
+```ts
+OpenNavNext({
+  siteName: "Example Docs",
+  siteUrl: "https://example.com",
+  mode: "static",
+  outputDirectory: "out"
+})(nextConfig);
+```
+
+| Next option | Required | What it means | File outcome |
+|-------------|----------|---------------|--------------|
+| `siteName` | Yes | Human-readable site or docs name. | Appears in generated OpenNav files. |
+| `siteUrl` | Yes | Public deployed site URL. | Controls generated links and manifest URLs. |
+| `mode` | No | Static export mode. Defaults to `"static"`. | OpenNav runs only when Next config uses `output: "export"`. |
+| `outputDirectory` | No | Static export folder. Defaults to `out`. | OpenNav reads and writes that folder after `next build`. |
+| `accessGuidance` | No | Same access policy object used by the SDK. | Only affects `out/robots.txt`, and only when configured. |
+
+## Access Guidance And `robots.txt`
+
+`accessGuidance` is optional. If you omit it, OpenNav does not create or edit
+`robots.txt` for Content Signals.
+
+Use it when you want the generated static output to include machine-readable
+content-use preferences in `robots.txt`.
+
+This is guidance, not enforcement. OpenNav does not block requests, add auth, or
+change server behavior. It writes a `robots.txt` policy signal that compliant
+crawlers and AI systems can read.
+
+```ts
+accessGuidance: {
+  contentSignals: {
+    search: "allow",
+    aiInput: "allow",
+    aiTrain: "disallow"
+  }
+}
+```
+
+The configured fields become one `Content-signal` directive:
+
+| Field | `allow` writes | `disallow` writes | Meaning |
+|-------|----------------|-------------------|---------|
+| `search` | `search=yes` | `search=no` | Whether search indexing and search snippets are allowed. |
+| `aiInput` | `ai-input=yes` | `ai-input=no` | Whether real-time AI input use, such as grounding or retrieval, is allowed. |
+| `aiTrain` | `ai-train=yes` | `ai-train=no` | Whether model training or fine-tuning use is allowed. |
+
+With the example above, OpenNav writes:
+
+```txt
+Content-signal: search=yes, ai-input=yes, ai-train=no
+```
+
+If `robots.txt` does not exist, OpenNav creates it:
+
+```txt
+# Begin OpenNav AI
+# opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:..." manifest="/.well-known/opennav.json"
+User-agent: *
+Content-signal: search=yes, ai-input=yes, ai-train=no
+# End OpenNav AI
+```
+
+If `robots.txt` already has a `User-agent: *` group, OpenNav inserts its managed
+block inside that group. If there is no wildcard group, OpenNav appends one. On
+later runs, OpenNav replaces only the block between `# Begin OpenNav AI` and
+`# End OpenNav AI`.
+
+OpenNav will not overwrite unmanaged Content Signals. If `robots.txt` already
+contains a `Content-signal:` line outside the OpenNav managed block, OpenNav
+returns a warning instead of changing that file.
+
+An empty policy such as `contentSignals: {}` does not write a directive. At
+least one of `search`, `aiInput`, or `aiTrain` must be configured.
+
+## Result Fields
 
 Successful CLI and SDK runs report the same concrete result fields:
 
@@ -371,12 +412,12 @@ OpenNav skips unsupported files such as JavaScript, CSS, source maps, images,
 fonts, media, archives, framework payload files, platform routing files, and
 static HTTP error pages like `404.html` and `500.html`.
 
-## Planned Static Outputs
+## Static Output Support
 
-The generic CLI path is intended to work with any framework that writes real
-static HTML or Markdown files to disk.
+OpenNav works with frameworks and generators that write real static HTML or
+Markdown files to disk.
 
-| Framework or generator     | Common output folder | Phase 1 support                       |
+| Framework or generator     | Common output folder | Support                               |
 |----------------------------|----------------------|---------------------------------------|
 | Astro                      | `dist`               | First-class static integration        |
 | Astro Starlight            | `dist`               | Covered by Astro static integration   |
@@ -390,14 +431,13 @@ static HTML or Markdown files to disk.
 | Jekyll                     | `_site`              | Generic static-folder support         |
 | MkDocs                     | `site`               | Generic static-folder support         |
 
-Phase 1 does not claim complete coverage for SSR-only apps, middleware,
+OpenNav does not claim complete coverage for SSR-only apps, middleware,
 serverless functions, dynamic routes rendered only at request time, or pure SPA
 shells that emit one generic `index.html`.
 
 ## Current Repo Status
 
-This repository is the public OpenNav AI npm workspace. The engine side of
-Phase 1 is implemented, and the public launch package now exists.
+This repository is the public OpenNav AI npm workspace.
 
 ```txt
 packages/
@@ -415,13 +455,10 @@ Implemented today:
 - Dry-run mode reports exact planned creates and modifications without writing.
 - Successful results include `createdFilePaths`, `modifiedFilePaths`,
   `skippedFilePaths`, and `warnings`.
+- `opennav build --static` runs the CLI static-folder path.
 - `OpenNavStaticSite.build()` runs the shared static-folder SDK path.
 - `OpenNavAstro({ mode: "static" })` runs after Astro static builds.
-
-Not implemented yet:
-
-- `opennav static`
-- automatic Next post-build execution through `OpenNavNext`
+- `OpenNavNext({ mode: "static" })` runs after supported Next static exports.
 
 ## Development
 
@@ -439,7 +476,7 @@ npm run lint
 npm test
 ```
 
-Run the Phase 1 engine fixture:
+Run the engine fixture:
 
 ```bash
 npm run fixture:engine:phase1:write
@@ -450,8 +487,8 @@ That command copies
 `packages/engine/.manual-runs/phase-1-small-site/dist/`, runs the engine with
 `dryRun: false`, and writes `build-result.json` next to the generated output.
 
-## Next Work Item
+Run the example compatibility tests:
 
-The next Phase 1 work items are to finish `opennav static`, design Next output
-normalization for full-output example snapshots, and wire `OpenNavNext(...)`
-once the supported Next adapter path is agreed.
+```bash
+npm run test:examples
+```

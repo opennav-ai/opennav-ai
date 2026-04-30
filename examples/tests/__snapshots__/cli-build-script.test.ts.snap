@@ -1,0 +1,202 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`CLI build-script example > writes OpenNav files through the package build script > CLI build-script OpenNav output 1`] = `
+[
+  {
+    "content": "# CLI Example Docs
+
+## Root
+
+### CLI Example Home
+
+URL: https://cli.example.com/index.md
+
+Plain static site root page for the OpenNav CLI.
+
+# CLI Example Home
+
+Plain static HTML can run OpenNav from an npm build script.
+
+---
+
+## Docs
+
+### CLI Example About
+
+URL: https://cli.example.com/docs/about.md
+
+A second plain static route for the OpenNav CLI.
+
+# CLI Example About
+
+This page proves the CLI discovers nested static HTML files.
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:61bd4b7b7950" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": ".well-known/llms-full.txt",
+  },
+  {
+    "content": "# CLI Example Docs
+
+## Root
+
+- [CLI Example Home](https://cli.example.com/index.md): Plain static site root page for the OpenNav CLI.
+
+## Docs
+
+- [CLI Example About](https://cli.example.com/docs/about.md): A second plain static route for the OpenNav CLI.
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:61bd4b7b7950" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": ".well-known/llms.txt",
+  },
+  {
+    "content": "{
+  "opennav": true,
+  "version": "1.0",
+  "profile": "static-agent-ready",
+  "site": "https://cli.example.com",
+  "build_fingerprint": "sha256:61bd4b7b7950",
+  "spec": "https://opennav.ai/spec/1.0",
+  "artifacts": {
+    "llms_txt": "/llms.txt",
+    "llms_full_txt": "/llms-full.txt",
+    "well_known_llms_txt": "/.well-known/llms.txt",
+    "well_known_llms_full_txt": "/.well-known/llms-full.txt"
+  },
+  "capabilities": {
+    "clean_markdown": true,
+    "llms_txt": true,
+    "llms_full_txt": true,
+    "html_resource_links": true,
+    "content_signals": false
+  }
+}
+",
+    "filePath": ".well-known/opennav.json",
+  },
+  {
+    "content": "<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" fill="#111827"/></svg>
+",
+    "filePath": "assets/logo.svg",
+  },
+  {
+    "content": "<!doctype html>
+<html lang="en">
+  <head>
+  <link rel="alternate" type="text/markdown" href="https://cli.example.com/docs/about.md" data-opennav="resource-link" data-opennav-sha="sha256:61bd4b7b7950">
+  <link rel="index" type="text/plain" href="https://cli.example.com/llms.txt" title="LLMs text site index" data-opennav="resource-link" data-opennav-sha="sha256:61bd4b7b7950">
+    <title>CLI Example About</title>
+    <meta
+      name="description"
+      content="A second plain static route for the OpenNav CLI."
+    />
+  </head>
+  <body>
+    <main>
+      <h1>CLI Example About</h1>
+      <p>This page proves the CLI discovers nested static HTML files.</p>
+    </main>
+  </body>
+</html>
+",
+    "filePath": "docs/about.html",
+  },
+  {
+    "content": "# CLI Example About
+
+This page proves the CLI discovers nested static HTML files.
+
+---
+
+Site index: [llms.txt](https://cli.example.com/llms.txt)
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:61bd4b7b7950" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": "docs/about.md",
+  },
+  {
+    "content": "<!doctype html>
+<html lang="en">
+  <head>
+  <link rel="alternate" type="text/markdown" href="https://cli.example.com/index.md" data-opennav="resource-link" data-opennav-sha="sha256:61bd4b7b7950">
+  <link rel="index" type="text/plain" href="https://cli.example.com/llms.txt" title="LLMs text site index" data-opennav="resource-link" data-opennav-sha="sha256:61bd4b7b7950">
+    <title>CLI Example Home</title>
+    <meta
+      name="description"
+      content="Plain static site root page for the OpenNav CLI."
+    />
+  </head>
+  <body>
+    <main>
+      <h1>CLI Example Home</h1>
+      <p>Plain static HTML can run OpenNav from an npm build script.</p>
+    </main>
+  </body>
+</html>
+",
+    "filePath": "index.html",
+  },
+  {
+    "content": "# CLI Example Home
+
+Plain static HTML can run OpenNav from an npm build script.
+
+---
+
+Site index: [llms.txt](https://cli.example.com/llms.txt)
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:61bd4b7b7950" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": "index.md",
+  },
+  {
+    "content": "# CLI Example Docs
+
+## Root
+
+### CLI Example Home
+
+URL: https://cli.example.com/index.md
+
+Plain static site root page for the OpenNav CLI.
+
+# CLI Example Home
+
+Plain static HTML can run OpenNav from an npm build script.
+
+---
+
+## Docs
+
+### CLI Example About
+
+URL: https://cli.example.com/docs/about.md
+
+A second plain static route for the OpenNav CLI.
+
+# CLI Example About
+
+This page proves the CLI discovers nested static HTML files.
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:61bd4b7b7950" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": "llms-full.txt",
+  },
+  {
+    "content": "# CLI Example Docs
+
+## Root
+
+- [CLI Example Home](https://cli.example.com/index.md): Plain static site root page for the OpenNav CLI.
+
+## Docs
+
+- [CLI Example About](https://cli.example.com/docs/about.md): A second plain static route for the OpenNav CLI.
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:61bd4b7b7950" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": "llms.txt",
+  },
+]
+`;

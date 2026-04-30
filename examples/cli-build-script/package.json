@@ -4,8 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "your-framework-build && opennav static --output dist --site-url https://example.com --site-name \"Example Docs\" --full-run",
-    "opennav:dry-run": "opennav static --output dist --site-url https://example.com --site-name \"Example Docs\" --dry-run"
+    "build": "npm run build:static && opennav build --static --output dist --site-url https://cli.example.com --site-name \"CLI Example Docs\"",
+    "build:static": "node --experimental-strip-types scripts/build-static-output.ts",
+    "opennav:dry-run": "npm run build:static && opennav build --static --output dist --site-url https://cli.example.com --site-name \"CLI Example Docs\" --dry-run"
   },
   "devDependencies": {
     "@opennav-ai/opennav": "file:../../packages/opennav"
