@@ -3,10 +3,16 @@
 This folder contains small, pinned example projects that show how the public
 `@opennav-ai/opennav` package is meant to be used from real static-site builds.
 
-The Astro and Next examples are also compatibility checks. Running
-`npm run test:examples` from the repo root builds the local OpenNav package,
-installs each pinned example from its `package-lock.json`, runs the framework
-build, and verifies that the expected static HTML file exists.
+The examples are also compatibility checks. Running `npm run test:examples`
+from the repo root builds the local OpenNav packages, installs each pinned
+example from its `package-lock.json`, and installs packed local tarballs rather
+than workspace symlinks.
+
+Static SDK and Astro examples use `examples/tests/` Vitest snapshots. They
+first prove the original framework/static output is stable, then run OpenNav
+and compare the full modified output tree. Next examples still use the
+temporary legacy compatibility runner until their generated output noise is
+normalized.
 
 The static-site SDK example shows the root `OpenNavStaticSite` class running
 against plain HTML without a framework.

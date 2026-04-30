@@ -1,0 +1,709 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Astro static examples > Astro 4 static keeps framework output stable before OpenNav modifies it > Astro 4 static OpenNav output 1`] = `
+[
+  {
+    "content": "# OpenNav Astro 4 Static Fixture
+
+## Root
+
+### OpenNav Astro 4 Static Fixture
+
+URL: https://astro-4.example.com/index.md
+
+Pinned Astro 4 static example for OpenNav package compatibility.
+
+# OpenNav Astro 4 Static Fixture
+
+This page proves Astro can import the local OpenNav integration.
+
+---
+
+## Docs
+
+### OpenNav Astro 4 Docs Fixture
+
+URL: https://astro-4.example.com/docs/index.md
+
+Pinned Astro 4 docs route for OpenNav package compatibility.
+
+# OpenNav Astro 4 Docs Fixture
+
+This docs page proves Astro emits additional static routes.
+
+---
+
+## Guides
+
+### OpenNav Astro 4 Setup Fixture
+
+URL: https://astro-4.example.com/guides/setup/index.md
+
+Pinned Astro 4 setup route for OpenNav package compatibility.
+
+# OpenNav Astro 4 Setup Fixture
+
+This setup guide proves Astro emits nested static routes.
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:fb9c17a5d6fe" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": ".well-known/llms-full.txt",
+  },
+  {
+    "content": "# OpenNav Astro 4 Static Fixture
+
+## Root
+
+- [OpenNav Astro 4 Static Fixture](https://astro-4.example.com/index.md): Pinned Astro 4 static example for OpenNav package compatibility.
+
+## Docs
+
+- [OpenNav Astro 4 Docs Fixture](https://astro-4.example.com/docs/index.md): Pinned Astro 4 docs route for OpenNav package compatibility.
+
+## Guides
+
+- [OpenNav Astro 4 Setup Fixture](https://astro-4.example.com/guides/setup/index.md): Pinned Astro 4 setup route for OpenNav package compatibility.
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:fb9c17a5d6fe" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": ".well-known/llms.txt",
+  },
+  {
+    "content": "{
+  "opennav": true,
+  "version": "1.0",
+  "profile": "static-agent-ready",
+  "site": "https://astro-4.example.com",
+  "build_fingerprint": "sha256:fb9c17a5d6fe",
+  "spec": "https://opennav.ai/spec/1.0",
+  "artifacts": {
+    "llms_txt": "/llms.txt",
+    "llms_full_txt": "/llms-full.txt",
+    "well_known_llms_txt": "/.well-known/llms.txt",
+    "well_known_llms_full_txt": "/.well-known/llms-full.txt"
+  },
+  "capabilities": {
+    "clean_markdown": true,
+    "llms_txt": true,
+    "llms_full_txt": true,
+    "html_resource_links": true,
+    "content_signals": false
+  }
+}
+",
+    "filePath": ".well-known/opennav.json",
+  },
+  {
+    "content": "<!DOCTYPE html><html lang="en"> <head>
+  <link rel="alternate" type="text/markdown" href="https://astro-4.example.com/docs/index.md" data-opennav="resource-link" data-opennav-sha="sha256:fb9c17a5d6fe">
+  <link rel="index" type="text/plain" href="https://astro-4.example.com/llms.txt" title="LLMs text site index" data-opennav="resource-link" data-opennav-sha="sha256:fb9c17a5d6fe"><title>OpenNav Astro 4 Docs Fixture</title><meta name="description" content="Pinned Astro 4 docs route for OpenNav package compatibility."></head> <body> <main> <h1>OpenNav Astro 4 Docs Fixture</h1> <p>This docs page proves Astro emits additional static routes.</p> </main> </body></html>",
+    "filePath": "docs/index.html",
+  },
+  {
+    "content": "# OpenNav Astro 4 Docs Fixture
+
+This docs page proves Astro emits additional static routes.
+
+---
+
+Site index: [llms.txt](https://astro-4.example.com/llms.txt)
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:fb9c17a5d6fe" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": "docs/index.md",
+  },
+  {
+    "content": "<!DOCTYPE html><html lang="en"> <head>
+  <link rel="alternate" type="text/markdown" href="https://astro-4.example.com/guides/setup/index.md" data-opennav="resource-link" data-opennav-sha="sha256:fb9c17a5d6fe">
+  <link rel="index" type="text/plain" href="https://astro-4.example.com/llms.txt" title="LLMs text site index" data-opennav="resource-link" data-opennav-sha="sha256:fb9c17a5d6fe"><title>OpenNav Astro 4 Setup Fixture</title><meta name="description" content="Pinned Astro 4 setup route for OpenNav package compatibility."></head> <body> <main> <h1>OpenNav Astro 4 Setup Fixture</h1> <p>This setup guide proves Astro emits nested static routes.</p> </main> </body></html>",
+    "filePath": "guides/setup/index.html",
+  },
+  {
+    "content": "# OpenNav Astro 4 Setup Fixture
+
+This setup guide proves Astro emits nested static routes.
+
+---
+
+Site index: [llms.txt](https://astro-4.example.com/llms.txt)
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:fb9c17a5d6fe" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": "guides/setup/index.md",
+  },
+  {
+    "content": "<!DOCTYPE html><html lang="en"> <head>
+  <link rel="alternate" type="text/markdown" href="https://astro-4.example.com/index.md" data-opennav="resource-link" data-opennav-sha="sha256:fb9c17a5d6fe">
+  <link rel="index" type="text/plain" href="https://astro-4.example.com/llms.txt" title="LLMs text site index" data-opennav="resource-link" data-opennav-sha="sha256:fb9c17a5d6fe"><title>OpenNav Astro 4 Static Fixture</title><meta name="description" content="Pinned Astro 4 static example for OpenNav package compatibility."></head> <body> <main> <h1>OpenNav Astro 4 Static Fixture</h1> <p>This page proves Astro can import the local OpenNav integration.</p> </main> </body></html>",
+    "filePath": "index.html",
+  },
+  {
+    "content": "# OpenNav Astro 4 Static Fixture
+
+This page proves Astro can import the local OpenNav integration.
+
+---
+
+Site index: [llms.txt](https://astro-4.example.com/llms.txt)
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:fb9c17a5d6fe" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": "index.md",
+  },
+  {
+    "content": "# OpenNav Astro 4 Static Fixture
+
+## Root
+
+### OpenNav Astro 4 Static Fixture
+
+URL: https://astro-4.example.com/index.md
+
+Pinned Astro 4 static example for OpenNav package compatibility.
+
+# OpenNav Astro 4 Static Fixture
+
+This page proves Astro can import the local OpenNav integration.
+
+---
+
+## Docs
+
+### OpenNav Astro 4 Docs Fixture
+
+URL: https://astro-4.example.com/docs/index.md
+
+Pinned Astro 4 docs route for OpenNav package compatibility.
+
+# OpenNav Astro 4 Docs Fixture
+
+This docs page proves Astro emits additional static routes.
+
+---
+
+## Guides
+
+### OpenNav Astro 4 Setup Fixture
+
+URL: https://astro-4.example.com/guides/setup/index.md
+
+Pinned Astro 4 setup route for OpenNav package compatibility.
+
+# OpenNav Astro 4 Setup Fixture
+
+This setup guide proves Astro emits nested static routes.
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:fb9c17a5d6fe" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": "llms-full.txt",
+  },
+  {
+    "content": "# OpenNav Astro 4 Static Fixture
+
+## Root
+
+- [OpenNav Astro 4 Static Fixture](https://astro-4.example.com/index.md): Pinned Astro 4 static example for OpenNav package compatibility.
+
+## Docs
+
+- [OpenNav Astro 4 Docs Fixture](https://astro-4.example.com/docs/index.md): Pinned Astro 4 docs route for OpenNav package compatibility.
+
+## Guides
+
+- [OpenNav Astro 4 Setup Fixture](https://astro-4.example.com/guides/setup/index.md): Pinned Astro 4 setup route for OpenNav package compatibility.
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:fb9c17a5d6fe" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": "llms.txt",
+  },
+]
+`;
+
+exports[`Astro static examples > Astro 4 static keeps framework output stable before OpenNav modifies it > Astro 4 static framework output before OpenNav build 1`] = `
+[
+  {
+    "content": "<!DOCTYPE html><html lang="en"> <head><title>OpenNav Astro 4 Docs Fixture</title><meta name="description" content="Pinned Astro 4 docs route for OpenNav package compatibility."></head> <body> <main> <h1>OpenNav Astro 4 Docs Fixture</h1> <p>This docs page proves Astro emits additional static routes.</p> </main> </body></html>",
+    "filePath": "docs/index.html",
+  },
+  {
+    "content": "<!DOCTYPE html><html lang="en"> <head><title>OpenNav Astro 4 Setup Fixture</title><meta name="description" content="Pinned Astro 4 setup route for OpenNav package compatibility."></head> <body> <main> <h1>OpenNav Astro 4 Setup Fixture</h1> <p>This setup guide proves Astro emits nested static routes.</p> </main> </body></html>",
+    "filePath": "guides/setup/index.html",
+  },
+  {
+    "content": "<!DOCTYPE html><html lang="en"> <head><title>OpenNav Astro 4 Static Fixture</title><meta name="description" content="Pinned Astro 4 static example for OpenNav package compatibility."></head> <body> <main> <h1>OpenNav Astro 4 Static Fixture</h1> <p>This page proves Astro can import the local OpenNav integration.</p> </main> </body></html>",
+    "filePath": "index.html",
+  },
+]
+`;
+
+exports[`Astro static examples > Astro 5 static keeps framework output stable before OpenNav modifies it > Astro 5 static OpenNav output 1`] = `
+[
+  {
+    "content": "# OpenNav Astro 5 Static Fixture
+
+## Root
+
+### OpenNav Astro 5 Static Fixture
+
+URL: https://astro-5.example.com/index.md
+
+Pinned Astro 5 static example for OpenNav package compatibility.
+
+# OpenNav Astro 5 Static Fixture
+
+This page proves Astro can import the local OpenNav integration.
+
+---
+
+## Docs
+
+### OpenNav Astro 5 Docs Fixture
+
+URL: https://astro-5.example.com/docs/index.md
+
+Pinned Astro 5 docs route for OpenNav package compatibility.
+
+# OpenNav Astro 5 Docs Fixture
+
+This docs page proves Astro emits additional static routes.
+
+---
+
+## Guides
+
+### OpenNav Astro 5 Setup Fixture
+
+URL: https://astro-5.example.com/guides/setup/index.md
+
+Pinned Astro 5 setup route for OpenNav package compatibility.
+
+# OpenNav Astro 5 Setup Fixture
+
+This setup guide proves Astro emits nested static routes.
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:b6eea95e4743" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": ".well-known/llms-full.txt",
+  },
+  {
+    "content": "# OpenNav Astro 5 Static Fixture
+
+## Root
+
+- [OpenNav Astro 5 Static Fixture](https://astro-5.example.com/index.md): Pinned Astro 5 static example for OpenNav package compatibility.
+
+## Docs
+
+- [OpenNav Astro 5 Docs Fixture](https://astro-5.example.com/docs/index.md): Pinned Astro 5 docs route for OpenNav package compatibility.
+
+## Guides
+
+- [OpenNav Astro 5 Setup Fixture](https://astro-5.example.com/guides/setup/index.md): Pinned Astro 5 setup route for OpenNav package compatibility.
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:b6eea95e4743" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": ".well-known/llms.txt",
+  },
+  {
+    "content": "{
+  "opennav": true,
+  "version": "1.0",
+  "profile": "static-agent-ready",
+  "site": "https://astro-5.example.com",
+  "build_fingerprint": "sha256:b6eea95e4743",
+  "spec": "https://opennav.ai/spec/1.0",
+  "artifacts": {
+    "llms_txt": "/llms.txt",
+    "llms_full_txt": "/llms-full.txt",
+    "well_known_llms_txt": "/.well-known/llms.txt",
+    "well_known_llms_full_txt": "/.well-known/llms-full.txt"
+  },
+  "capabilities": {
+    "clean_markdown": true,
+    "llms_txt": true,
+    "llms_full_txt": true,
+    "html_resource_links": true,
+    "content_signals": false
+  }
+}
+",
+    "filePath": ".well-known/opennav.json",
+  },
+  {
+    "content": "<!DOCTYPE html><html lang="en"> <head>
+  <link rel="alternate" type="text/markdown" href="https://astro-5.example.com/docs/index.md" data-opennav="resource-link" data-opennav-sha="sha256:b6eea95e4743">
+  <link rel="index" type="text/plain" href="https://astro-5.example.com/llms.txt" title="LLMs text site index" data-opennav="resource-link" data-opennav-sha="sha256:b6eea95e4743"><title>OpenNav Astro 5 Docs Fixture</title><meta name="description" content="Pinned Astro 5 docs route for OpenNav package compatibility."></head> <body> <main> <h1>OpenNav Astro 5 Docs Fixture</h1> <p>This docs page proves Astro emits additional static routes.</p> </main> </body></html>",
+    "filePath": "docs/index.html",
+  },
+  {
+    "content": "# OpenNav Astro 5 Docs Fixture
+
+This docs page proves Astro emits additional static routes.
+
+---
+
+Site index: [llms.txt](https://astro-5.example.com/llms.txt)
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:b6eea95e4743" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": "docs/index.md",
+  },
+  {
+    "content": "<!DOCTYPE html><html lang="en"> <head>
+  <link rel="alternate" type="text/markdown" href="https://astro-5.example.com/guides/setup/index.md" data-opennav="resource-link" data-opennav-sha="sha256:b6eea95e4743">
+  <link rel="index" type="text/plain" href="https://astro-5.example.com/llms.txt" title="LLMs text site index" data-opennav="resource-link" data-opennav-sha="sha256:b6eea95e4743"><title>OpenNav Astro 5 Setup Fixture</title><meta name="description" content="Pinned Astro 5 setup route for OpenNav package compatibility."></head> <body> <main> <h1>OpenNav Astro 5 Setup Fixture</h1> <p>This setup guide proves Astro emits nested static routes.</p> </main> </body></html>",
+    "filePath": "guides/setup/index.html",
+  },
+  {
+    "content": "# OpenNav Astro 5 Setup Fixture
+
+This setup guide proves Astro emits nested static routes.
+
+---
+
+Site index: [llms.txt](https://astro-5.example.com/llms.txt)
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:b6eea95e4743" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": "guides/setup/index.md",
+  },
+  {
+    "content": "<!DOCTYPE html><html lang="en"> <head>
+  <link rel="alternate" type="text/markdown" href="https://astro-5.example.com/index.md" data-opennav="resource-link" data-opennav-sha="sha256:b6eea95e4743">
+  <link rel="index" type="text/plain" href="https://astro-5.example.com/llms.txt" title="LLMs text site index" data-opennav="resource-link" data-opennav-sha="sha256:b6eea95e4743"><title>OpenNav Astro 5 Static Fixture</title><meta name="description" content="Pinned Astro 5 static example for OpenNav package compatibility."></head> <body> <main> <h1>OpenNav Astro 5 Static Fixture</h1> <p>This page proves Astro can import the local OpenNav integration.</p> </main> </body></html>",
+    "filePath": "index.html",
+  },
+  {
+    "content": "# OpenNav Astro 5 Static Fixture
+
+This page proves Astro can import the local OpenNav integration.
+
+---
+
+Site index: [llms.txt](https://astro-5.example.com/llms.txt)
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:b6eea95e4743" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": "index.md",
+  },
+  {
+    "content": "# OpenNav Astro 5 Static Fixture
+
+## Root
+
+### OpenNav Astro 5 Static Fixture
+
+URL: https://astro-5.example.com/index.md
+
+Pinned Astro 5 static example for OpenNav package compatibility.
+
+# OpenNav Astro 5 Static Fixture
+
+This page proves Astro can import the local OpenNav integration.
+
+---
+
+## Docs
+
+### OpenNav Astro 5 Docs Fixture
+
+URL: https://astro-5.example.com/docs/index.md
+
+Pinned Astro 5 docs route for OpenNav package compatibility.
+
+# OpenNav Astro 5 Docs Fixture
+
+This docs page proves Astro emits additional static routes.
+
+---
+
+## Guides
+
+### OpenNav Astro 5 Setup Fixture
+
+URL: https://astro-5.example.com/guides/setup/index.md
+
+Pinned Astro 5 setup route for OpenNav package compatibility.
+
+# OpenNav Astro 5 Setup Fixture
+
+This setup guide proves Astro emits nested static routes.
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:b6eea95e4743" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": "llms-full.txt",
+  },
+  {
+    "content": "# OpenNav Astro 5 Static Fixture
+
+## Root
+
+- [OpenNav Astro 5 Static Fixture](https://astro-5.example.com/index.md): Pinned Astro 5 static example for OpenNav package compatibility.
+
+## Docs
+
+- [OpenNav Astro 5 Docs Fixture](https://astro-5.example.com/docs/index.md): Pinned Astro 5 docs route for OpenNav package compatibility.
+
+## Guides
+
+- [OpenNav Astro 5 Setup Fixture](https://astro-5.example.com/guides/setup/index.md): Pinned Astro 5 setup route for OpenNav package compatibility.
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:b6eea95e4743" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": "llms.txt",
+  },
+]
+`;
+
+exports[`Astro static examples > Astro 5 static keeps framework output stable before OpenNav modifies it > Astro 5 static framework output before OpenNav build 1`] = `
+[
+  {
+    "content": "<!DOCTYPE html><html lang="en"> <head><title>OpenNav Astro 5 Docs Fixture</title><meta name="description" content="Pinned Astro 5 docs route for OpenNav package compatibility."></head> <body> <main> <h1>OpenNav Astro 5 Docs Fixture</h1> <p>This docs page proves Astro emits additional static routes.</p> </main> </body></html>",
+    "filePath": "docs/index.html",
+  },
+  {
+    "content": "<!DOCTYPE html><html lang="en"> <head><title>OpenNav Astro 5 Setup Fixture</title><meta name="description" content="Pinned Astro 5 setup route for OpenNav package compatibility."></head> <body> <main> <h1>OpenNav Astro 5 Setup Fixture</h1> <p>This setup guide proves Astro emits nested static routes.</p> </main> </body></html>",
+    "filePath": "guides/setup/index.html",
+  },
+  {
+    "content": "<!DOCTYPE html><html lang="en"> <head><title>OpenNav Astro 5 Static Fixture</title><meta name="description" content="Pinned Astro 5 static example for OpenNav package compatibility."></head> <body> <main> <h1>OpenNav Astro 5 Static Fixture</h1> <p>This page proves Astro can import the local OpenNav integration.</p> </main> </body></html>",
+    "filePath": "index.html",
+  },
+]
+`;
+
+exports[`Astro static examples > Astro 6 static keeps framework output stable before OpenNav modifies it > Astro 6 static OpenNav output 1`] = `
+[
+  {
+    "content": "# OpenNav Astro 6 Static Fixture
+
+## Root
+
+### OpenNav Astro 6 Static Fixture
+
+URL: https://astro-6.example.com/index.md
+
+Pinned Astro 6 static fixture for OpenNav package compatibility.
+
+# OpenNav Astro 6 Static Fixture
+
+This page proves Astro can import the local OpenNav integration.
+
+---
+
+## Docs
+
+### OpenNav Astro 6 Docs Fixture
+
+URL: https://astro-6.example.com/docs/index.md
+
+Pinned Astro 6 docs route for OpenNav package compatibility.
+
+# OpenNav Astro 6 Docs Fixture
+
+This docs page proves Astro emits additional static routes.
+
+---
+
+## Guides
+
+### OpenNav Astro 6 Setup Fixture
+
+URL: https://astro-6.example.com/guides/setup/index.md
+
+Pinned Astro 6 setup route for OpenNav package compatibility.
+
+# OpenNav Astro 6 Setup Fixture
+
+This setup guide proves Astro emits nested static routes.
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:01a79e9b268b" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": ".well-known/llms-full.txt",
+  },
+  {
+    "content": "# OpenNav Astro 6 Static Fixture
+
+## Root
+
+- [OpenNav Astro 6 Static Fixture](https://astro-6.example.com/index.md): Pinned Astro 6 static fixture for OpenNav package compatibility.
+
+## Docs
+
+- [OpenNav Astro 6 Docs Fixture](https://astro-6.example.com/docs/index.md): Pinned Astro 6 docs route for OpenNav package compatibility.
+
+## Guides
+
+- [OpenNav Astro 6 Setup Fixture](https://astro-6.example.com/guides/setup/index.md): Pinned Astro 6 setup route for OpenNav package compatibility.
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:01a79e9b268b" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": ".well-known/llms.txt",
+  },
+  {
+    "content": "{
+  "opennav": true,
+  "version": "1.0",
+  "profile": "static-agent-ready",
+  "site": "https://astro-6.example.com",
+  "build_fingerprint": "sha256:01a79e9b268b",
+  "spec": "https://opennav.ai/spec/1.0",
+  "artifacts": {
+    "llms_txt": "/llms.txt",
+    "llms_full_txt": "/llms-full.txt",
+    "well_known_llms_txt": "/.well-known/llms.txt",
+    "well_known_llms_full_txt": "/.well-known/llms-full.txt"
+  },
+  "capabilities": {
+    "clean_markdown": true,
+    "llms_txt": true,
+    "llms_full_txt": true,
+    "html_resource_links": true,
+    "content_signals": false
+  }
+}
+",
+    "filePath": ".well-known/opennav.json",
+  },
+  {
+    "content": "<!DOCTYPE html><html lang="en"> <head>
+  <link rel="alternate" type="text/markdown" href="https://astro-6.example.com/docs/index.md" data-opennav="resource-link" data-opennav-sha="sha256:01a79e9b268b">
+  <link rel="index" type="text/plain" href="https://astro-6.example.com/llms.txt" title="LLMs text site index" data-opennav="resource-link" data-opennav-sha="sha256:01a79e9b268b"><title>OpenNav Astro 6 Docs Fixture</title><meta name="description" content="Pinned Astro 6 docs route for OpenNav package compatibility."></head> <body> <main> <h1>OpenNav Astro 6 Docs Fixture</h1> <p>This docs page proves Astro emits additional static routes.</p> </main> </body></html>",
+    "filePath": "docs/index.html",
+  },
+  {
+    "content": "# OpenNav Astro 6 Docs Fixture
+
+This docs page proves Astro emits additional static routes.
+
+---
+
+Site index: [llms.txt](https://astro-6.example.com/llms.txt)
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:01a79e9b268b" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": "docs/index.md",
+  },
+  {
+    "content": "<!DOCTYPE html><html lang="en"> <head>
+  <link rel="alternate" type="text/markdown" href="https://astro-6.example.com/guides/setup/index.md" data-opennav="resource-link" data-opennav-sha="sha256:01a79e9b268b">
+  <link rel="index" type="text/plain" href="https://astro-6.example.com/llms.txt" title="LLMs text site index" data-opennav="resource-link" data-opennav-sha="sha256:01a79e9b268b"><title>OpenNav Astro 6 Setup Fixture</title><meta name="description" content="Pinned Astro 6 setup route for OpenNav package compatibility."></head> <body> <main> <h1>OpenNav Astro 6 Setup Fixture</h1> <p>This setup guide proves Astro emits nested static routes.</p> </main> </body></html>",
+    "filePath": "guides/setup/index.html",
+  },
+  {
+    "content": "# OpenNav Astro 6 Setup Fixture
+
+This setup guide proves Astro emits nested static routes.
+
+---
+
+Site index: [llms.txt](https://astro-6.example.com/llms.txt)
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:01a79e9b268b" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": "guides/setup/index.md",
+  },
+  {
+    "content": "<!DOCTYPE html><html lang="en"> <head>
+  <link rel="alternate" type="text/markdown" href="https://astro-6.example.com/index.md" data-opennav="resource-link" data-opennav-sha="sha256:01a79e9b268b">
+  <link rel="index" type="text/plain" href="https://astro-6.example.com/llms.txt" title="LLMs text site index" data-opennav="resource-link" data-opennav-sha="sha256:01a79e9b268b"><title>OpenNav Astro 6 Static Fixture</title><meta name="description" content="Pinned Astro 6 static fixture for OpenNav package compatibility."></head> <body> <main> <h1>OpenNav Astro 6 Static Fixture</h1> <p>This page proves Astro can import the local OpenNav integration.</p> </main> </body></html>",
+    "filePath": "index.html",
+  },
+  {
+    "content": "# OpenNav Astro 6 Static Fixture
+
+This page proves Astro can import the local OpenNav integration.
+
+---
+
+Site index: [llms.txt](https://astro-6.example.com/llms.txt)
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:01a79e9b268b" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": "index.md",
+  },
+  {
+    "content": "# OpenNav Astro 6 Static Fixture
+
+## Root
+
+### OpenNav Astro 6 Static Fixture
+
+URL: https://astro-6.example.com/index.md
+
+Pinned Astro 6 static fixture for OpenNav package compatibility.
+
+# OpenNav Astro 6 Static Fixture
+
+This page proves Astro can import the local OpenNav integration.
+
+---
+
+## Docs
+
+### OpenNav Astro 6 Docs Fixture
+
+URL: https://astro-6.example.com/docs/index.md
+
+Pinned Astro 6 docs route for OpenNav package compatibility.
+
+# OpenNav Astro 6 Docs Fixture
+
+This docs page proves Astro emits additional static routes.
+
+---
+
+## Guides
+
+### OpenNav Astro 6 Setup Fixture
+
+URL: https://astro-6.example.com/guides/setup/index.md
+
+Pinned Astro 6 setup route for OpenNav package compatibility.
+
+# OpenNav Astro 6 Setup Fixture
+
+This setup guide proves Astro emits nested static routes.
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:01a79e9b268b" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": "llms-full.txt",
+  },
+  {
+    "content": "# OpenNav Astro 6 Static Fixture
+
+## Root
+
+- [OpenNav Astro 6 Static Fixture](https://astro-6.example.com/index.md): Pinned Astro 6 static fixture for OpenNav package compatibility.
+
+## Docs
+
+- [OpenNav Astro 6 Docs Fixture](https://astro-6.example.com/docs/index.md): Pinned Astro 6 docs route for OpenNav package compatibility.
+
+## Guides
+
+- [OpenNav Astro 6 Setup Fixture](https://astro-6.example.com/guides/setup/index.md): Pinned Astro 6 setup route for OpenNav package compatibility.
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:01a79e9b268b" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": "llms.txt",
+  },
+]
+`;
+
+exports[`Astro static examples > Astro 6 static keeps framework output stable before OpenNav modifies it > Astro 6 static framework output before OpenNav build 1`] = `
+[
+  {
+    "content": "<!DOCTYPE html><html lang="en"> <head><title>OpenNav Astro 6 Docs Fixture</title><meta name="description" content="Pinned Astro 6 docs route for OpenNav package compatibility."></head> <body> <main> <h1>OpenNav Astro 6 Docs Fixture</h1> <p>This docs page proves Astro emits additional static routes.</p> </main> </body></html>",
+    "filePath": "docs/index.html",
+  },
+  {
+    "content": "<!DOCTYPE html><html lang="en"> <head><title>OpenNav Astro 6 Setup Fixture</title><meta name="description" content="Pinned Astro 6 setup route for OpenNav package compatibility."></head> <body> <main> <h1>OpenNav Astro 6 Setup Fixture</h1> <p>This setup guide proves Astro emits nested static routes.</p> </main> </body></html>",
+    "filePath": "guides/setup/index.html",
+  },
+  {
+    "content": "<!DOCTYPE html><html lang="en"> <head><title>OpenNav Astro 6 Static Fixture</title><meta name="description" content="Pinned Astro 6 static fixture for OpenNav package compatibility."></head> <body> <main> <h1>OpenNav Astro 6 Static Fixture</h1> <p>This page proves Astro can import the local OpenNav integration.</p> </main> </body></html>",
+    "filePath": "index.html",
+  },
+]
+`;

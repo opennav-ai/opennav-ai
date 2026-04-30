@@ -1,0 +1,343 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`static site SDK example > keeps the plain static baseline stable before the SDK modifies it > OpenNav static SDK output 1`] = `
+[
+  {
+    "content": "# OpenNav Static SDK Example
+
+## Root
+
+### Static SDK Home
+
+URL: https://static-sdk.example.com/index.md
+
+Plain static site root page for the OpenNav SDK.
+
+# Static SDK Home
+
+Plain static HTML can call OpenNav after files are built.
+
+---
+
+## Docs
+
+### Static SDK About
+
+URL: https://static-sdk.example.com/docs/about.md
+
+A second plain static route for the OpenNav SDK.
+
+# Static SDK About
+
+This page proves the SDK discovers nested static HTML files.
+
+---
+
+## Guides
+
+### Static SDK Setup
+
+URL: https://static-sdk.example.com/guides/setup.md
+
+A nested plain static route for the OpenNav SDK.
+
+# Static SDK Setup
+
+This setup page proves the SDK discovers deep static HTML files.
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:d90ba8914fe5" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": ".well-known/llms-full.txt",
+  },
+  {
+    "content": "# OpenNav Static SDK Example
+
+## Root
+
+- [Static SDK Home](https://static-sdk.example.com/index.md): Plain static site root page for the OpenNav SDK.
+
+## Docs
+
+- [Static SDK About](https://static-sdk.example.com/docs/about.md): A second plain static route for the OpenNav SDK.
+
+## Guides
+
+- [Static SDK Setup](https://static-sdk.example.com/guides/setup.md): A nested plain static route for the OpenNav SDK.
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:d90ba8914fe5" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": ".well-known/llms.txt",
+  },
+  {
+    "content": "{
+  "opennav": true,
+  "version": "1.0",
+  "profile": "static-agent-ready",
+  "site": "https://static-sdk.example.com",
+  "build_fingerprint": "sha256:d90ba8914fe5",
+  "spec": "https://opennav.ai/spec/1.0",
+  "artifacts": {
+    "llms_txt": "/llms.txt",
+    "llms_full_txt": "/llms-full.txt",
+    "well_known_llms_txt": "/.well-known/llms.txt",
+    "well_known_llms_full_txt": "/.well-known/llms-full.txt"
+  },
+  "capabilities": {
+    "clean_markdown": true,
+    "llms_txt": true,
+    "llms_full_txt": true,
+    "html_resource_links": true,
+    "content_signals": false
+  }
+}
+",
+    "filePath": ".well-known/opennav.json",
+  },
+  {
+    "content": "<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" fill="#111827"/></svg>
+",
+    "filePath": "assets/logo.svg",
+  },
+  {
+    "content": "<!doctype html>
+<html lang="en">
+  <head>
+  <link rel="alternate" type="text/markdown" href="https://static-sdk.example.com/docs/about.md" data-opennav="resource-link" data-opennav-sha="sha256:d90ba8914fe5">
+  <link rel="index" type="text/plain" href="https://static-sdk.example.com/llms.txt" title="LLMs text site index" data-opennav="resource-link" data-opennav-sha="sha256:d90ba8914fe5">
+    <title>Static SDK About</title>
+    <meta
+      name="description"
+      content="A second plain static route for the OpenNav SDK."
+    />
+  </head>
+  <body>
+    <main>
+      <h1>Static SDK About</h1>
+      <p>This page proves the SDK discovers nested static HTML files.</p>
+    </main>
+  </body>
+</html>
+",
+    "filePath": "docs/about.html",
+  },
+  {
+    "content": "# Static SDK About
+
+This page proves the SDK discovers nested static HTML files.
+
+---
+
+Site index: [llms.txt](https://static-sdk.example.com/llms.txt)
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:d90ba8914fe5" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": "docs/about.md",
+  },
+  {
+    "content": "<!doctype html>
+<html lang="en">
+  <head>
+  <link rel="alternate" type="text/markdown" href="https://static-sdk.example.com/guides/setup.md" data-opennav="resource-link" data-opennav-sha="sha256:d90ba8914fe5">
+  <link rel="index" type="text/plain" href="https://static-sdk.example.com/llms.txt" title="LLMs text site index" data-opennav="resource-link" data-opennav-sha="sha256:d90ba8914fe5">
+    <title>Static SDK Setup</title>
+    <meta
+      name="description"
+      content="A nested plain static route for the OpenNav SDK."
+    />
+  </head>
+  <body>
+    <main>
+      <h1>Static SDK Setup</h1>
+      <p>This setup page proves the SDK discovers deep static HTML files.</p>
+    </main>
+  </body>
+</html>
+",
+    "filePath": "guides/setup.html",
+  },
+  {
+    "content": "# Static SDK Setup
+
+This setup page proves the SDK discovers deep static HTML files.
+
+---
+
+Site index: [llms.txt](https://static-sdk.example.com/llms.txt)
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:d90ba8914fe5" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": "guides/setup.md",
+  },
+  {
+    "content": "<!doctype html>
+<html lang="en">
+  <head>
+  <link rel="alternate" type="text/markdown" href="https://static-sdk.example.com/index.md" data-opennav="resource-link" data-opennav-sha="sha256:d90ba8914fe5">
+  <link rel="index" type="text/plain" href="https://static-sdk.example.com/llms.txt" title="LLMs text site index" data-opennav="resource-link" data-opennav-sha="sha256:d90ba8914fe5">
+    <title>Static SDK Home</title>
+    <meta
+      name="description"
+      content="Plain static site root page for the OpenNav SDK."
+    />
+  </head>
+  <body>
+    <main>
+      <h1>Static SDK Home</h1>
+      <p>Plain static HTML can call OpenNav after files are built.</p>
+    </main>
+  </body>
+</html>
+",
+    "filePath": "index.html",
+  },
+  {
+    "content": "# Static SDK Home
+
+Plain static HTML can call OpenNav after files are built.
+
+---
+
+Site index: [llms.txt](https://static-sdk.example.com/llms.txt)
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:d90ba8914fe5" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": "index.md",
+  },
+  {
+    "content": "# OpenNav Static SDK Example
+
+## Root
+
+### Static SDK Home
+
+URL: https://static-sdk.example.com/index.md
+
+Plain static site root page for the OpenNav SDK.
+
+# Static SDK Home
+
+Plain static HTML can call OpenNav after files are built.
+
+---
+
+## Docs
+
+### Static SDK About
+
+URL: https://static-sdk.example.com/docs/about.md
+
+A second plain static route for the OpenNav SDK.
+
+# Static SDK About
+
+This page proves the SDK discovers nested static HTML files.
+
+---
+
+## Guides
+
+### Static SDK Setup
+
+URL: https://static-sdk.example.com/guides/setup.md
+
+A nested plain static route for the OpenNav SDK.
+
+# Static SDK Setup
+
+This setup page proves the SDK discovers deep static HTML files.
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:d90ba8914fe5" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": "llms-full.txt",
+  },
+  {
+    "content": "# OpenNav Static SDK Example
+
+## Root
+
+- [Static SDK Home](https://static-sdk.example.com/index.md): Plain static site root page for the OpenNav SDK.
+
+## Docs
+
+- [Static SDK About](https://static-sdk.example.com/docs/about.md): A second plain static route for the OpenNav SDK.
+
+## Guides
+
+- [Static SDK Setup](https://static-sdk.example.com/guides/setup.md): A nested plain static route for the OpenNav SDK.
+
+<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:d90ba8914fe5" manifest="/.well-known/opennav.json" -->
+",
+    "filePath": "llms.txt",
+  },
+]
+`;
+
+exports[`static site SDK example > keeps the plain static baseline stable before the SDK modifies it > plain static output before SDK build 1`] = `
+[
+  {
+    "content": "<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" fill="#111827"/></svg>
+",
+    "filePath": "assets/logo.svg",
+  },
+  {
+    "content": "<!doctype html>
+<html lang="en">
+  <head>
+    <title>Static SDK About</title>
+    <meta
+      name="description"
+      content="A second plain static route for the OpenNav SDK."
+    />
+  </head>
+  <body>
+    <main>
+      <h1>Static SDK About</h1>
+      <p>This page proves the SDK discovers nested static HTML files.</p>
+    </main>
+  </body>
+</html>
+",
+    "filePath": "docs/about.html",
+  },
+  {
+    "content": "<!doctype html>
+<html lang="en">
+  <head>
+    <title>Static SDK Setup</title>
+    <meta
+      name="description"
+      content="A nested plain static route for the OpenNav SDK."
+    />
+  </head>
+  <body>
+    <main>
+      <h1>Static SDK Setup</h1>
+      <p>This setup page proves the SDK discovers deep static HTML files.</p>
+    </main>
+  </body>
+</html>
+",
+    "filePath": "guides/setup.html",
+  },
+  {
+    "content": "<!doctype html>
+<html lang="en">
+  <head>
+    <title>Static SDK Home</title>
+    <meta
+      name="description"
+      content="Plain static site root page for the OpenNav SDK."
+    />
+  </head>
+  <body>
+    <main>
+      <h1>Static SDK Home</h1>
+      <p>Plain static HTML can call OpenNav after files are built.</p>
+    </main>
+  </body>
+</html>
+",
+    "filePath": "index.html",
+  },
+]
+`;
