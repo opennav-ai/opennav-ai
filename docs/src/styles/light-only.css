@@ -63,46 +63,7 @@ html .expressive-code {
   --ec-sbThumbHoverCol: var(--opennav-code-scrollbar-hover);
 }
 
-html,
-html[data-code-theme="vscode-dark"] {
-  --opennav-code-bg: #1e1e1e;
-  --opennav-code-border: #3c3c3c;
-  --opennav-code-fg: #d4d4d4;
-  --opennav-code-header-bg: #252526;
-  --opennav-code-muted-fg: #8b949e;
-  --opennav-code-scrollbar: rgb(212 212 212 / 0.28);
-  --opennav-code-scrollbar-hover: rgb(212 212 212 / 0.48);
-  --opennav-code-token-control: #569cd6;
-  --opennav-code-token-function: #dcdcaa;
-  --opennav-code-token-keyword: #c586c0;
-  --opennav-code-token-number: #b5cea8;
-  --opennav-code-token-plain: #d4d4d4;
-  --opennav-code-token-property: #9cdcfe;
-  --opennav-code-token-string: #ce9178;
-  --opennav-code-token-type: #4ec9b0;
-  --opennav-code-token-variable: #4fc1ff;
-}
-
-html[data-code-theme="night-owl"] {
-  --opennav-code-bg: #011627;
-  --opennav-code-border: #1d3b53;
-  --opennav-code-fg: #d6deeb;
-  --opennav-code-header-bg: #0b2942;
-  --opennav-code-muted-fg: #637777;
-  --opennav-code-scrollbar: rgb(214 222 235 / 0.25);
-  --opennav-code-scrollbar-hover: rgb(214 222 235 / 0.45);
-  --opennav-code-token-control: #82aaff;
-  --opennav-code-token-function: #82aaff;
-  --opennav-code-token-keyword: #c792ea;
-  --opennav-code-token-number: #f78c6c;
-  --opennav-code-token-plain: #d6deeb;
-  --opennav-code-token-property: #addb67;
-  --opennav-code-token-string: #ecc48d;
-  --opennav-code-token-type: #7fdbca;
-  --opennav-code-token-variable: #ffcb8b;
-}
-
-html[data-code-theme="one-light"] {
+html {
   --opennav-code-bg: #fafafa;
   --opennav-code-border: #d8dee8;
   --opennav-code-fg: #383a42;
@@ -119,25 +80,6 @@ html[data-code-theme="one-light"] {
   --opennav-code-token-string: #50a14f;
   --opennav-code-token-type: #0184bc;
   --opennav-code-token-variable: #c18401;
-}
-
-html[data-code-theme="github-light"] {
-  --opennav-code-bg: #ffffff;
-  --opennav-code-border: #d0d7de;
-  --opennav-code-fg: #24292f;
-  --opennav-code-header-bg: #f6f8fa;
-  --opennav-code-muted-fg: #57606a;
-  --opennav-code-scrollbar: rgb(36 41 47 / 0.2);
-  --opennav-code-scrollbar-hover: rgb(36 41 47 / 0.4);
-  --opennav-code-token-control: #0550ae;
-  --opennav-code-token-function: #8250df;
-  --opennav-code-token-keyword: #cf222e;
-  --opennav-code-token-number: #0550ae;
-  --opennav-code-token-plain: #24292f;
-  --opennav-code-token-property: #953800;
-  --opennav-code-token-string: #0a3069;
-  --opennav-code-token-type: #116329;
-  --opennav-code-token-variable: #953800;
 }
 
 html .expressive-code .ec-line span[style*="#000000"] {
@@ -180,7 +122,6 @@ html .expressive-code .ec-line span[style*="#D40000"] {
   color: var(--opennav-code-token-keyword);
 }
 
-.opennav-code-theme-picker,
 .opennav-example-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -188,39 +129,8 @@ html .expressive-code .ec-line span[style*="#D40000"] {
   align-items: center;
 }
 
-.opennav-code-theme-picker {
-  justify-content: flex-end;
-  margin-block: 0 0.5rem;
-}
-
-.opennav-example-toolbar .opennav-code-theme-picker {
-  flex-wrap: nowrap;
+.sl-markdown-content .opennav-example-toolbar .opennav-example-tabs {
   margin: 0;
-}
-
-.sl-markdown-content
-  .opennav-example-toolbar
-  :is(.opennav-example-tabs, .opennav-code-theme-picker) {
-  margin: 0;
-}
-
-.opennav-code-theme-picker label {
-  color: #334155;
-  font-size: var(--sl-text-sm);
-  font-weight: 700;
-}
-
-.opennav-code-theme-picker select {
-  min-height: 2.25rem;
-  width: 12rem;
-  border: 1px solid var(--opennav-docs-border-color);
-  border-radius: 0.375rem;
-  background-color: #ffffff;
-  color: #000000;
-  font: inherit;
-  font-size: var(--sl-text-sm);
-  margin: 0;
-  padding-inline: 0.7rem 2rem;
 }
 
 .opennav-example-label {
@@ -378,24 +288,6 @@ html .sl-markdown-content table:not(:where(.not-content *)) code {
   .opennav-example-toolbar {
     grid-template-columns: 1fr;
     gap: 0.4rem;
-  }
-
-  .opennav-code-theme-picker {
-    align-items: center;
-    flex-direction: row;
-    justify-content: flex-start;
-    margin-block: 0;
-    width: 100%;
-  }
-
-  .opennav-code-theme-picker select {
-    flex: 1 1 11rem;
-    min-width: 0;
-    width: auto;
-  }
-
-  .opennav-code-theme-picker label {
-    white-space: nowrap;
   }
 
   .opennav-example-tabs button {

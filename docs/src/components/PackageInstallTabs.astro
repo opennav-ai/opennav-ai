@@ -1,0 +1,18 @@
+---
+import { Code, TabItem, Tabs } from "@astrojs/starlight/components";
+---
+
+<Tabs syncKey="package-manager">
+  <TabItem label="npm">
+    <Code code="npm install @opennav-ai/opennav" lang="bash" />
+  </TabItem>
+  <TabItem label="pnpm">
+    <Code code="pnpm add @opennav-ai/opennav" lang="bash" />
+  </TabItem>
+  <TabItem label="yarn">
+    <Code code="yarn add @opennav-ai/opennav" lang="bash" />
+  </TabItem>
+  <TabItem label="bun">
+    <Code code="bun add @opennav-ai/opennav" lang="bash" />
+  </TabItem>
+</Tabs>

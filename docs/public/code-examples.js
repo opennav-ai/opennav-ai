@@ -1,90 +1,4 @@
-const CODE_THEME_STORAGE_KEY = "opennav-code-theme";
-
-const codeThemes = [
-  ["one-light", "One Light"],
-  ["vscode-dark", "VS Code Dark+"],
-  ["night-owl", "Night Owl"],
-  ["github-light", "GitHub Light"],
-];
-
 let exampleSwitcherCount = 0;
-
-function getStoredCodeTheme() {
-  try {
-    return window.localStorage.getItem(CODE_THEME_STORAGE_KEY);
-  } catch {
-    return null;
-  }
-}
-
-function storeCodeTheme(theme) {
-  try {
-    window.localStorage.setItem(CODE_THEME_STORAGE_KEY, theme);
-  } catch {
-    return;
-  }
-}
-
-function getInitialCodeTheme() {
-  const storedTheme = getStoredCodeTheme();
-
-  if (codeThemes.some(([theme]) => theme === storedTheme)) {
-    return storedTheme;
-  }
-
-  return "one-light";
-}
-
-function applyCodeTheme(theme) {
-  document.documentElement.dataset.codeTheme = theme;
-  storeCodeTheme(theme);
-}
-
-function createCodeThemePicker() {
-  if (document.querySelector(".opennav-code-theme-picker") !== null) {
-    return;
-  }
-
-  if (window.location.pathname === "/how-it-works/") {
-    return;
-  }
-
-  const firstCodeBlock = document.querySelector(".expressive-code");
-
-  if (firstCodeBlock === null) {
-    return;
-  }
-
-  const insertionTarget =
-    firstCodeBlock.closest(".opennav-example-switcher") ?? firstCodeBlock;
-  const selectedTheme =
-    document.documentElement.dataset.codeTheme ?? getInitialCodeTheme();
-  const wrapper = document.createElement("div");
-  wrapper.className = "opennav-code-theme-picker not-content";
-
-  const label = document.createElement("label");
-  label.htmlFor = "opennav-code-theme";
-  label.textContent = "Code theme";
-
-  const select = document.createElement("select");
-  select.id = "opennav-code-theme";
-  select.name = "opennav-code-theme";
-
-  for (const [value, labelText] of codeThemes) {
-    const option = document.createElement("option");
-    option.value = value;
-    option.textContent = labelText;
-    option.selected = value === selectedTheme;
-    select.append(option);
-  }
-
-  select.addEventListener("change", () => {
-    applyCodeTheme(select.value);
-  });
-
-  wrapper.append(label, select);
-  insertionTarget.before(wrapper);
-}
 
 function getNextElementByClass(element, className) {
   let nextElement = element.nextElementSibling;
@@ -224,15 +138,7 @@ function enhanceExampleToggles() {
 }
 
 function enhanceCodeExamples() {
-  applyCodeTheme(getInitialCodeTheme());
   enhanceExampleToggles();
-  createCodeThemePicker();
-  const picker = document.querySelector(".opennav-code-theme-picker");
-  const toolbar = document.querySelector(".opennav-example-toolbar");
-
-  if (picker !== null && toolbar !== null) {
-    toolbar.append(picker);
-  }
 }
 
 if (document.readyState === "loading") {

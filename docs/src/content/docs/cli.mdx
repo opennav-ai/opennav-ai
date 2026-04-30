@@ -3,6 +3,8 @@ title: CLI
 description: Use the opennav command with a finished static output folder.
 ---
 
+import PackageInstallTabs from "../../components/PackageInstallTabs.astro";
+
 The CLI entrypoint is for projects that already have a shell build command and
 want the smallest OpenNav setup.
 
@@ -10,9 +12,7 @@ want the smallest OpenNav setup.
 
 Install OpenNav in the project that owns the static build command.
 
-```bash
-npm install @opennav-ai/opennav
-```
+<PackageInstallTabs />
 
 ```bash
 opennav build --static \
