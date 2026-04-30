@@ -1,22 +1,51 @@
-import { err, ok, type Result } from "neverthrow";
-import { describe, expect, it } from "vitest";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
+import type { Result } from "neverthrow";
+import { afterEach, describe, expect, it } from "vitest";
 import type { OpenNavError } from "../../common/types/opennav-error";
+import { EngineFileReader } from "../../input/services/engine-file-reader";
+import type { EngineFileReadInput } from "../../input/types/engine-file-read-input";
+import type { EngineFileReadResult } from "../../input/types/engine-file-read-result";
 import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
 import { DEFAULT_LLMS_FULL_MAX_CONTENT_TOKENS } from "../constants/default-llms-full-max-content-tokens";
 import type { AgentContentBuildInput } from "../types/agent-content-build-input";
-import type { AgentContentBuildPage } from "../types/agent-content-build-page";
 import type { AgentContentBuildResult } from "../types/agent-content-build-result";
 import type { AgentContentFile } from "../types/agent-content-file";
 import type { LlmsFullTxtTokenCounter } from "../types/llms-full-txt-token-counter";
 import { AgentContentFileBuilder } from "./agent-content-file-builder";
 import { LlmsFullTxtGenerator } from "./llms-full-txt-generator";
 
-interface SourcePageProbe {
-  readonly buildPage: AgentContentBuildPage;
-  readonly readCount: () => number;
-}
-
 const BUILD_FINGERPRINT = "sha256:build";
+let fixtureDirectory: string | undefined;
+
+class CountingEngineFileReader extends EngineFileReader {
+  readonly #readCounts = new Map<string, number>();
+
+  /**
+   * Reads one source file through the real engine file reader and records the path.
+   *
+   * @param input - Output directory and source file path to read.
+   * @returns The real file read result from disk.
+   */
+  public override async read(
+    input: EngineFileReadInput,
+  ): Promise<Result<EngineFileReadResult, OpenNavError>> {
+    this.#readCounts.set(input.filePath, this.readCount(input.filePath) + 1);
+
+    return super.read(input);
+  }
+
+  /**
+   * Returns how many times a source file path has been read.
+   *
+   * @param filePath - Output-directory-relative source file path to inspect.
+   * @returns The recorded read count for that exact path.
+   */
+  public readCount(filePath: string): number {
+    return this.#readCounts.get(filePath) ?? 0;
+  }
+}
 
 class StaticLlmsFullTxtTokenCounter implements LlmsFullTxtTokenCounter {
   /**
@@ -51,7 +80,8 @@ class WhitespaceLlmsFullTxtTokenCounter implements LlmsFullTxtTokenCounter {
 }
 
 function createBuildInput(
-  pages: readonly AgentContentBuildPage[],
+  outputDirectory: string,
+  pages: readonly OpenNavPageMetadata[],
   maxLlmsFullContentTokens: number = DEFAULT_LLMS_FULL_MAX_CONTENT_TOKENS,
   contentSignalsConfigured = false,
 ): AgentContentBuildInput {
@@ -61,6 +91,7 @@ function createBuildInput(
     buildFingerprint: BUILD_FINGERPRINT,
     contentSignalsConfigured,
     maxLlmsFullContentTokens,
+    outputDirectory,
     pages,
   };
 }
@@ -97,44 +128,6 @@ function createMarkdownPage(
   };
 }
 
-function createSourcePageProbe(
-  page: OpenNavPageMetadata,
-  sourceContent: string,
-): SourcePageProbe {
-  let readCount = 0;
-
-  return {
-    buildPage: {
-      page,
-      getSourceContent: async (): Promise<Result<string, OpenNavError>> => {
-        readCount += 1;
-
-        return ok(sourceContent);
-      },
-    },
-    readCount: (): number => readCount,
-  };
-}
-
-function createFailingSourcePageProbe(
-  page: OpenNavPageMetadata,
-  sourceReadError: OpenNavError,
-): SourcePageProbe {
-  let readCount = 0;
-
-  return {
-    buildPage: {
-      page,
-      getSourceContent: async (): Promise<Result<string, OpenNavError>> => {
-        readCount += 1;
-
-        return err(sourceReadError);
-      },
-    },
-    readCount: (): number => readCount,
-  };
-}
-
 function findFileByPath(
   files: readonly AgentContentFile[],
   outputFilePath: string,
@@ -166,24 +159,84 @@ function createExpectedOpenNavManifestContent(
   return `{\n  "opennav": true,\n  "version": "1.0",\n  "profile": "static-agent-ready",\n  "site": "https://example.com",\n  "build_fingerprint": "${BUILD_FINGERPRINT}",\n  "spec": "https://opennav.ai/spec/1.0",\n  "artifacts": {\n    "llms_txt": "/llms.txt",\n    "llms_full_txt": "/llms-full.txt",\n    "well_known_llms_txt": "/.well-known/llms.txt",\n    "well_known_llms_full_txt": "/.well-known/llms-full.txt"\n  },\n  "capabilities": {\n    "clean_markdown": true,\n    "llms_txt": true,\n    "llms_full_txt": true,\n    "html_resource_links": ${htmlResourceLinks ? "true" : "false"},\n    "content_signals": ${contentSignals ? "true" : "false"}\n  }\n}\n`;
 }
 
+async function createOutputDirectory(): Promise<string> {
+  fixtureDirectory = await mkdtemp(join(tmpdir(), "opennav-agent-content-"));
+  const outputDirectory = join(fixtureDirectory, "dist");
+  await mkdir(outputDirectory);
+
+  return outputDirectory;
+}
+
+function createReadError(
+  outputDirectory: string,
+  sourceFilePath: string,
+): OpenNavError {
+  return {
+    code: "ENGINE_FILE_READ_FAILED",
+    message: "The engine could not read the built site file.",
+    context: {
+      outputDirectory,
+      filePath: sourceFilePath,
+      cause: `ENOENT: no such file or directory, open '${join(
+        outputDirectory,
+        sourceFilePath,
+      )}'`,
+    },
+  };
+}
+
+async function writeSourceFile(
+  outputDirectory: string,
+  page: OpenNavPageMetadata,
+  sourceContent: string,
+): Promise<void> {
+  const absoluteFilePath = join(outputDirectory, page.sourceFilePath);
+  await mkdir(dirname(absoluteFilePath), { recursive: true });
+  await writeFile(absoluteFilePath, sourceContent, "utf8");
+}
+
 describe("AgentContentFileBuilder", (): void => {
-  it("returns exact priority-ordered file paths for a small site without reading page bodies", (): void => {
-    const homeProbe = createSourcePageProbe(
-      createHtmlPage("index.html", "/", "Home", "Project overview."),
+  afterEach(async (): Promise<void> => {
+    if (fixtureDirectory !== undefined) {
+      await rm(fixtureDirectory, { force: true, recursive: true });
+      fixtureDirectory = undefined;
+    }
+  });
+
+  it("returns exact priority-ordered file paths for a small site without reading page bodies", async (): Promise<void> => {
+    const outputDirectory = await createOutputDirectory();
+    const fileReader = new CountingEngineFileReader();
+    const homePage = createHtmlPage(
+      "index.html",
+      "/",
+      "Home",
+      "Project overview.",
+    );
+    const apiPage = createHtmlPage(
+      "docs/api.html",
+      "/docs/api",
+      "API",
+      "Use the API.",
+    );
+    await writeSourceFile(
+      outputDirectory,
+      homePage,
       "<h1>Home</h1><p>Project overview.</p>",
     );
-    const apiProbe = createSourcePageProbe(
-      createHtmlPage("docs/api.html", "/docs/api", "API", "Use the API."),
+    await writeSourceFile(
+      outputDirectory,
+      apiPage,
       "<h1>API</h1><p>Use the API.</p>",
     );
     const builder = new AgentContentFileBuilder({
+      fileReader,
       llmsFullTxtGenerator: new LlmsFullTxtGenerator(
         new StaticLlmsFullTxtTokenCounter(),
       ),
     });
 
     const result: AgentContentBuildResult = builder.build(
-      createBuildInput([homeProbe.buildPage, apiProbe.buildPage]),
+      createBuildInput(outputDirectory, [homePage, apiPage]),
     );
 
     expect({
@@ -191,8 +244,8 @@ describe("AgentContentFileBuilder", (): void => {
       skippedFilePaths: result.skippedFilePaths,
       warnings: result.warnings,
       sourceReadCounts: {
-        home: homeProbe.readCount(),
-        api: apiProbe.readCount(),
+        home: fileReader.readCount("index.html"),
+        api: fileReader.readCount("docs/api.html"),
       },
     }).toEqual({
       filePaths: [
@@ -214,22 +267,39 @@ describe("AgentContentFileBuilder", (): void => {
   });
 
   it("builds exact lazy readable content files for a validated page set", async (): Promise<void> => {
-    const homeProbe = createSourcePageProbe(
-      createHtmlPage("index.html", "/", "Home", "Project overview."),
+    const outputDirectory = await createOutputDirectory();
+    const fileReader = new CountingEngineFileReader();
+    const homePage = createHtmlPage(
+      "index.html",
+      "/",
+      "Home",
+      "Project overview.",
+    );
+    const apiPage = createHtmlPage(
+      "docs/api.html",
+      "/docs/api",
+      "API",
+      "Use the API.",
+    );
+    await writeSourceFile(
+      outputDirectory,
+      homePage,
       '<h1>Home</h1><p>Start with the <a href="/docs/api">API</a>.</p>',
     );
-    const apiProbe = createSourcePageProbe(
-      createHtmlPage("docs/api.html", "/docs/api", "API", "Use the API."),
+    await writeSourceFile(
+      outputDirectory,
+      apiPage,
       '<h1>API</h1><p>Use API features after reading <a href="/">Home</a>.</p>',
     );
     const builder = new AgentContentFileBuilder({
+      fileReader,
       llmsFullTxtGenerator: new LlmsFullTxtGenerator(
         new StaticLlmsFullTxtTokenCounter(),
       ),
     });
 
     const result: AgentContentBuildResult = builder.build(
-      createBuildInput([homeProbe.buildPage, apiProbe.buildPage]),
+      createBuildInput(outputDirectory, [homePage, apiPage]),
     );
 
     expect({
@@ -237,8 +307,8 @@ describe("AgentContentFileBuilder", (): void => {
       skippedFilePaths: result.skippedFilePaths,
       warnings: result.warnings,
       sourceReadCounts: {
-        home: homeProbe.readCount(),
-        api: apiProbe.readCount(),
+        home: fileReader.readCount("index.html"),
+        api: fileReader.readCount("docs/api.html"),
       },
     }).toEqual({
       filePaths: [
@@ -353,27 +423,39 @@ describe("AgentContentFileBuilder", (): void => {
     });
   });
 
-  it("does not plan a generated Markdown file when that Markdown path already exists", (): void => {
-    const htmlProbe = createSourcePageProbe(
-      createHtmlPage("docs/api.html", "/docs/api-html", "HTML API", undefined),
+  it("does not plan a generated Markdown file when that Markdown path already exists", async (): Promise<void> => {
+    const outputDirectory = await createOutputDirectory();
+    const fileReader = new CountingEngineFileReader();
+    const htmlPage = createHtmlPage(
+      "docs/api.html",
+      "/docs/api-html",
+      "HTML API",
+      undefined,
+    );
+    const markdownPage = createMarkdownPage(
+      "docs/api.md",
+      "/docs/api-markdown",
+      "Markdown API",
+      undefined,
+    );
+    await writeSourceFile(
+      outputDirectory,
+      htmlPage,
       "<h1>HTML API</h1><p>Generated from HTML.</p>",
     );
-    const markdownProbe = createSourcePageProbe(
-      createMarkdownPage(
-        "docs/api.md",
-        "/docs/api-markdown",
-        "Markdown API",
-        undefined,
-      ),
+    await writeSourceFile(
+      outputDirectory,
+      markdownPage,
       "# Markdown API\n\nGenerated from Markdown.\n",
     );
     const builder = new AgentContentFileBuilder({
+      fileReader,
       llmsFullTxtGenerator: new LlmsFullTxtGenerator(
         new StaticLlmsFullTxtTokenCounter(),
       ),
     });
     const result = builder.build(
-      createBuildInput([htmlProbe.buildPage, markdownProbe.buildPage]),
+      createBuildInput(outputDirectory, [htmlPage, markdownPage]),
     );
 
     expect({
@@ -381,8 +463,8 @@ describe("AgentContentFileBuilder", (): void => {
       skippedFilePaths: result.skippedFilePaths,
       warnings: result.warnings,
       sourceReadCounts: {
-        html: htmlProbe.readCount(),
-        markdown: markdownProbe.readCount(),
+        html: fileReader.readCount("docs/api.html"),
+        markdown: fileReader.readCount("docs/api.md"),
       },
     }).toEqual({
       filePaths: [
@@ -402,17 +484,27 @@ describe("AgentContentFileBuilder", (): void => {
   });
 
   it("reports configured static capabilities in the OpenNav manifest", async (): Promise<void> => {
-    const markdownProbe = createSourcePageProbe(
-      createMarkdownPage("docs/api.md", "/docs/api", "Markdown API", undefined),
+    const outputDirectory = await createOutputDirectory();
+    const fileReader = new CountingEngineFileReader();
+    const markdownPage = createMarkdownPage(
+      "docs/api.md",
+      "/docs/api",
+      "Markdown API",
+      undefined,
+    );
+    await writeSourceFile(
+      outputDirectory,
+      markdownPage,
       "# Markdown API\n\nGenerated from Markdown.\n",
     );
     const builder = new AgentContentFileBuilder({
+      fileReader,
       llmsFullTxtGenerator: new LlmsFullTxtGenerator(
         new StaticLlmsFullTxtTokenCounter(),
       ),
     });
     const result = builder.build(
-      createBuildInput([markdownProbe.buildPage], undefined, true),
+      createBuildInput(outputDirectory, [markdownPage], undefined, true),
     );
     const manifestFile = findFileByPath(
       result.files,
@@ -425,7 +517,7 @@ describe("AgentContentFileBuilder", (): void => {
     if (contentResult.isOk()) {
       expect({
         fileContent: contentResult.value,
-        sourceReadCount: markdownProbe.readCount(),
+        sourceReadCount: fileReader.readCount("docs/api.md"),
       }).toEqual({
         fileContent: {
           content: createExpectedOpenNavManifestContent(true, false),
@@ -437,34 +529,49 @@ describe("AgentContentFileBuilder", (): void => {
   });
 
   it("generates only the requested Markdown page body when one page file is read", async (): Promise<void> => {
-    const homeProbe = createSourcePageProbe(
-      createHtmlPage("index.html", "/", "Home", "Project overview."),
+    const outputDirectory = await createOutputDirectory();
+    const fileReader = new CountingEngineFileReader();
+    const homePage = createHtmlPage(
+      "index.html",
+      "/",
+      "Home",
+      "Project overview.",
+    );
+    const apiPage = createHtmlPage(
+      "docs/api.html",
+      "/docs/api",
+      "API",
+      "Use the API.",
+    );
+    const guidePage = createHtmlPage(
+      "docs/guide.html",
+      "/docs/guide",
+      "Guide",
+      "Read the guide.",
+    );
+    await writeSourceFile(
+      outputDirectory,
+      homePage,
       "<h1>Home</h1><p>Project overview.</p>",
     );
-    const apiProbe = createSourcePageProbe(
-      createHtmlPage("docs/api.html", "/docs/api", "API", "Use the API."),
+    await writeSourceFile(
+      outputDirectory,
+      apiPage,
       '<h1>API</h1><p>Use the <a href="/docs/guide">guide</a>.</p>',
     );
-    const guideProbe = createSourcePageProbe(
-      createHtmlPage(
-        "docs/guide.html",
-        "/docs/guide",
-        "Guide",
-        "Read the guide.",
-      ),
+    await writeSourceFile(
+      outputDirectory,
+      guidePage,
       "<h1>Guide</h1><p>Read the guide.</p>",
     );
     const builder = new AgentContentFileBuilder({
+      fileReader,
       llmsFullTxtGenerator: new LlmsFullTxtGenerator(
         new StaticLlmsFullTxtTokenCounter(),
       ),
     });
     const result = builder.build(
-      createBuildInput([
-        homeProbe.buildPage,
-        apiProbe.buildPage,
-        guideProbe.buildPage,
-      ]),
+      createBuildInput(outputDirectory, [homePage, apiPage, guidePage]),
     );
     const apiFile = findFileByPath(result.files, "docs/api.md");
 
@@ -475,9 +582,9 @@ describe("AgentContentFileBuilder", (): void => {
       expect({
         fileContent: contentResult.value,
         sourceReadCounts: {
-          home: homeProbe.readCount(),
-          api: apiProbe.readCount(),
-          guide: guideProbe.readCount(),
+          home: fileReader.readCount("index.html"),
+          api: fileReader.readCount("docs/api.html"),
+          guide: fileReader.readCount("docs/guide.html"),
         },
       }).toEqual({
         fileContent: {
@@ -496,23 +603,22 @@ describe("AgentContentFileBuilder", (): void => {
   });
 
   it("returns source read errors from lazy Markdown page content callbacks", async (): Promise<void> => {
-    const sourceReadError: OpenNavError = {
-      code: "ENGINE_FILE_READ_FAILED",
-      message: "Could not read the source page.",
-      context: {
-        sourceFilePath: "docs/api.html",
-      },
-    };
-    const apiProbe = createFailingSourcePageProbe(
-      createHtmlPage("docs/api.html", "/docs/api", "API", "Use the API."),
-      sourceReadError,
+    const outputDirectory = await createOutputDirectory();
+    const fileReader = new CountingEngineFileReader();
+    const apiPage = createHtmlPage(
+      "docs/api.html",
+      "/docs/api",
+      "API",
+      "Use the API.",
     );
+    const sourceReadError = createReadError(outputDirectory, "docs/api.html");
     const builder = new AgentContentFileBuilder({
+      fileReader,
       llmsFullTxtGenerator: new LlmsFullTxtGenerator(
         new StaticLlmsFullTxtTokenCounter(),
       ),
     });
-    const result = builder.build(createBuildInput([apiProbe.buildPage]));
+    const result = builder.build(createBuildInput(outputDirectory, [apiPage]));
     const apiFile = findFileByPath(result.files, "docs/api.md");
 
     const contentResult = await apiFile.getContent();
@@ -521,7 +627,7 @@ describe("AgentContentFileBuilder", (): void => {
       isErr: contentResult.isErr(),
       error: contentResult.isErr() ? contentResult.error : undefined,
       sourceReadCounts: {
-        api: apiProbe.readCount(),
+        api: fileReader.readCount("docs/api.html"),
       },
     }).toEqual({
       isErr: true,
@@ -533,28 +639,34 @@ describe("AgentContentFileBuilder", (): void => {
   });
 
   it("returns source read errors from the lazy llms-full content callback", async (): Promise<void> => {
-    const sourceReadError: OpenNavError = {
-      code: "ENGINE_FILE_READ_FAILED",
-      message: "Could not read the source page.",
-      context: {
-        sourceFilePath: "docs/api.html",
-      },
-    };
-    const homeProbe = createSourcePageProbe(
-      createHtmlPage("index.html", "/", "Home", "Project overview."),
+    const outputDirectory = await createOutputDirectory();
+    const fileReader = new CountingEngineFileReader();
+    const homePage = createHtmlPage(
+      "index.html",
+      "/",
+      "Home",
+      "Project overview.",
+    );
+    const apiPage = createHtmlPage(
+      "docs/api.html",
+      "/docs/api",
+      "API",
+      "Use the API.",
+    );
+    await writeSourceFile(
+      outputDirectory,
+      homePage,
       "<h1>Home</h1><p>Project overview.</p>",
     );
-    const apiProbe = createFailingSourcePageProbe(
-      createHtmlPage("docs/api.html", "/docs/api", "API", "Use the API."),
-      sourceReadError,
-    );
+    const sourceReadError = createReadError(outputDirectory, "docs/api.html");
     const builder = new AgentContentFileBuilder({
+      fileReader,
       llmsFullTxtGenerator: new LlmsFullTxtGenerator(
         new StaticLlmsFullTxtTokenCounter(),
       ),
     });
     const result = builder.build(
-      createBuildInput([homeProbe.buildPage, apiProbe.buildPage]),
+      createBuildInput(outputDirectory, [homePage, apiPage]),
     );
     const llmsFullFile = findFileByPath(result.files, "llms-full.txt");
     const wellKnownLlmsFullFile = findFileByPath(
@@ -580,8 +692,8 @@ describe("AgentContentFileBuilder", (): void => {
         }),
       ),
       sourceReadCounts: {
-        home: homeProbe.readCount(),
-        api: apiProbe.readCount(),
+        home: fileReader.readCount("index.html"),
+        api: fileReader.readCount("docs/api.html"),
       },
     }).toEqual({
       contentResults: [
@@ -601,25 +713,30 @@ describe("AgentContentFileBuilder", (): void => {
     });
   });
 
-  it("does not create a route-based index.md file for a non-index root HTML file", (): void => {
-    const homeProbe = createSourcePageProbe(
-      createHtmlPage("home.html", "/", "Home", "Home page."),
+  it("does not create a route-based index.md file for a non-index root HTML file", async (): Promise<void> => {
+    const outputDirectory = await createOutputDirectory();
+    const fileReader = new CountingEngineFileReader();
+    const homePage = createHtmlPage("home.html", "/", "Home", "Home page.");
+    await writeSourceFile(
+      outputDirectory,
+      homePage,
       "<h1>Home</h1><p>Home page.</p>",
     );
     const builder = new AgentContentFileBuilder({
+      fileReader,
       llmsFullTxtGenerator: new LlmsFullTxtGenerator(
         new StaticLlmsFullTxtTokenCounter(),
       ),
     });
 
-    const result = builder.build(createBuildInput([homeProbe.buildPage]));
+    const result = builder.build(createBuildInput(outputDirectory, [homePage]));
 
     expect({
       filePaths: getFilePaths(result.files),
       skippedFilePaths: result.skippedFilePaths,
       warnings: result.warnings,
       sourceReadCounts: {
-        home: homeProbe.readCount(),
+        home: fileReader.readCount("home.html"),
       },
     }).toEqual({
       filePaths: [
@@ -639,23 +756,36 @@ describe("AgentContentFileBuilder", (): void => {
   });
 
   it("returns llms-full token cap warnings from the lazy content callback", async (): Promise<void> => {
+    const outputDirectory = await createOutputDirectory();
+    const fileReader = new CountingEngineFileReader();
     const tokenCounter = new WhitespaceLlmsFullTxtTokenCounter();
-    const homeProbe = createSourcePageProbe(
-      createHtmlPage("index.html", "/", "Home", undefined),
+    const homePage = createHtmlPage("index.html", "/", "Home", undefined);
+    const apiPage = createHtmlPage(
+      "docs/api.html",
+      "/docs/api",
+      "API",
+      undefined,
+    );
+    await writeSourceFile(
+      outputDirectory,
+      homePage,
       "<h1>Home</h1><p>Hello agents.</p>",
     );
-    const apiProbe = createSourcePageProbe(
-      createHtmlPage("docs/api.html", "/docs/api", "API", undefined),
+    await writeSourceFile(
+      outputDirectory,
+      apiPage,
       "<h1>API</h1><p>Use the engine.</p>",
     );
     const cappedContent =
       "# Example Docs\n\n## Root\n\n### Home\n\nURL: https://example.com/index.md\n\n# Home\n\nHello agents.\n";
     const builder = new AgentContentFileBuilder({
+      fileReader,
       llmsFullTxtGenerator: new LlmsFullTxtGenerator(tokenCounter),
     });
     const result = builder.build(
       createBuildInput(
-        [homeProbe.buildPage, apiProbe.buildPage],
+        outputDirectory,
+        [homePage, apiPage],
         tokenCounter.count(cappedContent),
       ),
     );

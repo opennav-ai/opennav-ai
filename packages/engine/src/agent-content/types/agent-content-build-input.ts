@@ -1,4 +1,4 @@
-import type { AgentContentBuildPage } from "./agent-content-build-page";
+import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
 
 /**
  * Site metadata and lazy page readers needed to plan agent-readable files.
@@ -56,11 +56,20 @@ export interface AgentContentBuildInput {
   readonly maxLlmsFullContentTokens: number;
 
   /**
+   * Absolute or process-relative path to the built static output directory.
+   *
+   * Lazy Markdown artifacts and `llms-full.txt` resolve each page source path
+   * under this directory when their `getContent` callbacks are materialized.
+   * Planning does not read from this directory.
+   */
+  readonly outputDirectory: string;
+
+  /**
    * Source pages available for generated Markdown artifacts and `llms-full.txt`.
    *
    * Page metadata is used during planning. Existing Markdown source page paths
-   * reserve their matching `.md` output paths, and page body callbacks are used
-   * later by individual lazy files.
+   * reserve their matching `.md` output paths, and source bodies are read later
+   * by individual lazy files from `outputDirectory`.
    */
-  readonly pages: readonly AgentContentBuildPage[];
+  readonly pages: readonly OpenNavPageMetadata[];
 }

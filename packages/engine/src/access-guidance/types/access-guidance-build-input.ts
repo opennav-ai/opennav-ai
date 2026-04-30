@@ -1,5 +1,5 @@
+import type { EngineFileReference } from "../../input/types/engine-file-reference";
 import type { EngineContentSignalsPolicy } from "../../types/engine-content-signals-policy";
-import type { RobotsTxtSourceFile } from "./robots-txt-source-file";
 
 /**
  * Existing crawler files and configured preferences needed to plan access guidance.
@@ -16,13 +16,22 @@ export interface AccessGuidanceBuildInput {
   readonly buildFingerprint: string;
 
   /**
-   * Existing root `robots.txt` content from the built static output folder.
+   * Absolute or process-relative path to the built static output directory.
    *
-   * When omitted and Content Signals are configured, OpenNav plans a new
-   * `robots.txt` file containing only the minimum `User-agent: *` group needed
-   * for the configured `Content-signal` directive.
+   * When a `robots.txt` source reference is present, the builder reads that
+   * file from this directory before planning Content Signals guidance. The
+   * builder does not write to this directory.
    */
-  readonly robotsTxtFile?: RobotsTxtSourceFile | undefined;
+  readonly outputDirectory: string;
+
+  /**
+   * Supported source files discovered in the built static output folder.
+   *
+   * The first reference whose kind is `robots` is treated as the existing root
+   * `robots.txt` file. If no such reference exists and Content Signals are
+   * configured, OpenNav plans a new `robots.txt` file.
+   */
+  readonly sourceFileReferences: readonly EngineFileReference[];
 
   /**
    * Caller-provided Content Signals preferences.

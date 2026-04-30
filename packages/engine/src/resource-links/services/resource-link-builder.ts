@@ -1,6 +1,8 @@
+import { err, ok, type Result } from "neverthrow";
 import { MarkdownPageArtifactPathBuilder } from "../../agent-content/services/markdown-page-artifact-path-builder";
 import type { MarkdownPageArtifactPathBuildResult } from "../../agent-content/types/markdown-page-artifact-path-build-result";
 import type { OpenNavError } from "../../common/types/opennav-error";
+import { EngineFileReader } from "../../input/services/engine-file-reader";
 import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
 import type { ResourceLink } from "../types/resource-link";
 import type { ResourceLinkBuildInput } from "../types/resource-link-build-input";
@@ -11,6 +13,7 @@ import { HtmlHeadLinkPlanner } from "./html-head-link-planner";
 interface ResourceLinkBuilderDependencies {
   readonly htmlHeadLinkPlanner?: HtmlHeadLinkPlanner;
   readonly markdownPageArtifactPathBuilder?: MarkdownPageArtifactPathBuilder;
+  readonly fileReader?: EngineFileReader;
 }
 
 /**
@@ -19,6 +22,7 @@ interface ResourceLinkBuilderDependencies {
 export class ResourceLinkBuilder {
   readonly #htmlHeadLinkPlanner: HtmlHeadLinkPlanner;
   readonly #markdownPageArtifactPathBuilder: MarkdownPageArtifactPathBuilder;
+  readonly #fileReader: EngineFileReader;
 
   /**
    * Creates a builder with default resource-link collaborators.
@@ -31,28 +35,37 @@ export class ResourceLinkBuilder {
     this.#markdownPageArtifactPathBuilder =
       dependencies.markdownPageArtifactPathBuilder ??
       new MarkdownPageArtifactPathBuilder();
+    this.#fileReader = dependencies.fileReader ?? new EngineFileReader();
   }
 
   /**
    * Plans resource links for HTML pages without writing files.
    *
    * @param input - Site root and source pages available for link planning.
-   * @returns Page edit plans and non-fatal warnings.
+   * @returns Page edit plans with non-fatal warnings, or a typed file read error.
    */
-  public build(input: ResourceLinkBuildInput): ResourceLinkBuildResult {
+  public async build(
+    input: ResourceLinkBuildInput,
+  ): Promise<Result<ResourceLinkBuildResult, OpenNavError>> {
     const pageEdits: ResourceLinkPageEdit[] = [];
     const warnings: OpenNavError[] = [];
 
-    for (const buildPage of input.pages) {
-      if (buildPage.page.sourceContentType !== "html") {
+    for (const page of input.pages) {
+      if (page.sourceContentType !== "html") {
         continue;
       }
 
-      const links = this.createLinks(input.baseUrl, buildPage.page);
+      const sourceContentResult = await this.readPageSourceContent(input, page);
+
+      if (sourceContentResult.isErr()) {
+        return err(sourceContentResult.error);
+      }
+
+      const links = this.createLinks(input.baseUrl, page);
       const pageEditResult = this.#htmlHeadLinkPlanner.plan({
-        page: buildPage.page,
+        page,
         resourceLinkFingerprint: input.buildFingerprint,
-        sourceContent: buildPage.sourceContent,
+        sourceContent: sourceContentResult.value,
         links,
       });
 
@@ -63,10 +76,10 @@ export class ResourceLinkBuilder {
       }
     }
 
-    return {
+    return ok({
       pageEdits,
       warnings,
-    };
+    });
   }
 
   private buildSiteIndexUrl(baseUrl: string): string {
@@ -96,5 +109,21 @@ export class ResourceLinkBuilder {
         title: "LLMs text site index",
       },
     ];
+  }
+
+  private async readPageSourceContent(
+    input: ResourceLinkBuildInput,
+    page: OpenNavPageMetadata,
+  ): Promise<Result<string, OpenNavError>> {
+    const readResult = await this.#fileReader.read({
+      outputDirectory: input.outputDirectory,
+      filePath: page.sourceFilePath,
+    });
+
+    if (readResult.isErr()) {
+      return err(readResult.error);
+    }
+
+    return ok(readResult.value.content);
   }
 }

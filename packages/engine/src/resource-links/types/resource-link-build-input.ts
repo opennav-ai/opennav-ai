@@ -1,4 +1,4 @@
-import type { ResourceLinkBuildPage } from "./resource-link-build-page";
+import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
 
 /**
  * Site root and page source data needed to build resource-link plans.
@@ -23,10 +23,20 @@ export interface ResourceLinkBuildInput {
   readonly buildFingerprint: string;
 
   /**
+   * Absolute or process-relative path to the built static output directory.
+   *
+   * HTML page source paths are resolved under this directory before their
+   * current bodies are read for safe `<head>` insertion planning. The builder
+   * does not write to this directory.
+   */
+  readonly outputDirectory: string;
+
+  /**
    * Built pages available for resource-link planning.
    *
-   * HTML pages are processed in this order. Markdown pages remain caller-owned
-   * and are skipped by the HTML head planner.
+   * HTML page source files are read in this order and used to plan resource
+   * links. Markdown pages remain caller-owned and are skipped without reading
+   * their source files.
    */
-  readonly pages: readonly ResourceLinkBuildPage[];
+  readonly pages: readonly OpenNavPageMetadata[];
 }

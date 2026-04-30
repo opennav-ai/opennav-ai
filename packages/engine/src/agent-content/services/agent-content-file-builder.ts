@@ -1,9 +1,9 @@
 import { err, ok, type Result } from "neverthrow";
 import type { OpenNavError } from "../../common/types/opennav-error";
+import { EngineFileReader } from "../../input/services/engine-file-reader";
 import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
 import type { EngineFilePath } from "../../types/engine-file-path";
 import type { AgentContentBuildInput } from "../types/agent-content-build-input";
-import type { AgentContentBuildPage } from "../types/agent-content-build-page";
 import type { AgentContentBuildResult } from "../types/agent-content-build-result";
 import type { AgentContentFile } from "../types/agent-content-file";
 import type { AgentContentFileContent } from "../types/agent-content-file-content";
@@ -27,18 +27,19 @@ interface AgentContentFileBuilderDependencies {
   readonly markdownPageArtifactPathBuilder?: MarkdownPageArtifactPathBuilder;
   readonly buildFingerprintDecorator?: AgentContentFileBuildFingerprintDecorator;
   readonly openNavManifestGenerator?: OpenNavManifestGenerator;
+  readonly fileReader?: EngineFileReader;
 }
 
 /**
  * Plans the Phase 1 files that agents can read directly from a static site.
  *
  * The builder receives already-validated site metadata and page metadata plus
- * one lazy source-content reader per page. It returns an in-memory file plan
- * with output-directory-relative paths such as `llms.txt`, `index.md`,
+ * the built output directory. It returns an in-memory file plan with
+ * output-directory-relative paths such as `llms.txt`, `index.md`,
  * `docs/api.md`, `llms-full.txt`, `.well-known/llms.txt`, and
  * `.well-known/opennav.json`. Each planned file exposes a `getContent`
  * callback so later write planning can inspect every path before page bodies
- * are read or converted.
+ * are read or converted from disk.
  *
  * Responsibilities:
  *
@@ -70,6 +71,7 @@ export class AgentContentFileBuilder {
   readonly #markdownPageArtifactPathBuilder: MarkdownPageArtifactPathBuilder;
   readonly #buildFingerprintDecorator: AgentContentFileBuildFingerprintDecorator;
   readonly #openNavManifestGenerator: OpenNavManifestGenerator;
+  readonly #fileReader: EngineFileReader;
 
   /**
    * Creates a builder with default content generators.
@@ -95,6 +97,7 @@ export class AgentContentFileBuilder {
       new AgentContentFileBuildFingerprintDecorator();
     this.#openNavManifestGenerator =
       dependencies.openNavManifestGenerator ?? new OpenNavManifestGenerator();
+    this.#fileReader = dependencies.fileReader ?? new EngineFileReader();
   }
 
   /**
@@ -121,10 +124,10 @@ export class AgentContentFileBuilder {
     this.reserveExistingMarkdownPagePaths(input, reservedOutputFilePaths);
 
     // Priority 3: HTML page files get mirrored `.md` artifacts by source path.
-    for (const pageInput of input.pages) {
+    for (const page of input.pages) {
       this.addMarkdownPageArtifactFile(
         input,
-        pageInput,
+        page,
         files,
         reservedOutputFilePaths,
       );
@@ -201,11 +204,11 @@ export class AgentContentFileBuilder {
 
   private addMarkdownPageArtifactFile(
     input: AgentContentBuildInput,
-    pageInput: AgentContentBuildPage,
+    page: OpenNavPageMetadata,
     files: AgentContentFile[],
     reservedOutputFilePaths: Set<EngineFilePath>,
   ): void {
-    if (pageInput.page.sourceContentType !== "html") {
+    if (page.sourceContentType !== "html") {
       return;
     }
 
@@ -213,16 +216,16 @@ export class AgentContentFileBuilder {
       input,
       files,
       reservedOutputFilePaths,
-      this.createMarkdownPageArtifactFile(input, pageInput),
+      this.createMarkdownPageArtifactFile(input, page),
     );
   }
 
   private async buildMarkdownPageContent(
     input: AgentContentBuildInput,
-    pageInput: AgentContentBuildPage,
+    page: OpenNavPageMetadata,
     includeSiteIndexBacklink: boolean,
   ): Promise<Result<string, OpenNavError>> {
-    const sourceContentResult = await pageInput.getSourceContent();
+    const sourceContentResult = await this.readPageSourceContent(input, page);
 
     if (sourceContentResult.isErr()) {
       return err(sourceContentResult.error);
@@ -230,11 +233,8 @@ export class AgentContentFileBuilder {
 
     const artifactResult = this.#markdownPageArtifactGenerator.generate({
       baseUrl: input.baseUrl,
-      page: pageInput.page,
-      pages: input.pages.map(
-        (candidate: AgentContentBuildPage): OpenNavPageMetadata =>
-          candidate.page,
-      ),
+      page,
+      pages: input.pages,
       sourceContent: sourceContentResult.value,
       includeSiteIndexBacklink,
     });
@@ -290,10 +290,7 @@ export class AgentContentFileBuilder {
           siteName: input.siteName,
           baseUrl: input.baseUrl,
           siteDescription: input.siteDescription,
-          pages: input.pages.map(
-            (pageInput: AgentContentBuildPage): OpenNavPageMetadata =>
-              pageInput.page,
-          ),
+          pages: input.pages,
         });
 
         return ok({
@@ -311,8 +308,8 @@ export class AgentContentFileBuilder {
       baseUrl: input.baseUrl,
       buildFingerprint: input.buildFingerprint,
       htmlResourceLinks: input.pages.some(
-        (pageInput: AgentContentBuildPage): boolean =>
-          pageInput.page.sourceContentType === "html",
+        (page: OpenNavPageMetadata): boolean =>
+          page.sourceContentType === "html",
       ),
       contentSignals: input.contentSignalsConfigured ?? false,
     });
@@ -334,10 +331,10 @@ export class AgentContentFileBuilder {
   ): Promise<Result<readonly LlmsFullTxtPageContent[], OpenNavError>> {
     const pages: LlmsFullTxtPageContent[] = [];
 
-    for (const pageInput of input.pages) {
+    for (const page of input.pages) {
       const markdownContentResult = await this.buildMarkdownPageContent(
         input,
-        pageInput,
+        page,
         false,
       );
 
@@ -346,7 +343,7 @@ export class AgentContentFileBuilder {
       }
 
       pages.push({
-        page: pageInput.page,
+        page,
         markdownContent: markdownContentResult.value,
       });
     }
@@ -356,11 +353,11 @@ export class AgentContentFileBuilder {
 
   private createMarkdownPageArtifactFile(
     input: AgentContentBuildInput,
-    pageInput: AgentContentBuildPage,
+    page: OpenNavPageMetadata,
   ): AgentContentFile {
     const artifactPath = this.#markdownPageArtifactPathBuilder.build({
       baseUrl: input.baseUrl,
-      page: pageInput.page,
+      page,
     });
 
     return {
@@ -370,7 +367,7 @@ export class AgentContentFileBuilder {
       > => {
         const markdownContentResult = await this.buildMarkdownPageContent(
           input,
-          pageInput,
+          page,
           true,
         );
 
@@ -390,17 +387,33 @@ export class AgentContentFileBuilder {
     input: AgentContentBuildInput,
     reservedOutputFilePaths: Set<EngineFilePath>,
   ): void {
-    for (const pageInput of input.pages) {
-      if (pageInput.page.sourceContentType !== "markdown") {
+    for (const page of input.pages) {
+      if (page.sourceContentType !== "markdown") {
         continue;
       }
 
       const artifactPath = this.#markdownPageArtifactPathBuilder.build({
         baseUrl: input.baseUrl,
-        page: pageInput.page,
+        page,
       });
 
       reservedOutputFilePaths.add(artifactPath.outputFilePath);
     }
+  }
+
+  private async readPageSourceContent(
+    input: AgentContentBuildInput,
+    page: OpenNavPageMetadata,
+  ): Promise<Result<string, OpenNavError>> {
+    const readResult = await this.#fileReader.read({
+      outputDirectory: input.outputDirectory,
+      filePath: page.sourceFilePath,
+    });
+
+    if (readResult.isErr()) {
+      return err(readResult.error);
+    }
+
+    return ok(readResult.value.content);
   }
 }
