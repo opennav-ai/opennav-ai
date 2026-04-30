@@ -1,6 +1,5 @@
 # ![OpenNav AI](./assets/full-open-logo.svg)
 
-
 ## **The open standard for agent navigation**
 
 Search finds pages. OpenNav makes them usable.
@@ -32,11 +31,41 @@ dist/
   robots.txt                         # includes configured Content Signals guidance
 ```
 
-Launch Day 1 does not currently include server-side Markdown responses or HTTP
-content negotiation. Those belong to the next layer: runtime integrations that
-can serve Markdown dynamically, negotiate content, and extend coverage across
-major frameworks and platforms such as Astro, Next.js, Cloudflare, AWS, and
-others.
+## Static Site Platforms
+
+OpenNav works with static output, so it fits the hosting platforms teams already
+use for documentation, marketing sites, and exported apps. Build your site, run
+OpenNav against the finished folder, and deploy the folder to platforms such as
+Cloudflare Pages, Netlify, Vercel static output, GitHub Pages, S3-compatible
+hosting, or any CDN that serves plain files.
+
+The static workflow is deployment-platform agnostic. OpenNav reads the generated
+HTML, writes agent-readable files beside it, and leaves your hosting stack to
+serve the result.
+
+## TypeScript SDKs
+
+Use the CLI for any finished static folder, or use the TypeScript SDK when your
+build already knows the output path. OpenNav includes framework helpers for
+Astro static builds and Next.js static export builds, with more framework
+integrations planned for upcoming releases.
+
+| Path | Supported now | Best fit |
+|------|---------------|----------|
+| CLI | Any finished static output folder. | Existing build scripts and CI pipelines. |
+| TypeScript SDK | Direct static output folder control. | Custom Node scripts and build hooks. |
+| Astro helper | Astro static builds. | `astro build` projects that publish `dist/`. |
+| Next.js helper | Next.js static export builds. | `output: "export"` projects that publish `out/`. |
+
+## Server-Side Roadmap
+
+Launch Day 1 focuses on real static output folders such as `dist/`, `out/`,
+`build/`, and framework-specific static export directories.
+
+Server-side Astro and Next.js support is the next track. That work will add
+Markdown content negotiation for runtime routes, with site-wide middleware and
+per-endpoint middleware options so apps can return agent-readable Markdown from
+server-rendered pages without requiring every route to be exported first.
 
 ## Why OpenNav Exists
 
@@ -71,7 +100,7 @@ what teams need next.
 | Stage | Deliverable | What it means |
 |-------|-------------|---------------|
 | Launch Day 1 | Static agent-ready sites | Generate Markdown page artifacts, `llms.txt`, `llms-full.txt`, OpenNav metadata, HTML resource links, and configured crawler guidance. |
-| Launch Day 2 | Runtime framework integrations | Add framework middleware and server hooks for dynamic Markdown responses, content negotiation, auth-aware docs, and larger sites. |
+| Launch Day 2 | Server-side Astro and Next.js integrations | Add Markdown content negotiation for runtime routes, with site-wide and per-endpoint middleware options. |
 | Future | Broader agent-ready publishing | Keep expanding framework coverage, validation, and documentation around the publishing workflows teams actually use. |
 
 The project stays disciplined: adoption first, then deeper navigation. The
@@ -431,9 +460,12 @@ Markdown files to disk.
 | Jekyll                     | `_site`              | Generic static-folder support         |
 | MkDocs                     | `site`               | Generic static-folder support         |
 
-OpenNav does not claim complete coverage for SSR-only apps, middleware,
-serverless functions, dynamic routes rendered only at request time, or pure SPA
-shells that emit one generic `index.html`.
+The static launch path does not claim complete coverage for SSR-only apps,
+middleware, serverless functions, dynamic routes rendered only at request time,
+or pure SPA shells that emit one generic `index.html`.
+
+Server-side Astro and Next.js support is planned after the static launch path,
+with Markdown content negotiation through site-wide and per-endpoint middleware.
 
 ## Current Repo Status
 

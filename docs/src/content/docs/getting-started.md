@@ -1,0 +1,86 @@
+---
+title: Getting Started
+description: Add OpenNav to an existing static site build.
+---
+
+Run OpenNav after your existing static build command. The output folder must
+already contain real prerendered HTML such as `index.html`,
+`docs/getting-started/index.html`, or `docs/api/index.html`.
+
+## Where It Runs
+
+OpenNav is designed for static site platforms first. If your deployment is a
+folder of files, OpenNav can run before you upload that folder.
+
+| Platform style | Example output | How OpenNav fits |
+| -------------- | -------------- | ---------------- |
+| Cloudflare Pages | `dist/` or framework output | Run OpenNav after the build, then deploy the same folder. |
+| Netlify | `dist/`, `build/`, or framework output | Add OpenNav as the final build step before publish. |
+| Vercel static output | `out/` or generated assets | Run OpenNav for exported static routes before upload. |
+| GitHub Pages or CDN hosting | Plain HTML folder | Run OpenNav locally or in CI, then publish the generated files. |
+
+## CLI Quick Start
+
+```bash
+opennav build --static --output dist --site-url https://example.com --site-name "Example Docs"
+```
+
+Use `--dry-run` first when you want to preview the exact files OpenNav would
+create, modify, or skip.
+
+```bash
+opennav build --static \
+  --output dist \
+  --site-url https://example.com \
+  --site-name "Example Docs" \
+  --dry-run
+```
+
+## Framework SDKs
+
+Use the TypeScript SDK when OpenNav should run inside a framework build or a
+custom Node script. Static Astro and Next.js export builds are the first
+framework-specific SDK paths.
+
+| Framework | Current support | Output folder |
+| --------- | --------------- | ------------- |
+| Astro | Static build helper. | `dist/` |
+| Next.js | Static export helper for `output: "export"`. | `out/` |
+
+More framework helpers will follow in coming releases.
+
+## Expected Output
+
+A successful run reports output-directory-relative paths.
+
+```typescript
+{
+  createdFilePaths: [
+    "llms.txt",
+    ".well-known/llms.txt",
+    "index.md",
+    "llms-full.txt",
+    ".well-known/llms-full.txt",
+    ".well-known/opennav.json"
+  ],
+  modifiedFilePaths: ["index.html"],
+  skippedFilePaths: ["assets/logo.svg"],
+  warnings: []
+}
+```
+
+Expected validation, input, and filesystem failures return typed OpenNav errors
+instead of throwing for normal failure paths.
+
+## Coming Next: Server-Side Frameworks
+
+Server-side Astro and Next.js support is planned after the static launch path.
+The goal is Markdown content negotiation for runtime pages: agents can request a
+Markdown representation while people still receive normal HTML.
+
+The planned server-side integrations will support both site-wide middleware and
+per-endpoint middleware, so teams can choose a default policy for the whole app
+or opt specific routes into Markdown responses.
+
+See the [server-side framework roadmap](/frameworks/server-side/) for the
+planned Astro and Next.js runtime integrations.

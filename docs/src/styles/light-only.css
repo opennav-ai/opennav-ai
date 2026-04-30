@@ -1,0 +1,367 @@
+:root,
+:root[data-theme="light"] {
+  --opennav-docs-text-color: #000000;
+  --opennav-docs-page-bg: #fbfcff;
+  --opennav-docs-surface-bg: #ffffff;
+  --opennav-docs-border-color: #d8dee8;
+  --sl-color-text: var(--opennav-docs-text-color);
+  --sl-color-white: var(--opennav-docs-text-color);
+  --sl-color-black: var(--opennav-docs-page-bg);
+  --sl-color-bg: var(--opennav-docs-page-bg);
+  --sl-color-bg-nav: var(--opennav-docs-surface-bg);
+  --sl-color-bg-sidebar: var(--opennav-docs-page-bg);
+  --sl-color-gray-7: #f4f7fc;
+  --sl-color-gray-6: #e8edf5;
+  --sl-color-gray-5: var(--opennav-docs-border-color);
+  --sl-rapide-ui-bg-color: var(--opennav-docs-surface-bg);
+  --sl-rapide-ui-header-bg-color: rgb(255 255 255 / 0.82);
+  --sl-rapide-ui-border-color: var(--opennav-docs-border-color);
+}
+
+body,
+body :where(:not(.expressive-code, .expressive-code *)) {
+  color: var(--opennav-docs-text-color);
+}
+
+body {
+  background-color: var(--opennav-docs-page-bg);
+}
+
+::placeholder {
+  color: var(--opennav-docs-text-color);
+  opacity: 1;
+}
+
+starlight-menu-button button {
+  background-color: #ffffff;
+  color: var(--opennav-docs-text-color);
+}
+
+html .expressive-code {
+  --ec-brdCol: var(--opennav-code-border);
+  --ec-codeBg: var(--opennav-code-bg);
+  --ec-codeFg: var(--opennav-code-fg);
+  --ec-frm-edActTabBg: var(--opennav-code-header-bg);
+  --ec-frm-edActTabFg: var(--opennav-code-muted-fg);
+  --ec-frm-edTabBarBg: var(--opennav-code-header-bg);
+  --ec-frm-edTabBarBrdCol: var(--opennav-code-border);
+  --ec-frm-edTabBarBrdBtmCol: var(--opennav-code-border);
+  --ec-frm-edBg: var(--opennav-code-bg);
+  --ec-frm-frameBoxShdCssVal: 0 1rem 2.5rem rgb(15 23 42 / 0.08);
+  --ec-frm-inlBtnBg: var(--opennav-code-muted-fg);
+  --ec-frm-inlBtnBrd: var(--opennav-code-muted-fg);
+  --ec-frm-inlBtnFg: var(--opennav-code-muted-fg);
+  --ec-frm-trmBg: var(--opennav-code-bg);
+  --ec-frm-trmDotsFg: var(--opennav-code-muted-fg);
+  --ec-frm-trmTtbBg: var(--opennav-code-header-bg);
+  --ec-frm-trmTtbBrdBtmCol: var(--opennav-code-border);
+  --ec-frm-trmTtbDotsFg: var(--opennav-code-muted-fg);
+  --ec-frm-trmTtbFg: var(--opennav-code-muted-fg);
+  --ec-gtrBrdCol: var(--opennav-code-border);
+  --ec-gtrFg: var(--opennav-code-muted-fg);
+  --ec-sbThumbCol: var(--opennav-code-scrollbar);
+  --ec-sbThumbHoverCol: var(--opennav-code-scrollbar-hover);
+}
+
+html,
+html[data-code-theme="vscode-dark"] {
+  --opennav-code-bg: #1e1e1e;
+  --opennav-code-border: #3c3c3c;
+  --opennav-code-fg: #d4d4d4;
+  --opennav-code-header-bg: #252526;
+  --opennav-code-muted-fg: #8b949e;
+  --opennav-code-scrollbar: rgb(212 212 212 / 0.28);
+  --opennav-code-scrollbar-hover: rgb(212 212 212 / 0.48);
+  --opennav-code-token-control: #569cd6;
+  --opennav-code-token-function: #dcdcaa;
+  --opennav-code-token-keyword: #c586c0;
+  --opennav-code-token-number: #b5cea8;
+  --opennav-code-token-plain: #d4d4d4;
+  --opennav-code-token-property: #9cdcfe;
+  --opennav-code-token-string: #ce9178;
+  --opennav-code-token-type: #4ec9b0;
+  --opennav-code-token-variable: #4fc1ff;
+}
+
+html[data-code-theme="night-owl"] {
+  --opennav-code-bg: #011627;
+  --opennav-code-border: #1d3b53;
+  --opennav-code-fg: #d6deeb;
+  --opennav-code-header-bg: #0b2942;
+  --opennav-code-muted-fg: #637777;
+  --opennav-code-scrollbar: rgb(214 222 235 / 0.25);
+  --opennav-code-scrollbar-hover: rgb(214 222 235 / 0.45);
+  --opennav-code-token-control: #82aaff;
+  --opennav-code-token-function: #82aaff;
+  --opennav-code-token-keyword: #c792ea;
+  --opennav-code-token-number: #f78c6c;
+  --opennav-code-token-plain: #d6deeb;
+  --opennav-code-token-property: #addb67;
+  --opennav-code-token-string: #ecc48d;
+  --opennav-code-token-type: #7fdbca;
+  --opennav-code-token-variable: #ffcb8b;
+}
+
+html[data-code-theme="one-light"] {
+  --opennav-code-bg: #fafafa;
+  --opennav-code-border: #d8dee8;
+  --opennav-code-fg: #383a42;
+  --opennav-code-header-bg: #f0f2f6;
+  --opennav-code-muted-fg: #696c77;
+  --opennav-code-scrollbar: rgb(56 58 66 / 0.22);
+  --opennav-code-scrollbar-hover: rgb(56 58 66 / 0.42);
+  --opennav-code-token-control: #4078f2;
+  --opennav-code-token-function: #a626a4;
+  --opennav-code-token-keyword: #a626a4;
+  --opennav-code-token-number: #986801;
+  --opennav-code-token-plain: #383a42;
+  --opennav-code-token-property: #e45649;
+  --opennav-code-token-string: #50a14f;
+  --opennav-code-token-type: #0184bc;
+  --opennav-code-token-variable: #c18401;
+}
+
+html[data-code-theme="github-light"] {
+  --opennav-code-bg: #ffffff;
+  --opennav-code-border: #d0d7de;
+  --opennav-code-fg: #24292f;
+  --opennav-code-header-bg: #f6f8fa;
+  --opennav-code-muted-fg: #57606a;
+  --opennav-code-scrollbar: rgb(36 41 47 / 0.2);
+  --opennav-code-scrollbar-hover: rgb(36 41 47 / 0.4);
+  --opennav-code-token-control: #0550ae;
+  --opennav-code-token-function: #8250df;
+  --opennav-code-token-keyword: #cf222e;
+  --opennav-code-token-number: #0550ae;
+  --opennav-code-token-plain: #24292f;
+  --opennav-code-token-property: #953800;
+  --opennav-code-token-string: #0a3069;
+  --opennav-code-token-type: #116329;
+  --opennav-code-token-variable: #953800;
+}
+
+html .expressive-code .ec-line span[style*="#000000"] {
+  color: var(--opennav-code-token-plain);
+}
+
+html .expressive-code .ec-line span[style*="#0000FF"] {
+  color: var(--opennav-code-token-control);
+}
+
+html .expressive-code .ec-line span[style*="#001080"] {
+  color: var(--opennav-code-token-property);
+}
+
+html .expressive-code .ec-line span[style*="#006BB8"] {
+  color: var(--opennav-code-token-variable);
+}
+
+html .expressive-code .ec-line span[style*="#08774E"] {
+  color: var(--opennav-code-token-number);
+}
+
+html .expressive-code .ec-line span[style*="#227188"] {
+  color: var(--opennav-code-token-type);
+}
+
+html .expressive-code .ec-line span[style*="#795E26"] {
+  color: var(--opennav-code-token-function);
+}
+
+html .expressive-code .ec-line span[style*="#A31515"] {
+  color: var(--opennav-code-token-string);
+}
+
+html .expressive-code .ec-line span[style*="#AC00D8"] {
+  color: var(--opennav-code-token-keyword);
+}
+
+html .expressive-code .ec-line span[style*="#D40000"] {
+  color: var(--opennav-code-token-keyword);
+}
+
+.opennav-code-theme-picker,
+.opennav-example-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.opennav-code-theme-picker {
+  justify-content: flex-end;
+  margin-block: 1rem 0.5rem;
+}
+
+.opennav-example-toolbar .opennav-code-theme-picker {
+  flex-wrap: nowrap;
+  margin: 0;
+}
+
+.sl-markdown-content
+  .opennav-example-toolbar
+  :is(.opennav-example-tabs, .opennav-code-theme-picker) {
+  margin: 0;
+}
+
+.opennav-code-theme-picker label {
+  color: #334155;
+  font-size: var(--sl-text-sm);
+  font-weight: 700;
+}
+
+.opennav-code-theme-picker select {
+  min-height: 2.25rem;
+  width: 12rem;
+  border: 1px solid var(--opennav-docs-border-color);
+  border-radius: 0.375rem;
+  background-color: #ffffff;
+  color: #000000;
+  font: inherit;
+  font-size: var(--sl-text-sm);
+  padding-inline: 0.7rem 2rem;
+}
+
+.opennav-example-label {
+  color: #334155;
+  font-size: var(--sl-text-sm);
+  font-weight: 700;
+  margin-block: 1rem 0.5rem;
+}
+
+.opennav-example-switcher {
+  margin-block: 1rem 1.25rem;
+}
+
+.opennav-example-toolbar {
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--opennav-docs-border-color);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+}
+
+.opennav-example-tabs {
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
+}
+
+.opennav-example-tabs button {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: #334155;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  font: inherit;
+  font-size: var(--sl-text-sm);
+  font-weight: 700;
+  min-height: 2.25rem;
+  padding: 0 0.75rem;
+}
+
+.opennav-example-tabs button:hover,
+.opennav-example-tabs button:focus-visible {
+  color: #000000;
+}
+
+.opennav-example-tabs button:focus-visible {
+  outline: 2px solid var(--sl-color-accent);
+  outline-offset: 0.125rem;
+}
+
+.opennav-example-tabs button[aria-selected="true"] {
+  border-bottom-color: var(--sl-color-accent);
+  color: #000000;
+}
+
+@media (max-width: 44rem) {
+  .opennav-example-toolbar {
+    grid-template-columns: 1fr;
+    gap: 0.4rem;
+  }
+
+  .opennav-code-theme-picker {
+    align-items: center;
+    flex-direction: row;
+    justify-content: flex-start;
+    margin-block: 0;
+    width: 100%;
+  }
+
+  .opennav-code-theme-picker select {
+    flex: 1 1 11rem;
+    min-width: 0;
+    width: auto;
+  }
+
+  .opennav-code-theme-picker label {
+    white-space: nowrap;
+  }
+
+  .opennav-example-tabs button {
+    padding-inline: 0.5rem;
+  }
+
+  .sl-markdown-content table {
+    display: block;
+    overflow: visible;
+  }
+
+  .sl-markdown-content table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .sl-markdown-content table tbody,
+  .sl-markdown-content table tbody tr,
+  .sl-markdown-content table tbody td {
+    display: block;
+  }
+
+  .sl-markdown-content table tbody tr {
+    margin-block: 1rem;
+    border: 1px solid var(--sl-rapide-ui-border-color);
+    border-radius: 0.5rem;
+    background-color: var(--opennav-docs-surface-bg);
+    overflow: hidden;
+  }
+
+  .sl-markdown-content table tbody td {
+    display: grid;
+    grid-template-columns: minmax(7.5rem, 38%) minmax(0, 1fr);
+    gap: 0.75rem;
+    align-items: start;
+    border-bottom: 1px solid var(--sl-rapide-ui-border-color);
+    padding: 0.75rem;
+  }
+
+  .sl-markdown-content table tbody td:last-child {
+    border-bottom: 0;
+  }
+
+  .sl-markdown-content table tbody td::before {
+    content: attr(data-label);
+    color: #334155;
+    font-size: var(--sl-text-xs);
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  .sl-markdown-content table tbody td:not([data-label]) {
+    grid-template-columns: 1fr;
+  }
+
+  .sl-markdown-content table tbody td:not([data-label])::before {
+    content: none;
+  }
+}
