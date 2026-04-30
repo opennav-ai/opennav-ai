@@ -1,9 +1,10 @@
 import { ok, type Result } from "neverthrow";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { OpenNavBuildResult } from "./types/open-nav-build-result";
-import type { OpenNavError } from "./types/open-nav-error";
-import type { OpenNavStaticSiteBuildOptions } from "./types/open-nav-static-site-build-options";
-import type { OpenNavStaticSiteOptions } from "./types/open-nav-static-site-options";
+import type { OpenNavBuildResult, OpenNavError } from "./types/open-nav-build";
+import type {
+  OpenNavStaticSiteBuildOptions,
+  OpenNavStaticSiteOptions,
+} from "./types/open-nav-static-site";
 
 type BuildMethod = (
   options: OpenNavStaticSiteBuildOptions,

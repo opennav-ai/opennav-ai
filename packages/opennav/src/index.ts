@@ -3,25 +3,35 @@ import { readdir } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
 import { err, ok, type Result, ResultAsync } from "neverthrow";
 import { Engine } from "#opennav-engine";
-import type { OpenNavBuildResult } from "./types/open-nav-build-result";
-import type { OpenNavConfigOptions } from "./types/open-nav-config";
-import type { OpenNavError } from "./types/open-nav-error";
-import type { OpenNavOutputFilePath } from "./types/open-nav-output-file-path";
-import type { OpenNavStaticSiteBuildOptions } from "./types/open-nav-static-site-build-options";
-import type { OpenNavStaticSiteOptions } from "./types/open-nav-static-site-options";
+import type {
+  OpenNavBuildResult,
+  OpenNavError,
+  OpenNavOutputFilePath,
+} from "./types/open-nav-build";
+import type {
+  OpenNavConfigOptions,
+  OpenNavStaticSiteBuildOptions,
+  OpenNavStaticSiteOptions,
+} from "./types/open-nav-static-site";
 
-export type { OpenNavAccessGuidanceOptions } from "./types/open-nav-access-guidance-options";
-export type { OpenNavAstroOptions } from "./types/open-nav-astro-options";
-export type { OpenNavBuildResult } from "./types/open-nav-build-result";
-export type { OpenNavConfigOptions } from "./types/open-nav-config";
-export type { OpenNavContentSignalPermission } from "./types/open-nav-content-signal-permission";
-export type { OpenNavContentSignalsPolicy } from "./types/open-nav-content-signals-policy";
-export type { OpenNavError } from "./types/open-nav-error";
-export type { OpenNavNextOptions } from "./types/open-nav-next-options";
-export type { OpenNavOutputFilePath } from "./types/open-nav-output-file-path";
-export type { OpenNavStaticSiteBuildOptions } from "./types/open-nav-static-site-build-options";
-export type { OpenNavStaticSiteOptions } from "./types/open-nav-static-site-options";
-export type { OpenNavStaticSitePreset } from "./types/open-nav-static-site-preset";
+export type { OpenNavAstroOptions } from "./types/open-nav-astro";
+export type {
+  OpenNavBuildResult,
+  OpenNavError,
+  OpenNavOutputFilePath,
+} from "./types/open-nav-build";
+export type { OpenNavNextOptions } from "./types/open-nav-next";
+export type {
+  OpenNavAccessGuidanceOptions,
+  OpenNavContentSignalPermission,
+  OpenNavContentSignalsPolicy,
+} from "./types/open-nav-policy";
+export type {
+  OpenNavConfigOptions,
+  OpenNavStaticSiteBuildOptions,
+  OpenNavStaticSiteOptions,
+  OpenNavStaticSitePreset,
+} from "./types/open-nav-static-site";
 
 /**
  * Public static-site SDK runner for a built output directory.

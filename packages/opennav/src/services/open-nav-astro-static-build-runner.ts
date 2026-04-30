@@ -1,11 +1,12 @@
 import { fileURLToPath } from "node:url";
 import { err, ok, type Result } from "neverthrow";
 import { OpenNavStaticSite } from "../index";
-import type { OpenNavAstroBuildDoneHookInput } from "../types/open-nav-astro-build-done-hook-input";
-import type { OpenNavAstroConfigDoneHookInput } from "../types/open-nav-astro-config-done-hook-input";
-import type { OpenNavAstroOptions } from "../types/open-nav-astro-options";
-import type { OpenNavBuildResult } from "../types/open-nav-build-result";
-import type { OpenNavError } from "../types/open-nav-error";
+import type {
+  OpenNavAstroBuildDoneHookInput,
+  OpenNavAstroConfigDoneHookInput,
+  OpenNavAstroOptions,
+} from "../types/open-nav-astro";
+import type { OpenNavBuildResult, OpenNavError } from "../types/open-nav-build";
 
 /**
  * Runs OpenNav for Astro static builds using the shared static-site SDK.

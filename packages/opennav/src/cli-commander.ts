@@ -2,8 +2,8 @@ import { Command, CommanderError } from "commander";
 import type { Result } from "neverthrow";
 import { err, ok, ResultAsync } from "neverthrow";
 import { type OpenNavError, OpenNavStaticSite } from "./index";
-import type { OpenNavBuildResult } from "./types/open-nav-build-result";
-import type { OpenNavStaticSitePreset } from "./types/open-nav-static-site-preset";
+import type { OpenNavBuildResult } from "./types/open-nav-build";
+import type { OpenNavStaticSitePreset } from "./types/open-nav-static-site";
 
 /**
  * Creates the Commander program used by the OpenNav executable.

@@ -11,8 +11,7 @@ import { dirname, join } from "node:path";
 import type { Result } from "neverthrow";
 import { afterEach, describe, expect, it } from "vitest";
 import { OpenNavStaticSite } from "./index";
-import type { OpenNavBuildResult } from "./types/open-nav-build-result";
-import type { OpenNavError } from "./types/open-nav-error";
+import type { OpenNavBuildResult, OpenNavError } from "./types/open-nav-build";
 
 describe("OpenNavStaticSite", (): void => {
   let fixtureDirectory: string | undefined;

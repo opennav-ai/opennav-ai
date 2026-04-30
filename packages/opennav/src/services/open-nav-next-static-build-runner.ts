@@ -1,10 +1,11 @@
 import { resolve } from "node:path";
 import { err, ok, type Result } from "neverthrow";
 import { OpenNavStaticSite } from "../index";
-import type { OpenNavBuildResult } from "../types/open-nav-build-result";
-import type { OpenNavError } from "../types/open-nav-error";
-import type { OpenNavNextConfig } from "../types/open-nav-next-config";
-import type { OpenNavNextOptions } from "../types/open-nav-next-options";
+import type { OpenNavBuildResult, OpenNavError } from "../types/open-nav-build";
+import type {
+  OpenNavNextConfig,
+  OpenNavNextOptions,
+} from "../types/open-nav-next";
 
 /**
  * Runs OpenNav after a Next static export build has produced `out`.

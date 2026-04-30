@@ -1,11 +1,15 @@
 import { OpenNavAstroStaticBuildRunner } from "./services/open-nav-astro-static-build-runner";
-import type { OpenNavAstroBuildDoneHookInput } from "./types/open-nav-astro-build-done-hook-input";
-import type { OpenNavAstroConfigDoneHookInput } from "./types/open-nav-astro-config-done-hook-input";
-import type { OpenNavAstroIntegration } from "./types/open-nav-astro-integration";
-import type { OpenNavAstroOptions } from "./types/open-nav-astro-options";
+import type {
+  OpenNavAstroBuildDoneHookInput,
+  OpenNavAstroConfigDoneHookInput,
+  OpenNavAstroIntegration,
+  OpenNavAstroOptions,
+} from "./types/open-nav-astro";
 
-export type { OpenNavAstroIntegration } from "./types/open-nav-astro-integration";
-export type { OpenNavAstroOptions } from "./types/open-nav-astro-options";
+export type {
+  OpenNavAstroIntegration,
+  OpenNavAstroOptions,
+} from "./types/open-nav-astro";
 
 /**
  * Creates the OpenNav Astro integration.

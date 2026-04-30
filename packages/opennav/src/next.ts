@@ -1,9 +1,13 @@
 import { OpenNavNextStaticBuildRunner } from "./services/open-nav-next-static-build-runner";
-import type { OpenNavNextConfig } from "./types/open-nav-next-config";
-import type { OpenNavNextOptions } from "./types/open-nav-next-options";
+import type {
+  OpenNavNextConfig,
+  OpenNavNextOptions,
+} from "./types/open-nav-next";
 
-export type { OpenNavNextConfig } from "./types/open-nav-next-config";
-export type { OpenNavNextOptions } from "./types/open-nav-next-options";
+export type {
+  OpenNavNextConfig,
+  OpenNavNextOptions,
+} from "./types/open-nav-next";
 
 /**
  * Creates the OpenNav Next.js config wrapper.

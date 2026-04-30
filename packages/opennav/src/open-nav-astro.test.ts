@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import { OpenNavAstro } from "./astro";
-import type { OpenNavAstroIntegration } from "./types/open-nav-astro-integration";
+import type { OpenNavAstroIntegration } from "./types/open-nav-astro";
 
 interface TestAstroConfigDoneHookInput {
   readonly config: {

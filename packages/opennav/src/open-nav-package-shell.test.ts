@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { OpenNavAstro } from "./astro";
 import { OpenNavConfig, OpenNavStaticSite } from "./index";
 import { OpenNavNext } from "./next";
-import type { OpenNavAstroIntegration } from "./types/open-nav-astro-integration";
-import type { OpenNavNextConfig } from "./types/open-nav-next-config";
+import type { OpenNavAstroIntegration } from "./types/open-nav-astro";
+import type { OpenNavNextConfig } from "./types/open-nav-next";
 
 describe("OpenNav public package shell", (): void => {
   it("exports the root static-site SDK and config helper", (): void => {

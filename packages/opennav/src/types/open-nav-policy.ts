@@ -1,4 +1,7 @@
-import type { OpenNavContentSignalPermission } from "./open-nav-content-signal-permission";
+/**
+ * Site owner preference for one generated Content Signals directive value.
+ */
+export type OpenNavContentSignalPermission = "allow" | "disallow";
 
 /**
  * Optional Content Signals preferences for generated `robots.txt` guidance.
@@ -30,4 +33,18 @@ export interface OpenNavContentSignalsPolicy {
    * an AI-training preference.
    */
   readonly aiTrain?: OpenNavContentSignalPermission | undefined;
+}
+
+/**
+ * Optional access guidance configured for generated static policy files.
+ */
+export interface OpenNavAccessGuidanceOptions {
+  /**
+   * Content-use preferences to write into `robots.txt`.
+   *
+   * OpenNav does not emit Content Signals by default. At least one field in
+   * this object must be populated before OpenNav creates or edits
+   * `robots.txt` for Content Signals guidance.
+   */
+  readonly contentSignals?: OpenNavContentSignalsPolicy | undefined;
 }
