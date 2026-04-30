@@ -15,6 +15,7 @@ import { OpenNavStaticSite } from "./index";
 
 describe("OpenNavStaticSite", (): void => {
   let fixtureDirectory: string | undefined;
+  const buildFingerprint = "sha256:0328bd23bfdb";
 
   afterEach(async (): Promise<void> => {
     if (fixtureDirectory !== undefined) {
@@ -152,12 +153,9 @@ describe("OpenNavStaticSite", (): void => {
           warnings: [],
         },
         generatedContent: {
-          llmsTxt:
-            '# Example Docs\n\n## Root\n\n- [Home](https://example.com/index.md): Start here.\n\n## Docs\n\n- [About](https://example.com/docs/about.md): Learn about OpenNav.\n\n<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:0328bd23bfdbce7ad864c0279a199fb49e13737c538fa44ba44e63757827c3a4" manifest="/.well-known/opennav.json" -->\n',
-          indexMarkdown:
-            '# Home\n\nStart here.\n\n---\n\nSite index: [llms.txt](https://example.com/llms.txt)\n\n<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:0328bd23bfdbce7ad864c0279a199fb49e13737c538fa44ba44e63757827c3a4" manifest="/.well-known/opennav.json" -->\n',
-          aboutMarkdown:
-            '# About\n\nLearn about OpenNav.\n\n---\n\nSite index: [llms.txt](https://example.com/llms.txt)\n\n<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:0328bd23bfdbce7ad864c0279a199fb49e13737c538fa44ba44e63757827c3a4" manifest="/.well-known/opennav.json" -->\n',
+          llmsTxt: `# Example Docs\n\n## Root\n\n- [Home](https://example.com/index.md): Start here.\n\n## Docs\n\n- [About](https://example.com/docs/about.md): Learn about OpenNav.\n\n<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="${buildFingerprint}" manifest="/.well-known/opennav.json" -->\n`,
+          indexMarkdown: `# Home\n\nStart here.\n\n---\n\nSite index: [llms.txt](https://example.com/llms.txt)\n\n<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="${buildFingerprint}" manifest="/.well-known/opennav.json" -->\n`,
+          aboutMarkdown: `# About\n\nLearn about OpenNav.\n\n---\n\nSite index: [llms.txt](https://example.com/llms.txt)\n\n<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="${buildFingerprint}" manifest="/.well-known/opennav.json" -->\n`,
         },
       });
     }

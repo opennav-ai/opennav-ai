@@ -21,10 +21,10 @@ interface HtmlAttribute {
  */
 export class BuildFingerprintBuilder {
   /**
-   * Builds a deterministic SHA-256 fingerprint for one engine run.
+   * Builds the short deterministic SHA-256 fingerprint for one engine run.
    *
    * @param input - Normalized run settings, source file fingerprints, and optional access guidance.
-   * @returns Fingerprint in `sha256:<hex>` format.
+   * @returns Fingerprint in `sha256:<12 hex characters>` format.
    */
   public buildBuildFingerprint(input: BuildFingerprintInput): string {
     const normalizedInput = {
@@ -51,9 +51,11 @@ export class BuildFingerprintBuilder {
         ),
     };
 
-    return this.buildContentFingerprint({
-      content: JSON.stringify(normalizedInput),
-    });
+    return this.buildShortFingerprint(
+      this.buildContentFingerprint({
+        content: JSON.stringify(normalizedInput),
+      }),
+    );
   }
 
   /**
@@ -76,7 +78,7 @@ export class BuildFingerprintBuilder {
   }
 
   /**
-   * Builds a short display fingerprint from an existing full fingerprint.
+   * Builds a short OpenNav run fingerprint from an existing full fingerprint.
    *
    * @param fingerprint - Full fingerprint in `algorithm:<hex>` format.
    * @returns Fingerprint with the original algorithm and first 12 digest characters.

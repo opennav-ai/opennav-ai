@@ -5,10 +5,12 @@ import type { RobotsTxtSourceFile } from "./robots-txt-source-file";
  */
 export interface RobotsTxtGuidanceBuildInput {
   /**
-   * Deterministic fingerprint for the current OpenNav build run.
+   * Short deterministic fingerprint for the current OpenNav build run.
    *
    * Managed `robots.txt` blocks include this value so later runs can identify
-   * the OpenNav-owned block without claiming ownership of the full file.
+   * the OpenNav-owned block without claiming ownership of the full file. The
+   * value uses `sha256:<12 hex characters>` format and matches generated files,
+   * the manifest, and HTML resource-link fingerprints for the run.
    */
   readonly buildFingerprint: string;
 

@@ -55,7 +55,7 @@ Allow: /
     );
   });
 
-  it("builds exact short fingerprints for HTML run markers", (): void => {
+  it("builds exact short fingerprints for product-visible run markers", (): void => {
     const builder = new BuildFingerprintBuilder();
 
     expect(
@@ -65,7 +65,7 @@ Allow: /
     ).toEqual("sha256:90f8ec5669cd");
   });
 
-  it("builds exact deterministic build fingerprints from normalized inputs", (): void => {
+  it("builds exact short deterministic build fingerprints from normalized inputs", (): void => {
     const builder = new BuildFingerprintBuilder();
     const firstFingerprint = builder.buildBuildFingerprint({
       siteName: "Example Docs",
@@ -102,10 +102,8 @@ Allow: /
       firstFingerprint,
       secondFingerprint,
     }).toEqual({
-      firstFingerprint:
-        "sha256:0726ee08a3c2b354e09ea04c16700ff461fb69508c21684895f187feb71be5ef",
-      secondFingerprint:
-        "sha256:0726ee08a3c2b354e09ea04c16700ff461fb69508c21684895f187feb71be5ef",
+      firstFingerprint: "sha256:0726ee08a3c2",
+      secondFingerprint: "sha256:0726ee08a3c2",
     });
   });
 
@@ -136,10 +134,8 @@ Allow: /
       firstFingerprint,
       secondFingerprint,
     }).toEqual({
-      firstFingerprint:
-        "sha256:5bcf1847872fdf241b5734a8969e6b0f7d8d5479f0e4e61c9e2c28e64098b42d",
-      secondFingerprint:
-        "sha256:c47ab7c483727c1872814480d4badae666361bc6d33a810f50d45956e6d5e041",
+      firstFingerprint: "sha256:5bcf1847872f",
+      secondFingerprint: "sha256:c47ab7c48372",
     });
   });
 });

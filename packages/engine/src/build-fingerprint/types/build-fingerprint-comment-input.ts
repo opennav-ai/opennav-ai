@@ -13,10 +13,11 @@ export interface BuildFingerprintCommentInput {
   readonly format: BuildFingerprintCommentFormat;
 
   /**
-   * Deterministic fingerprint for the OpenNav run that produced the content.
+   * Short deterministic fingerprint for the OpenNav run that produced the content.
    *
    * Every OpenNav-generated file and managed block from the same run receives
-   * this same value.
+   * this same value. The value uses `sha256:<12 hex characters>` format and
+   * matches the run manifest and HTML resource-link fingerprints.
    */
   readonly buildFingerprint: string;
 }

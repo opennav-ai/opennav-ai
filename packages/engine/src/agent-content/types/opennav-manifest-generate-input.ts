@@ -11,10 +11,12 @@ export interface OpenNavManifestGenerateInput {
   readonly baseUrl: string;
 
   /**
-   * Deterministic fingerprint shared by generated OpenNav files for this run.
+   * Short deterministic fingerprint shared by generated OpenNav files for this run.
    *
    * The manifest stores the same value that file-level compatibility markers
-   * expose, allowing agents and write planning to group outputs by build.
+   * expose, allowing agents and write planning to group outputs by build. The
+   * value uses `sha256:<12 hex characters>` format and matches every
+   * `build-fingerprint` marker and `data-opennav-sha` link from the run.
    */
   readonly buildFingerprint: string;
 

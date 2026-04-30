@@ -20,10 +20,12 @@ export interface AgentContentBuildInput {
   readonly baseUrl: string;
 
   /**
-   * Deterministic fingerprint for the current OpenNav build run.
+   * Short deterministic fingerprint for the current OpenNav build run.
    *
    * Every generated file receives this value in its bottom build fingerprint
-   * marker so later write planning can identify files from the same run.
+   * marker so later write planning can identify files from the same run. The
+   * value uses `sha256:<12 hex characters>` format and must match the manifest,
+   * `robots.txt`, and HTML resource-link fingerprint for the run.
    */
   readonly buildFingerprint: string;
 

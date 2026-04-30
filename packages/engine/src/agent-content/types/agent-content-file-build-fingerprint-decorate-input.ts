@@ -13,10 +13,11 @@ export interface AgentContentFileBuildFingerprintDecorateInput {
   readonly file: AgentContentFile;
 
   /**
-   * Deterministic fingerprint shared by every generated file from the same build run.
+   * Short deterministic fingerprint shared by every generated file from the same build run.
    *
    * The value is written into the marker appended to this file's
-   * generated content.
+   * generated content. It uses `sha256:<12 hex characters>` format and matches
+   * the manifest, `robots.txt`, and HTML resource-link fingerprints for the run.
    */
   readonly buildFingerprint: string;
 }

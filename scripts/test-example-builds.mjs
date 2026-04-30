@@ -1,5 +1,15 @@
 import { execFile } from "node:child_process";
-import { access, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  access,
+  lstat,
+  mkdir,
+  mkdtemp,
+  readdir,
+  readFile,
+  rm,
+  writeFile,
+} from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
@@ -24,9 +34,25 @@ const repoDirectory = resolve(scriptDirectory, "..");
 
 /**
  * @typedef {{
+ *   engineTarballPath: string;
+ *   openNavTarballPath: string;
+ *   packageArchiveDirectory: string;
+ * }} PackedOpenNavPackages
+ */
+
+/**
+ * @typedef {{
+ *   filePath: string;
+ *   fingerprints: readonly string[];
+ * }} OpenNavFingerprintRecord
+ */
+
+/**
+ * @typedef {{
  *   name: string;
  *   directory: string;
  *   outputDirectory: string;
+ *   expectedOpenNavBuildFingerprint?: string;
  *   expectedHtmlPages: readonly ExpectedHtmlPage[];
  *   expectedOutputFiles?: readonly ExpectedOutputFile[];
  *   setup?: "static-site-sdk";
@@ -52,17 +78,24 @@ class ExampleBuildTestRunner {
    * static HTML output.
    */
   async run() {
-    await this.buildOpenNavPackages();
+    const packages = await this.buildOpenNavPackages();
 
-    for (const example of this.examples) {
-      await this.verifyExample(example);
+    try {
+      for (const example of this.examples) {
+        await this.verifyExample(example, packages);
+      }
+    } finally {
+      await rm(packages.packageArchiveDirectory, {
+        force: true,
+        recursive: true,
+      });
     }
   }
 
   /**
    * Builds local OpenNav packages before fixture installs resolve them.
    *
-   * @returns {Promise<void>} Resolves after package dist files are ready.
+   * @returns {Promise<PackedOpenNavPackages>} Packed package tarballs ready for fixture installs.
    */
   async buildOpenNavPackages() {
     await this.runCommand({
@@ -91,15 +124,47 @@ class ExampleBuildTestRunner {
       cwd: repoDirectory,
       label: "build @opennav-ai/opennav",
     });
+
+    const packageArchiveDirectory = await mkdtemp(
+      join(tmpdir(), "opennav-example-packages-"),
+    );
+
+    try {
+      const engineTarballPath = await this.packWorkspacePackage({
+        packageArchiveDirectory,
+        packageDirectory: "packages/engine",
+        label: "pack @opennav-ai/engine",
+      });
+      const openNavTarballPath = await this.packWorkspacePackage({
+        packageArchiveDirectory,
+        packageDirectory: "packages/opennav",
+        label: "pack @opennav-ai/opennav",
+      });
+
+      return {
+        engineTarballPath,
+        openNavTarballPath,
+        packageArchiveDirectory,
+      };
+    } catch (error) {
+      await rm(packageArchiveDirectory, {
+        force: true,
+        recursive: true,
+      });
+
+      throw error;
+    }
   }
 
   /**
    * Installs, builds, and checks one example project.
    *
    * @param {ExampleProject} example - Example project and expected output.
+   * @param {PackedOpenNavPackages} packages - Packed local packages to install
+   * before the example build runs.
    * @returns {Promise<void>} Resolves after the example build is verified.
    */
-  async verifyExample(example) {
+  async verifyExample(example, packages) {
     const exampleDirectory = join(repoDirectory, example.directory);
     const outputDirectory = join(exampleDirectory, example.outputDirectory);
 
@@ -118,6 +183,8 @@ class ExampleBuildTestRunner {
       cwd: exampleDirectory,
       label: `${example.name} install`,
     });
+    await this.installPackedOpenNavPackages(example, packages);
+    await this.assertPackedOpenNavInstall(example);
     await this.runCommand({
       command: "npm",
       args: ["run", "build"],
@@ -126,6 +193,116 @@ class ExampleBuildTestRunner {
     });
     await this.assertHtmlOutput(example);
     await this.assertOutputFiles(example);
+    await this.assertOpenNavBuildFingerprints(example);
+  }
+
+  /**
+   * Fails if an example still resolves OpenNav packages through workspace
+   * symlinks instead of package tarball contents.
+   *
+   * @param {ExampleProject} example - Example project whose install should be checked.
+   * @returns {Promise<void>} Resolves after both package installs are verified.
+   */
+  async assertPackedOpenNavInstall(example) {
+    await this.assertPackedPackageInstall(
+      example,
+      "node_modules/@opennav-ai/engine",
+    );
+    await this.assertPackedPackageInstall(
+      example,
+      "node_modules/@opennav-ai/opennav",
+    );
+  }
+
+  /**
+   * Fails if one installed package path is a symlink or does not contain built
+   * package output.
+   *
+   * @param {ExampleProject} example - Example project that owns the install.
+   * @param {string} packageDirectory - Project-relative package directory to check.
+   * @returns {Promise<void>} Resolves after the package directory is verified.
+   */
+  async assertPackedPackageInstall(example, packageDirectory) {
+    const packagePath = join(
+      repoDirectory,
+      example.directory,
+      packageDirectory,
+    );
+    const packageStat = await lstat(packagePath);
+
+    if (packageStat.isSymbolicLink()) {
+      throw new Error(
+        `${example.name} installed ${packageDirectory} as a symlink instead of a packed package.`,
+      );
+    }
+
+    await access(join(packagePath, "dist"));
+  }
+
+  /**
+   * Installs packed local OpenNav packages into an example after its framework
+   * dependencies are restored.
+   *
+   * @param {ExampleProject} example - Example project receiving package tarballs.
+   * @param {PackedOpenNavPackages} packages - Packed local package tarballs.
+   * @returns {Promise<void>} Resolves after the tarball install is complete.
+   */
+  async installPackedOpenNavPackages(example, packages) {
+    await this.runCommand({
+      command: "npm",
+      args: [
+        "install",
+        "--ignore-scripts",
+        "--no-audit",
+        "--fund=false",
+        "--package-lock=false",
+        "--no-save",
+        "--cache",
+        "../../.npm-cache",
+        packages.engineTarballPath,
+        packages.openNavTarballPath,
+      ],
+      cwd: join(repoDirectory, example.directory),
+      label: `${example.name} install packed OpenNav packages`,
+    });
+  }
+
+  /**
+   * Packs one local workspace package so examples consume package contents
+   * instead of workspace symlinks.
+   *
+   * @param {{
+   *   packageArchiveDirectory: string;
+   *   packageDirectory: string;
+   *   label: string;
+   * }} input - Package directory, output directory, and command label.
+   * @returns {Promise<string>} Absolute path to the generated tarball.
+   */
+  async packWorkspacePackage(input) {
+    const stdout = await this.runCommand({
+      command: "npm",
+      args: [
+        "pack",
+        join(repoDirectory, input.packageDirectory),
+        "--pack-destination",
+        input.packageArchiveDirectory,
+        "--cache",
+        ".npm-cache",
+      ],
+      cwd: repoDirectory,
+      label: input.label,
+    });
+    const tarballFileName = stdout
+      .trim()
+      .split(/\r?\n/u)
+      .filter((line) => line.length > 0)
+      .at(-1);
+
+    if (tarballFileName === undefined) {
+      throw new Error(`${input.label} did not report a package tarball.`);
+    }
+
+    return join(input.packageArchiveDirectory, tarballFileName);
   }
 
   /**
@@ -285,6 +462,155 @@ class ExampleBuildTestRunner {
   }
 
   /**
+   * Checks OpenNav-managed output markers for one short fingerprint value when
+   * the example declares one.
+   *
+   * @param {ExampleProject} example - Example project and optional expected fingerprint.
+   * @returns {Promise<void>} Resolves after every marker uses the same short value.
+   */
+  async assertOpenNavBuildFingerprints(example) {
+    if (example.expectedOpenNavBuildFingerprint === undefined) {
+      return;
+    }
+
+    const fingerprintRecords =
+      await this.collectOpenNavFingerprintRecords(example);
+
+    if (fingerprintRecords.length === 0) {
+      throw new Error(`${example.name} did not emit OpenNav fingerprints.`);
+    }
+
+    const expectedFingerprintRecords = fingerprintRecords.map((record) => ({
+      filePath: record.filePath,
+      fingerprints: record.fingerprints.map(
+        () => example.expectedOpenNavBuildFingerprint,
+      ),
+    }));
+
+    if (
+      JSON.stringify(fingerprintRecords) !==
+      JSON.stringify(expectedFingerprintRecords)
+    ) {
+      throw new Error(
+        `${example.name} emitted unexpected OpenNav fingerprints: ${JSON.stringify(
+          fingerprintRecords,
+          null,
+          2,
+        )}`,
+      );
+    }
+  }
+
+  /**
+   * Finds every OpenNav fingerprint marker in an example output directory.
+   *
+   * @param {ExampleProject} example - Example project whose output should be scanned.
+   * @returns {Promise<readonly OpenNavFingerprintRecord[]>} Output-relative files and fingerprints.
+   */
+  async collectOpenNavFingerprintRecords(example) {
+    const exampleDirectory = join(repoDirectory, example.directory);
+    const outputDirectory = join(exampleDirectory, example.outputDirectory);
+    const outputFilePaths = await this.collectOutputFilePaths(
+      outputDirectory,
+      outputDirectory,
+    );
+    const fingerprintRecords = [];
+
+    for (const outputFilePath of outputFilePaths) {
+      const content = await readFile(join(outputDirectory, outputFilePath), {
+        encoding: "utf8",
+      });
+      const fingerprints = this.extractOpenNavFingerprints(content);
+
+      if (fingerprints.length === 0) {
+        continue;
+      }
+
+      fingerprintRecords.push({
+        filePath: outputFilePath,
+        fingerprints,
+      });
+    }
+
+    return fingerprintRecords;
+  }
+
+  /**
+   * Recursively lists files under an example output directory.
+   *
+   * @param {string} outputDirectory - Absolute root output directory for relative paths.
+   * @param {string} directory - Absolute directory currently being listed.
+   * @returns {Promise<readonly string[]>} Output-directory-relative file paths sorted by name.
+   */
+  async collectOutputFilePaths(outputDirectory, directory) {
+    const entries = await readdir(directory, { withFileTypes: true });
+    const outputFilePaths = [];
+
+    for (const entry of entries.sort((first, second) =>
+      first.name.localeCompare(second.name),
+    )) {
+      const absoluteEntryPath = join(directory, entry.name);
+
+      if (entry.isDirectory()) {
+        outputFilePaths.push(
+          ...(await this.collectOutputFilePaths(
+            outputDirectory,
+            absoluteEntryPath,
+          )),
+        );
+        continue;
+      }
+
+      if (!entry.isFile()) {
+        continue;
+      }
+
+      outputFilePaths.push(
+        this.toPosixRelativePath(outputDirectory, absoluteEntryPath),
+      );
+    }
+
+    return outputFilePaths;
+  }
+
+  /**
+   * Extracts OpenNav marker fingerprints from one generated file body.
+   *
+   * @param {string} content - Exact UTF-8 file content.
+   * @returns {readonly string[]} Fingerprint values in source order.
+   */
+  extractOpenNavFingerprints(content) {
+    const fingerprints = [];
+    const fingerprintPattern =
+      /(?:build-fingerprint|data-opennav-sha)="(?<attributeFingerprint>sha256:[0-9a-f]+)"|"build_fingerprint":\s*"(?<manifestFingerprint>sha256:[0-9a-f]+)"/gu;
+
+    for (const match of content.matchAll(fingerprintPattern)) {
+      const fingerprint =
+        match.groups?.attributeFingerprint ?? match.groups?.manifestFingerprint;
+
+      if (fingerprint !== undefined) {
+        fingerprints.push(fingerprint);
+      }
+    }
+
+    return fingerprints;
+  }
+
+  /**
+   * Converts an absolute file path to an output-directory-relative POSIX path.
+   *
+   * @param {string} outputDirectory - Absolute output directory.
+   * @param {string} absoluteFilePath - Absolute file path under the output directory.
+   * @returns {string} Relative path using `/` separators.
+   */
+  toPosixRelativePath(outputDirectory, absoluteFilePath) {
+    return absoluteFilePath
+      .slice(outputDirectory.length + 1)
+      .split("\\")
+      .join("/");
+  }
+
+  /**
    * Writes one ignored fixture file used only by the example compatibility test.
    *
    * @param {ExampleProject} example - Example project that owns the file.
@@ -308,7 +634,7 @@ class ExampleBuildTestRunner {
    *   cwd: string;
    *   label: string;
    * }} input - Command details and a human-readable label.
-   * @returns {Promise<void>} Resolves after the command exits successfully.
+   * @returns {Promise<string>} Resolves with stdout after the command exits successfully.
    */
   async runCommand(input) {
     try {
@@ -331,6 +657,8 @@ class ExampleBuildTestRunner {
       if (stderr.trim().length > 0) {
         console.error(stderr.trim());
       }
+
+      return stdout;
     } catch (error) {
       throw new Error(`${input.label} failed`, { cause: error });
     }
@@ -342,6 +670,7 @@ const runner = new ExampleBuildTestRunner([
     name: "Static site SDK",
     directory: "examples/static-site-sdk",
     outputDirectory: "dist",
+    expectedOpenNavBuildFingerprint: "sha256:d90ba8914fe5",
     setup: "static-site-sdk",
     expectedHtmlPages: [
       {

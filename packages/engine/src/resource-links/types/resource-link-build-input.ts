@@ -13,10 +13,12 @@ export interface ResourceLinkBuildInput {
   readonly baseUrl: string;
 
   /**
-   * Full build fingerprint for the current engine run.
+   * Short build fingerprint for the current engine run.
    *
-   * Resource-link planning derives one short fingerprint from this value and
-   * writes it into every managed HTML `<link>` tag created during the run.
+   * Resource-link planning writes this exact value into every managed HTML
+   * `<link>` tag created during the run. The value uses
+   * `sha256:<12 hex characters>` format and matches generated file markers,
+   * `robots.txt`, and `/.well-known/opennav.json`.
    */
   readonly buildFingerprint: string;
 

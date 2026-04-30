@@ -37,9 +37,7 @@ const OPENNAV_MANAGED_TEXT_FILE_CONTENT =
   '# Stale\n\n<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:stale" manifest="/.well-known/opennav.json" -->\n';
 const OPENNAV_MANAGED_MANIFEST_CONTENT =
   '{\n  "opennav": true,\n  "build_fingerprint": "sha256:stale"\n}\n';
-const REAL_WRITE_BUILD_FINGERPRINT =
-  "sha256:c8b50fb2887b07d3a6b8624ee872f5eefdd50ab342b5226a2c5d3dfc292f1a24";
-const REAL_WRITE_RESOURCE_LINK_FINGERPRINT = "sha256:c8b50fb2887b";
+const REAL_WRITE_BUILD_FINGERPRINT = "sha256:c8b50fb2887b";
 
 describe("Engine", (): void => {
   let fixtureDirectory: string | undefined;
@@ -886,7 +884,7 @@ function appendRealWriteHtmlMarker(content: string): string {
 }
 
 function createExpectedHtmlResourceLinks(markdownHref: string): string {
-  return `  <link rel="alternate" type="text/markdown" href="${markdownHref}" data-opennav="resource-link" data-opennav-sha="${REAL_WRITE_RESOURCE_LINK_FINGERPRINT}">\n  <link rel="index" type="text/plain" href="https://example.com/llms.txt" title="LLMs text site index" data-opennav="resource-link" data-opennav-sha="${REAL_WRITE_RESOURCE_LINK_FINGERPRINT}">`;
+  return `  <link rel="alternate" type="text/markdown" href="${markdownHref}" data-opennav="resource-link" data-opennav-sha="${REAL_WRITE_BUILD_FINGERPRINT}">\n  <link rel="index" type="text/plain" href="https://example.com/llms.txt" title="LLMs text site index" data-opennav="resource-link" data-opennav-sha="${REAL_WRITE_BUILD_FINGERPRINT}">`;
 }
 
 function createExpectedApiHtmlContent(): string {

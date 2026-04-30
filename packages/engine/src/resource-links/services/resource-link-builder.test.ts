@@ -3,8 +3,7 @@ import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
 import type { ResourceLinkBuildResult } from "../types/resource-link-build-result";
 import { ResourceLinkBuilder } from "./resource-link-builder";
 
-const BUILD_FINGERPRINT = "sha256:0123456789abcdef";
-const RESOURCE_LINK_FINGERPRINT = "sha256:0123456789ab";
+const BUILD_FINGERPRINT = "sha256:0123456789ab";
 
 function createHtmlPage(
   sourceFilePath: string,
@@ -74,7 +73,7 @@ describe("ResourceLinkBuilder", (): void => {
               title: "LLMs text site index",
             },
           ],
-          headLinkMarkup: `\n  <link rel="alternate" type="text/markdown" href="https://example.com/docs/api/index.md" data-opennav="resource-link" data-opennav-sha="${RESOURCE_LINK_FINGERPRINT}">\n  <link rel="index" type="text/plain" href="https://example.com/llms.txt" title="LLMs text site index" data-opennav="resource-link" data-opennav-sha="${RESOURCE_LINK_FINGERPRINT}">`,
+          headLinkMarkup: `\n  <link rel="alternate" type="text/markdown" href="https://example.com/docs/api/index.md" data-opennav="resource-link" data-opennav-sha="${BUILD_FINGERPRINT}">\n  <link rel="index" type="text/plain" href="https://example.com/llms.txt" title="LLMs text site index" data-opennav="resource-link" data-opennav-sha="${BUILD_FINGERPRINT}">`,
         },
       ],
       warnings: [],
