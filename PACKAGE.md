@@ -1,237 +1,317 @@
-# Package Publishing Guide
+# Package Maintainer Guide
 
-This guide defines the package publishing pattern for this workspace. Every
-published `@opennav-ai/*` package should follow the same build, export, and
-verification rules unless we explicitly document a package-specific exception.
+This guide is for maintainers of this repository. It is not user-facing product
+documentation.
 
-The immediate goal is simple: a package consumer should be able to install an
-OpenNav AI package and use it from either ESM or CommonJS without custom
-loaders, bundler assumptions, or source-path imports.
+The current Phase 1 packaging goal is simple: publish one consumer package,
+`@opennav-ai/opennav`, that works from ESM, CommonJS, framework integrations,
+and the CLI without requiring consumers to install `@opennav-ai/engine`.
 
-## Why This Exists
+## Current Package Shape
 
-The workspace currently uses TypeScript source files and package-level builds.
-That is not enough by itself for a reliable npm package.
-
-For example, a package may compile `src/index.ts` into `dist/index.js`, but if
-the emitted JavaScript still imports `./engine` instead of `./engine.js`, plain
-Node ESM cannot resolve it. Vitest and bundler-style TypeScript resolution can
-hide that problem during development, but npm consumers can still hit it at
-runtime.
-
-The fix should be a package publishing strategy, not one-off loader hacks in
-scripts and not direct imports from `src/` in published packages.
-
-## Reference Pattern
-
-Zod is the closest reference package for our intended shape:
-
-- It is a TypeScript-first library.
-- It publishes both ESM and CommonJS.
-- It keeps a source entrypoint map in `package.json`.
-- It uses `zshy`, a TypeScript library build tool created for Zod.
-- It publishes explicit `exports` entries for `import`, `require`, and `types`.
-
-Relevant references:
-
-- Zod package metadata: <https://raw.githubusercontent.com/colinhacks/zod/main/packages/zod/package.json>
-- zshy project and docs: <https://github.com/colinhacks/zshy>
-
-The important lesson is not that every OpenNav package must copy Zod line for
-line. The important lesson is that published package output needs a deliberate
-build step that emits runtime-valid ESM, CommonJS, and declaration files.
-
-## Standard Package Shape
-
-Each published package should use this source layout:
+The workspace has two packages:
 
 ```text
-packages/<name>/
-  README.md
-  package.json
-  tsconfig.json
-  src/
-    index.ts
+packages/
+  engine/    private internal engine source and engine package smoke checks
+  opennav/   public package published as @opennav-ai/opennav
 ```
 
-`src/index.ts` is the package boundary. It should export only the public API for
-that package. Internal services, validators, readers, writers, adapters, and
-helper types stay internal unless we explicitly agree to publish them.
+`@opennav-ai/engine` is private. It remains useful as a workspace boundary and
+as a focused place for engine tests, but it is not published for Phase 1.
 
-For example, `@opennav-ai/engine` should expose the engine entrypoint and public
-input/output types. It should not expose implementation classes such as file
-readers, validators, write planners, generators, or reporters.
+`@opennav-ai/opennav` is the public package. It owns:
 
-## Build Output Contract
+- The root SDK export: `@opennav-ai/opennav`
+- The Astro export: `@opennav-ai/opennav/astro`
+- The Next export: `@opennav-ai/opennav/next`
+- The CLI bins: `opennav` and `opennav-ai`
+- The public `OpenNav*` option, result, and error types
+- The compiled engine implementation used at runtime
 
-Every published package should provide:
+## How The OpenNav Build Uses Engine Code
 
-- ESM runtime output for `import`.
-- CommonJS runtime output for `require`.
-- Type declaration output for TypeScript consumers.
-- An explicit `exports` map in `package.json`.
-- A package smoke test proving ESM import and CommonJS require both work from
-  the packed package.
+OpenNav source imports the engine through a private package import:
 
-The package export contract should look like this conceptually:
+```ts
+import { Engine } from "#opennav-engine";
+```
+
+During development and build, `packages/opennav/tsconfig.json` maps that alias to
+the engine source:
+
+```json
+{
+  "compilerOptions": {
+    "paths": {
+      "#opennav-engine": ["../engine/src/index.ts"]
+    }
+  }
+}
+```
+
+`packages/opennav/tsconfig.build.json` sets `rootDir` to `..`, so `zshy` compiles
+the reachable OpenNav and engine source files into one OpenNav `dist/` tree:
+
+```text
+packages/opennav/dist/
+  opennav/src/index.js
+  opennav/src/astro.js
+  opennav/src/next.js
+  opennav/src/cli.cjs
+  engine/src/index.js
+  engine/src/engine.js
+```
+
+The built package keeps the private import specifier in emitted OpenNav files:
+
+```js
+import { Engine } from "#opennav-engine";
+```
+
+`packages/opennav/package.json#imports` resolves that private specifier inside
+the installed package:
+
+```json
+{
+  "imports": {
+    "#opennav-engine": {
+      "types": "./dist/engine/src/index.d.cts",
+      "import": "./dist/engine/src/index.js",
+      "require": "./dist/engine/src/index.cjs"
+    }
+  }
+}
+```
+
+There is no post-build copy step and no rewrite script. The normal OpenNav build
+compiles the real engine source through TypeScript path resolution.
+
+## Public Export Contract
+
+The public package exports only the user-facing entrypoints:
 
 ```json
 {
   "exports": {
     ".": {
-      "types": "./dist/index.d.cts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "types": "./dist/opennav/src/index.d.cts",
+      "import": "./dist/opennav/src/index.js",
+      "require": "./dist/opennav/src/index.cjs"
     },
-    "./package.json": "./package.json"
-  }
-}
-```
-
-The exact file names may be generated by the package build tool, but the
-consumer behavior must remain the same.
-
-## Preferred Build Tool
-
-The preferred candidate for OpenNav AI packages is `zshy`.
-
-Why `zshy` fits this workspace:
-
-- It is designed for TypeScript libraries.
-- It builds ESM and CommonJS from one TypeScript source tree.
-- It uses `tsc` rather than bundling package internals into one file.
-- It rewrites relative import specifiers in emitted JavaScript so Node can run
-  the package output.
-- It can generate or maintain the `exports` map from source entrypoints.
-- It matches the pattern used by Zod.
-
-A package-level `package.json` should define source entrypoints with `zshy`.
-For a simple package:
-
-```json
-{
-  "name": "@opennav-ai/example",
-  "type": "module",
-  "zshy": {
-    "exports": {
-      ".": "./src/index.ts"
+    "./astro": {
+      "types": "./dist/opennav/src/astro.d.cts",
+      "import": "./dist/opennav/src/astro.js",
+      "require": "./dist/opennav/src/astro.cjs"
+    },
+    "./next": {
+      "types": "./dist/opennav/src/next.d.cts",
+      "import": "./dist/opennav/src/next.js",
+      "require": "./dist/opennav/src/next.cjs"
     }
-  },
-  "scripts": {
-    "build": "zshy --project tsconfig.build.json",
-    "test": "vitest run --reporter=default"
   }
 }
 ```
 
-We should avoid adding package-specific build systems unless there is a concrete
-reason the standard pattern does not work.
+Do not add public exports for engine internals unless we deliberately decide to
+publish that API. The internal engine index currently exports only `Engine`.
 
-## Source Imports
+## Dependency Rules
 
-Source imports should optimize for maintainability in the TypeScript codebase.
-Do not mass-edit source imports to satisfy a runtime problem until the package
-build tool strategy has been chosen.
+`packages/opennav/package.json` must list every runtime dependency needed by the
+OpenNav package and by the compiled engine code. That includes engine runtime
+dependencies such as `js-tiktoken`, `parse5`, `turndown`, and
+`turndown-plugin-gfm`.
 
-The preferred package build should handle emitted JavaScript correctness. For
-example, `zshy` can accept extensionless source imports and emit the correct
-runtime extensions for both ESM and CommonJS outputs.
-
-## Package Scripts
-
-Each published package should provide these scripts:
-
-```json
-{
-  "scripts": {
-    "build": "zshy --project tsconfig.build.json",
-    "test": "vitest run --reporter=default",
-    "pack:check": "npm pack --dry-run --cache ../../.npm-cache"
-  }
-}
-```
-
-Root workspace scripts can orchestrate package scripts, but package correctness
-must not depend on root-only behavior. A package should be buildable and testable
-from its own directory. The repo-local npm cache keeps package checks isolated
-from machine-specific global npm cache permissions.
-
-## Verification Requirements
-
-Before publishing any package, run the normal workspace checks:
+`@opennav-ai/opennav` must not depend on `@opennav-ai/engine`. Consumers should
+install one package:
 
 ```bash
-npm run lint
-npm run build
-npm test
+npm install -D @opennav-ai/opennav
 ```
 
-Then run package-specific publishing checks:
+The example harness verifies this by installing only the packed OpenNav tarball
+and asserting `node_modules/@opennav-ai/engine` is absent.
+
+## Root NPM Scripts
+
+Run these from the repository root.
+
+| Command | What It Does | When To Use It |
+| --- | --- | --- |
+| `npm run build` | Runs `npm run build --workspaces`, building engine and OpenNav packages. | Normal build verification. |
+| `npm test` | Runs the root Vitest suite for `packages/**/*.test.ts`. | Normal source test verification. |
+| `npm run test:verbose` | Runs the same root Vitest suite with verbose reporting. | Debugging failing tests. |
+| `npm run lint` | Runs `biome check .`. | Required before publishing or committing broad changes. |
+| `npm run check` | Runs `biome check --write .`. | Applies Biome safe fixes and checks. |
+| `npm run format` | Runs `biome format --write .`. | Applies formatting only. |
+| `npm run lint:fix` | Runs `npm run check && npm run format`. | Full local Biome fix pass. |
+| `npm run test:examples` | Runs the full packed-package example matrix. | Required packaging compatibility check. |
+| `npm run test:examples:vitest` | Direct Vitest command behind `test:examples`. | Useful when debugging the example config. |
+| `npm run test:frameworks` | Alias for `npm run test:examples`. | Backward-compatible framework test command. |
+| `npm run test:package:engine` | Runs the engine packed-package type smoke test. | Checks the private engine package shape still builds. |
+| `npm run fixture:engine:phase1:write` | Runs the manual Phase 1 fixture writer with Bun. | Manual inspection of engine output files. |
+
+The root `npm test` command is the supported source-test entrypoint today. The
+package-level `test` scripts exist, but the current Vitest include pattern is
+root-oriented.
+
+## Package NPM Scripts
+
+Run package scripts through npm workspaces from the repository root.
+
+### Public OpenNav Package
 
 ```bash
-npm pack --dry-run --workspace @opennav-ai/<name>
+npm run build --workspace @opennav-ai/opennav
+npm run pack:check --workspace @opennav-ai/opennav
+npm run test:package --workspace @opennav-ai/opennav
+npm pack --dry-run --workspace @opennav-ai/opennav
 ```
 
-Each package also needs smoke tests against the packed artifact:
+What they do:
 
-- Install the packed package into a temporary ESM consumer and import it.
-- Install the packed package into a temporary CommonJS consumer and require it.
-- Assert the public entrypoint exports exactly the intended public API.
-- Assert no internal implementation modules are reachable through public
-  package exports unless intentionally documented.
+- `build` runs `zshy --project tsconfig.build.json`, compiling OpenNav and the
+  reachable engine source into `packages/opennav/dist/`.
+- `pack:check` runs `npm pack --dry-run --cache ../../.npm-cache` from the
+  package directory.
+- `test:package` builds OpenNav, packs it, extracts the tarball into temporary
+  consumers, and verifies ESM types, ESM runtime imports, and CommonJS runtime
+  requires.
+- `npm pack --dry-run --workspace @opennav-ai/opennav` is the direct npm pack
+  check used before publishing.
 
-Package smoke tests should exercise the package as an npm consumer sees it, not
-as the monorepo test runner sees it.
-
-`@opennav-ai/engine` has an automated packed-package type smoke test:
+### Private Engine Package
 
 ```bash
+npm run build --workspace @opennav-ai/engine
+npm run pack:check --workspace @opennav-ai/engine
+npm run test:package --workspace @opennav-ai/engine
 npm run test:package:engine
 ```
 
-That command builds and packs the engine package, extracts the tarball into a
-temporary package install shape, and runs `tsc --noEmit` against temporary ESM
-and CommonJS TypeScript consumers.
+What they do:
 
-## CLI Packages
+- `build` runs `zshy --project tsconfig.build.json`, compiling the engine package
+  to `packages/engine/dist/`.
+- `pack:check` runs `npm pack --dry-run --cache ../../.npm-cache` from the
+  package directory.
+- `test:package` builds the engine, packs it, extracts the tarball into
+  temporary TypeScript consumers, and verifies ESM and CommonJS type consumers.
+- `npm run test:package:engine` is the root alias for the same engine package
+  smoke test.
 
-CLI packages follow the same package rules, plus CLI-specific rules:
+The engine package remains private even though these checks exist. Keep the
+checks because they protect the internal package boundary and catch accidental
+export or build regressions.
 
-- Published binaries must be explicit in `package.json`.
-- Destructive, expensive, or bulk operations must require explicit flags.
-- Dry-run support should be available wherever practical.
-- CLI entrypoints may be declared through the package build tool if supported.
+## Package Smoke Test Scripts
 
-With `zshy`, CLI entrypoints can be declared in the `zshy` package config and
-emitted as CommonJS binaries.
+The package smoke checks live in `scripts/`.
 
-## Adding A New Published Package
+`scripts/check-opennav-package-exports.mjs`:
 
-Use this checklist for every new package:
+- Runs `npm pack --json` for `packages/opennav`.
+- Extracts the packed tarball into a temporary install shape.
+- Copies only `@opennav-ai/opennav` into temporary consumers.
+- Symlinks runtime dependencies from root `node_modules`.
+- Runs a TypeScript ESM consumer against public types.
+- Runs an ESM runtime consumer.
+- Runs a CommonJS runtime consumer.
+- Does not install or copy `@opennav-ai/engine`.
 
-1. Agree the public behavior first.
-2. Create `packages/<name>/src/index.ts` as the only public source entrypoint.
-3. Keep internal implementation files under role-based directories such as
-   `src/services/`, `src/types/`, `src/stores/`, and `src/adapters/`.
-4. Add a package-level `package.json` using the standard export/build pattern.
-5. Add package-level tests for public behavior.
-6. Add package smoke tests for ESM import and CommonJS require from the packed
-   artifact.
-7. Confirm `npm pack --dry-run` includes only the intended files.
-8. Confirm the package does not expose internal implementation modules.
+`scripts/check-engine-package-types.mjs`:
 
-## Current Workspace Follow-Up
+- Runs `npm pack --json` for `packages/engine`.
+- Extracts the packed tarball into a temporary install shape.
+- Runs TypeScript ESM and CommonJS consumers against the private engine package.
+- Imports only `Engine` from the engine package index.
 
-`@opennav-ai/engine` now uses `zshy` for its package build and emits the
-standard ESM plus CommonJS package shape. Before publishing, the remaining
-packaging work is:
+`scripts/run-phase-1-fixture.ts`:
 
-1. Add runtime smoke assertions to the existing `@opennav-ai/engine` package
-   test so it verifies both type safety and runtime import/require behavior.
-2. Apply the same package pattern to future packages, including
-   `@opennav-ai/cli`.
-3. Add package release checks before the first npm publish.
+- Copies the Phase 1 static fixture into a manual-run directory.
+- Runs `Engine.execute(...)` with `dryRun: false`.
+- Writes `build-result.json` next to the generated output.
+- Imports internal engine types directly from engine source files because the
+  engine package index intentionally exports only `Engine`.
 
-The current package smoke test proves type safety from the packed tarball.
-Runtime checks are still useful before the first npm publish because they prove
-the emitted JavaScript graph loads under both module systems.
+## Example Compatibility Matrix
+
+`npm run test:examples` is the strongest packaging compatibility check. It:
+
+- Builds and packs `@opennav-ai/opennav`.
+- Installs only the packed OpenNav tarball into each example.
+- Verifies the install is not a workspace symlink.
+- Verifies `node_modules/@opennav-ai/engine` is absent.
+- Builds the example framework/static output.
+- Runs OpenNav through the public integration point.
+- Snapshots the final generated output tree.
+
+Current examples cover:
+
+- Astro 6 static
+- Astro 5 static
+- Astro 4 static
+- Next 16 static export
+- Next 15 static export
+- Next 14 static export
+- CLI build script
+- Static-site SDK
+
+When OpenNav package dependencies change, refresh the example lockfiles so the
+packed examples still model real consumer installs.
+
+## Standard Verification Before Publishing
+
+Run this full set before publishing `@opennav-ai/opennav`:
+
+```bash
+npm run build
+npm run lint
+npm test
+npm run test:package --workspace @opennav-ai/opennav
+npm run test:package --workspace @opennav-ai/engine
+npm pack --dry-run --workspace @opennav-ai/opennav
+npm run test:examples
+```
+
+Expected shape:
+
+- `packages/opennav/dist/opennav/src/*` contains public OpenNav entrypoints.
+- `packages/opennav/dist/engine/src/*` contains compiled internal engine files.
+- Packed OpenNav includes `dist/` and `package.json`.
+- Packed OpenNav does not require a separate `@opennav-ai/engine` install.
+- Public imports work from ESM and CommonJS.
+- The CLI bin resolves to `dist/opennav/src/cli.cjs`.
+
+## Adding Or Changing Public Entrypoints
+
+For a new public OpenNav subpath:
+
+1. Add the source entrypoint under `packages/opennav/src/`.
+2. Add the subpath to `packages/opennav/package.json#zshy.exports`.
+3. Run `npm run build --workspace @opennav-ai/opennav` so `zshy` updates
+   `exports`.
+4. Add package smoke-test coverage in `scripts/check-opennav-package-exports.mjs`.
+5. Add example coverage when the entrypoint represents a real user workflow.
+6. Run the standard publishing verification set.
+
+For an internal engine change:
+
+1. Keep implementation imports inside `packages/engine/src/`.
+2. Export only `Engine` from `packages/engine/src/index.ts`.
+3. Add public OpenNav wrapper types in `packages/opennav/src/types/` when a type
+   crosses the package boundary.
+4. Keep `packages/opennav/src/index.ts` returning `OpenNav*` public types rather
+   than engine-branded types.
+5. Run the package and example smoke checks.
+
+## Things To Avoid
+
+- Do not add a post-build copy or import-rewrite script for engine files.
+- Do not add `@opennav-ai/engine` as a dependency of `@opennav-ai/opennav`.
+- Do not export internal engine services, validators, readers, writers,
+  generators, or reporters from a public package path.
+- Do not rely on workspace symlinks as proof that packaging works.
+- Do not publish with only unit tests passing; run packed-package and example
+  checks too.
