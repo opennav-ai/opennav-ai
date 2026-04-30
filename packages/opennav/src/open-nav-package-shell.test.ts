@@ -45,7 +45,7 @@ describe("OpenNav public package shell", (): void => {
     });
   });
 
-  it("exports a Next config wrapper-shaped stub", (): void => {
+  it("exports a Next config wrapper that preserves user config fields", (): void => {
     const nextConfig: OpenNavNextConfig = {
       output: "export",
       reactStrictMode: true,
@@ -60,5 +60,37 @@ describe("OpenNav public package shell", (): void => {
       output: "export",
       reactStrictMode: true,
     });
+  });
+
+  it("defaults the Next config wrapper to static mode", (): void => {
+    const nextConfig: OpenNavNextConfig = {
+      output: "export",
+      reactStrictMode: true,
+    };
+    const wrappedConfig = OpenNavNext({
+      siteName: "Example Docs",
+      siteUrl: "https://example.com",
+    })(nextConfig);
+
+    expect(wrappedConfig).toEqual({
+      output: "export",
+      reactStrictMode: true,
+    });
+  });
+
+  it("rejects Next configs without static export output", (): void => {
+    const nextConfig: OpenNavNextConfig = {
+      output: "standalone",
+    };
+
+    expect((): void => {
+      OpenNavNext({
+        siteName: "Example Docs",
+        siteUrl: "https://example.com",
+        mode: "static",
+      })(nextConfig);
+    }).toThrow(
+      'OPENNAV_NEXT_STATIC_EXPORT_REQUIRED: OpenNav Next static mode requires `output: "export"`.',
+    );
   });
 });
