@@ -11,6 +11,7 @@ import { FileMetadataReader } from "./pages/services/file-metadata-reader";
 import { BuildResultReporter } from "./reporting/services/build-result-reporter";
 import { ResourceLinkBuilder } from "./resource-links/services/resource-link-builder";
 import { OpenNavSiteValidator } from "./site-validation/services/opennav-site-validator";
+import { SiteBaseUrlNormalizer } from "./site-validation/services/site-base-url-normalizer";
 import type { EngineExecuteInput } from "./types/engine-execute-input";
 import type { EngineExecuteOptions } from "./types/engine-execute-options";
 import type { EngineExecuteResult } from "./types/engine-execute-result";
@@ -32,6 +33,16 @@ export class Engine {
     input: EngineExecuteInput,
     options: EngineExecuteOptions = {},
   ): Promise<Result<EngineExecuteResult, OpenNavError>> {
+    const siteBaseUrlNormalizer = new SiteBaseUrlNormalizer();
+    const normalizedBaseUrlResult = siteBaseUrlNormalizer.normalize(
+      input.baseUrl,
+    );
+
+    if (normalizedBaseUrlResult.isErr()) {
+      return err(normalizedBaseUrlResult.error);
+    }
+
+    const baseUrl = normalizedBaseUrlResult.value.baseUrl;
     const fileListReader = new EngineFileListReader();
     const fileMetadataReader = new FileMetadataReader();
     const siteValidator = new OpenNavSiteValidator();
@@ -53,7 +64,7 @@ export class Engine {
     }
 
     const fileMetadataResult = await fileMetadataReader.read({
-      baseUrl: input.baseUrl,
+      baseUrl,
       outputDirectory: input.outputDirectory,
       fileReferences: fileListResult.value.fileReferences,
     });
@@ -64,7 +75,7 @@ export class Engine {
 
     const validationResult = siteValidator.validate({
       siteName: input.siteName,
-      baseUrl: input.baseUrl,
+      baseUrl,
       pages: fileMetadataResult.value.pageMetadata,
       mode: "strict",
     });
@@ -75,7 +86,7 @@ export class Engine {
 
     const buildFingerprint = buildFingerprintBuilder.buildBuildFingerprint({
       siteName: input.siteName,
-      baseUrl: input.baseUrl,
+      baseUrl,
       sourceFiles: fileMetadataResult.value.fingerprintFiles,
       contentSignals: contentSignalsGuidanceBuilder.buildFingerprintSignals({
         contentSignals: input.accessGuidance?.contentSignals,
@@ -84,7 +95,7 @@ export class Engine {
 
     const agentContentResult = agentContentFileBuilder.build({
       siteName: input.siteName,
-      baseUrl: input.baseUrl,
+      baseUrl,
       buildFingerprint,
       contentSignalsConfigured:
         contentSignalsGuidanceBuilder.hasConfiguredSignals({
@@ -96,7 +107,7 @@ export class Engine {
     });
 
     const resourceLinkResult = await resourceLinkBuilder.build({
-      baseUrl: input.baseUrl,
+      baseUrl,
       buildFingerprint,
       outputDirectory: input.outputDirectory,
       pages: fileMetadataResult.value.pageMetadata,
@@ -133,6 +144,7 @@ export class Engine {
       ...agentContentResult.skippedFilePaths,
     ];
     const warnings = [
+      ...normalizedBaseUrlResult.value.warnings,
       ...fileListResult.value.warnings,
       ...validationResult.value.warnings,
       ...agentContentResult.warnings,

@@ -178,4 +178,44 @@ describe("OpenNavStaticSite", (): void => {
       });
     }
   });
+
+  it("normalizes schemeless site URLs before generating public URLs", async (): Promise<void> => {
+    const outputDirectory = await createStaticOutputDirectory();
+    const staticSite = new OpenNavStaticSite({
+      siteName: "Example Docs",
+      siteUrl: "example.com",
+      outputDirectory,
+    });
+
+    const result: Result<OpenNavBuildResult, OpenNavError> =
+      await staticSite.build();
+
+    expect(result.isOk()).toEqual(true);
+    if (result.isOk()) {
+      expect({
+        warnings: result.value.warnings,
+        llmsTxt: await readFile(join(outputDirectory, "llms.txt"), "utf8"),
+      }).toEqual({
+        warnings: [
+          {
+            code: "SITE_URL_PROTOCOL_ADDED",
+            message: "OpenNav added https:// to the configured siteUrl.",
+            context: {
+              originalBaseUrl: "example.com",
+              normalizedBaseUrl: "https://example.com",
+            },
+          },
+          {
+            code: "ENGINE_FILE_UNSUPPORTED",
+            message: "The engine skipped an unsupported built site file.",
+            context: {
+              filePath: "assets/logo.svg",
+              kind: "unsupported",
+            },
+          },
+        ],
+        llmsTxt: `# Example Docs\n\n## Root\n\n- [Home](https://example.com/index.md): Start here.\n\n## Docs\n\n- [About](https://example.com/docs/about.md): Learn about OpenNav.\n\n<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="${buildFingerprint}" manifest="/.well-known/opennav.json" -->\n`,
+      });
+    }
+  });
 });
