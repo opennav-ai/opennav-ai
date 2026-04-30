@@ -5,6 +5,14 @@ description: Run OpenNav after a supported Next.js static export build.
 
 Next.js support is for static export builds.
 
+## Install
+
+Install OpenNav in your Next.js project.
+
+```bash
+npm install @opennav-ai/opennav
+```
+
 <p class="opennav-example-label" data-example-role="quick">Quick start</p>
 
 ```typescript

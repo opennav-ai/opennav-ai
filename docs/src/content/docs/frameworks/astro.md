@@ -6,6 +6,14 @@ description: Run OpenNav after an Astro static build.
 Astro static sites can run OpenNav after `astro build` through the Astro
 integration.
 
+## Install
+
+Install OpenNav in your Astro project.
+
+```bash
+npm install @opennav-ai/opennav
+```
+
 <p class="opennav-example-label" data-example-role="quick">Quick start</p>
 
 ```typescript

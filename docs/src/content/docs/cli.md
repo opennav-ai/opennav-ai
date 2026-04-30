@@ -6,6 +6,14 @@ description: Use the opennav command with a finished static output folder.
 The CLI entrypoint is for projects that already have a shell build command and
 want the smallest OpenNav setup.
 
+## Install
+
+Install OpenNav in the project that owns the static build command.
+
+```bash
+npm install @opennav-ai/opennav
+```
+
 ```bash
 opennav build --static \
   --output dist \

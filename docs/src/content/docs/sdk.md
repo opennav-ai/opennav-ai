@@ -5,6 +5,14 @@ description: Use OpenNavStaticSite from a Node script or framework hook.
 
 Use the root SDK when your script already knows the built output folder.
 
+## Install
+
+Install OpenNav before importing `OpenNavStaticSite`.
+
+```bash
+npm install @opennav-ai/opennav
+```
+
 <p class="opennav-example-label" data-example-role="quick">Quick start</p>
 
 ```typescript

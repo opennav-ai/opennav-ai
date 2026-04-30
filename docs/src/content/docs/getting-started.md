@@ -7,6 +7,14 @@ Run OpenNav after your existing static build command. The output folder must
 already contain real prerendered HTML such as `index.html`,
 `docs/getting-started/index.html`, or `docs/api/index.html`.
 
+## Install
+
+Install OpenNav in the project that builds your static site.
+
+```bash
+npm install @opennav-ai/opennav
+```
+
 ## CLI Quick Start
 
 ```bash
