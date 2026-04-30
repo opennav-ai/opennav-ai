@@ -6,12 +6,10 @@ import { DEFAULT_LLMS_FULL_MAX_CONTENT_TOKENS } from "./agent-content/constants/
 import { AgentContentFileBuilder } from "./agent-content/services/agent-content-file-builder";
 import type { AgentContentBuildPage } from "./agent-content/types/agent-content-build-page";
 import { BuildFingerprintBuilder } from "./build-fingerprint/services/build-fingerprint-builder";
-import type { BuildFingerprintFileInput } from "./build-fingerprint/types/build-fingerprint-file-input";
 import type { OpenNavError } from "./common/types/opennav-error";
 import { DistFileWriter } from "./dist-write/services/dist-file-writer";
 import { EngineFileListReader } from "./input/services/engine-file-list-reader";
 import { EngineFileReader } from "./input/services/engine-file-reader";
-import type { EngineFile } from "./input/types/engine-file";
 import type { EngineFileReference } from "./input/types/engine-file-reference";
 import { FileMetadataReader } from "./pages/services/file-metadata-reader";
 import type { OpenNavPageMetadata } from "./pages/types/opennav-page";
@@ -24,12 +22,6 @@ import type { EngineExecuteOptions } from "./types/engine-execute-options";
 import type { EngineExecuteResult } from "./types/engine-execute-result";
 import type { EngineFilePath } from "./types/engine-file-path";
 import { WritePlanBuilder } from "./write-plan/services/write-plan-builder";
-
-interface SourceFilesForPlanning {
-  readonly fingerprintFiles: readonly BuildFingerprintFileInput[];
-  readonly pageMetadata: readonly OpenNavPageMetadata[];
-  readonly sourceFileReferences: readonly EngineFileReference[];
-}
 
 /**
  * Public OpenNav AI engine entrypoint.
@@ -68,25 +60,20 @@ export class Engine {
       return err(fileListResult.error);
     }
 
-    const sourceFilesResult = await Engine.readSourceFilesForPlanning({
+    const fileMetadataResult = await fileMetadataReader.read({
+      baseUrl: input.baseUrl,
       outputDirectory: input.outputDirectory,
       fileReferences: fileListResult.value.fileReferences,
-      fileReader,
-      fileMetadataReader,
-      buildFingerprintBuilder,
-      baseUrl: input.baseUrl,
     });
 
-    if (sourceFilesResult.isErr()) {
-      return err(sourceFilesResult.error);
+    if (fileMetadataResult.isErr()) {
+      return err(fileMetadataResult.error);
     }
-
-    const sourceFilesForPlanning = sourceFilesResult.value;
 
     const validationResult = siteValidator.validate({
       siteName: input.siteName,
       baseUrl: input.baseUrl,
-      pages: sourceFilesForPlanning.pageMetadata,
+      pages: fileMetadataResult.value.pageMetadata,
       mode: "strict",
     });
 
@@ -97,7 +84,7 @@ export class Engine {
     const buildFingerprint = buildFingerprintBuilder.buildBuildFingerprint({
       siteName: input.siteName,
       baseUrl: input.baseUrl,
-      sourceFiles: sourceFilesForPlanning.fingerprintFiles,
+      sourceFiles: fileMetadataResult.value.fingerprintFiles,
       contentSignals: contentSignalsGuidanceBuilder.buildFingerprintSignals({
         contentSignals: input.accessGuidance?.contentSignals,
       }),
@@ -112,7 +99,7 @@ export class Engine {
           contentSignals: input.accessGuidance?.contentSignals,
         }),
       maxLlmsFullContentTokens: DEFAULT_LLMS_FULL_MAX_CONTENT_TOKENS,
-      pages: sourceFilesForPlanning.pageMetadata.map(
+      pages: fileMetadataResult.value.pageMetadata.map(
         (page: OpenNavPageMetadata): AgentContentBuildPage => ({
           page,
           getSourceContent: async (): Promise<Result<string, OpenNavError>> =>
@@ -127,7 +114,7 @@ export class Engine {
 
     const resourceLinkPagesResult = await Engine.createResourceLinkPages({
       outputDirectory: input.outputDirectory,
-      pages: sourceFilesForPlanning.pageMetadata,
+      pages: fileMetadataResult.value.pageMetadata,
       fileReader,
     });
 
@@ -142,7 +129,7 @@ export class Engine {
     });
     const robotsTxtSourceFileResult = await Engine.findRobotsTxtSourceFile({
       outputDirectory: input.outputDirectory,
-      sourceFileReferences: sourceFilesForPlanning.sourceFileReferences,
+      sourceFileReferences: fileMetadataResult.value.sourceFileReferences,
       fileReader,
     });
 
@@ -234,16 +221,6 @@ export class Engine {
     return ok(buildPages);
   }
 
-  private static isOpenNavManagedMarkdownSourceFile(
-    sourceFile: EngineFile,
-  ): boolean {
-    return (
-      sourceFile.kind === "markdown" &&
-      sourceFile.content.includes('opennav compatible="true"') &&
-      sourceFile.content.includes('manifest="/.well-known/opennav.json"')
-    );
-  }
-
   private static async findRobotsTxtSourceFile(input: {
     readonly outputDirectory: string;
     readonly sourceFileReferences: readonly EngineFileReference[];
@@ -288,63 +265,5 @@ export class Engine {
     }
 
     return ok(readResult.value.content);
-  }
-
-  private static async readSourceFilesForPlanning(input: {
-    readonly baseUrl: string;
-    readonly outputDirectory: string;
-    readonly fileReferences: readonly EngineFileReference[];
-    readonly fileReader: EngineFileReader;
-    readonly fileMetadataReader: FileMetadataReader;
-    readonly buildFingerprintBuilder: BuildFingerprintBuilder;
-  }): Promise<Result<SourceFilesForPlanning, OpenNavError>> {
-    const fingerprintFiles: BuildFingerprintFileInput[] = [];
-    const pageMetadata: OpenNavPageMetadata[] = [];
-    const sourceFileReferences: EngineFileReference[] = [];
-
-    for (const fileReference of input.fileReferences) {
-      const readResult = await input.fileReader.read({
-        outputDirectory: input.outputDirectory,
-        filePath: fileReference.filePath,
-      });
-
-      if (readResult.isErr()) {
-        return err(readResult.error);
-      }
-
-      if (Engine.isOpenNavManagedMarkdownSourceFile(readResult.value)) {
-        continue;
-      }
-
-      sourceFileReferences.push({
-        filePath: readResult.value.filePath,
-        kind: readResult.value.kind,
-      });
-      fingerprintFiles.push({
-        filePath: readResult.value.filePath,
-        contentFingerprint:
-          input.buildFingerprintBuilder.buildContentFingerprint({
-            content: readResult.value.content,
-            sourceContentKind: readResult.value.kind,
-          }),
-      });
-
-      const fileMetadataResult = await input.fileMetadataReader.read({
-        baseUrl: input.baseUrl,
-        files: [readResult.value],
-      });
-
-      if (fileMetadataResult.isErr()) {
-        return err(fileMetadataResult.error);
-      }
-
-      pageMetadata.push(...fileMetadataResult.value.pageMetadata);
-    }
-
-    return ok({
-      fingerprintFiles,
-      pageMetadata,
-      sourceFileReferences,
-    });
   }
 }

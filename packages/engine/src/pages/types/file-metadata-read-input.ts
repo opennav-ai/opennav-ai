@@ -1,7 +1,7 @@
-import type { EngineFile } from "../../input/types/engine-file";
+import type { EngineFileReference } from "../../input/types/engine-file-reference";
 
 /**
- * Input needed to create page metadata from already-read engine files.
+ * Input needed to prepare supported source files for metadata-driven planning.
  */
 export interface FileMetadataReadInput {
   /**
@@ -13,11 +13,19 @@ export interface FileMetadataReadInput {
   readonly baseUrl: string;
 
   /**
-   * Supported source files already read from the static output directory.
+   * Built static site output directory that contains every source reference.
    *
-   * HTML and Markdown files become page metadata entries. Files such as
-   * `robots.txt` cannot produce page metadata, even though another engine phase
-   * may still process them from the same read source file list.
+   * Each file reference is resolved relative to this directory before content
+   * is read for page metadata and source fingerprints.
    */
-  readonly files: readonly EngineFile[];
+  readonly outputDirectory: string;
+
+  /**
+   * Supported source file references produced by the input file list reader.
+   *
+   * HTML and Markdown files may become page metadata entries. `robots.txt`
+   * contributes to build fingerprints and later access-guidance lookup, but it
+   * does not produce page metadata.
+   */
+  readonly fileReferences: readonly EngineFileReference[];
 }
