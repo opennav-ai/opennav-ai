@@ -60,11 +60,13 @@ describe("OpenNavAstro", (): void => {
     return outputDirectory;
   }
 
-  function createTestAstroLogger(): TestAstroLogger {
+  function createTestAstroLogger(warnings: string[] = []): TestAstroLogger {
     return {
       error: (_message: string): void => undefined,
       info: (_message: string): void => undefined,
-      warn: (_message: string): void => undefined,
+      warn: (message: string): void => {
+        warnings.push(message);
+      },
     };
   }
 
@@ -108,6 +110,7 @@ describe("OpenNavAstro", (): void => {
       integration,
       "astro:build:done",
     );
+    const warnings: string[] = [];
 
     await configDoneHook({
       config: {
@@ -118,7 +121,7 @@ describe("OpenNavAstro", (): void => {
     await buildDoneHook({
       assets: new Map<string, readonly URL[]>(),
       dir: pathToFileURL(outputDirectory),
-      logger: createTestAstroLogger(),
+      logger: createTestAstroLogger(warnings),
       pages: [],
     });
 
@@ -133,11 +136,13 @@ describe("OpenNavAstro", (): void => {
         join(outputDirectory, ".well-known/opennav.json"),
         "utf8",
       ),
+      warnings,
     }).toEqual({
       llmsTxt: `# Example Docs\n\n## Root\n\n- [Home](https://example.com/index.md): Start here.\n\n## Docs\n\n- [About](https://example.com/docs/about.md): Learn about OpenNav.\n\n<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="${buildFingerprint}" manifest="/.well-known/opennav.json" -->\n`,
       indexMarkdown: `# Home\n\nStart here.\n\n---\n\nSite index: [llms.txt](https://example.com/llms.txt)\n\n<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="${buildFingerprint}" manifest="/.well-known/opennav.json" -->\n`,
       aboutMarkdown: `# About\n\nLearn about OpenNav.\n\n---\n\nSite index: [llms.txt](https://example.com/llms.txt)\n\n<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="${buildFingerprint}" manifest="/.well-known/opennav.json" -->\n`,
       manifest: `{\n  "opennav": true,\n  "version": "1.0",\n  "profile": "static-agent-ready",\n  "site": "https://example.com",\n  "build_fingerprint": "${buildFingerprint}",\n  "spec": "https://opennav.ai/spec/1.0",\n  "artifacts": {\n    "llms_txt": "/llms.txt",\n    "llms_full_txt": "/llms-full.txt",\n    "well_known_llms_txt": "/.well-known/llms.txt",\n    "well_known_llms_full_txt": "/.well-known/llms-full.txt"\n  },\n  "capabilities": {\n    "clean_markdown": true,\n    "llms_txt": true,\n    "llms_full_txt": true,\n    "html_resource_links": true,\n    "content_signals": false\n  }\n}\n`,
+      warnings: [],
     });
   });
 });

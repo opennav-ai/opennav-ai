@@ -123,6 +123,10 @@ export class OpenNavAstroStaticBuildRunner {
     );
 
     for (const warning of result.warnings) {
+      if (warning.code === "ENGINE_FILE_UNSUPPORTED") {
+        continue;
+      }
+
       input.logger.warn?.(`${warning.code}: ${warning.message}`);
     }
   }

@@ -86,6 +86,7 @@ fix(engine): reject missing output directory
 
 - **Co-located tests** — unit test files live next to the logic file they test. `engine.ts` → `engine.test.ts`. No separate `__tests__/` or `tests/` directories.
 - **Test every method** — every public method gets at least one test when its implementation is filled in.
+- **Scale test code to risk** — keep the amount of test code proportional to the value and risk of the change. For small targeted behavior changes, prefer adding one focused assertion to existing real coverage over creating new harnesses, mocks, or test files. Add larger scaffolding only when it catches a concrete risk that existing tests cannot cover.
 - **Test runner** — vitest (zero config, native TypeScript, fast).
 - **Quiet by default** — run tests with `npm test` (quiet/minimal output). Use `npm run test:verbose` only when debugging failures.
 - **Assert on exact values, not counts** — never assert that a result "has length > 0" or "contains" a value in isolation. Assert the full response structure and values with `toEqual`. Tests must verify actual behaviour and output, not just that _something_ was returned.

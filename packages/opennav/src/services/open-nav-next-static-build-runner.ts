@@ -153,6 +153,10 @@ export class OpenNavNextStaticBuildRunner {
     );
 
     for (const warning of result.value.warnings) {
+      if (warning.code === "ENGINE_FILE_UNSUPPORTED") {
+        continue;
+      }
+
       console.warn(`${warning.code}: ${warning.message}`);
     }
   }
