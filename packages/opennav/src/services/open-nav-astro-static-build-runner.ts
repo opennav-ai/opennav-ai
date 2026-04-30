@@ -1,10 +1,11 @@
 import { fileURLToPath } from "node:url";
-import type { EngineExecuteResult, OpenNavError } from "@opennav-ai/engine";
 import { err, ok, type Result } from "neverthrow";
 import { OpenNavStaticSite } from "../index";
 import type { OpenNavAstroBuildDoneHookInput } from "../types/open-nav-astro-build-done-hook-input";
 import type { OpenNavAstroConfigDoneHookInput } from "../types/open-nav-astro-config-done-hook-input";
 import type { OpenNavAstroOptions } from "../types/open-nav-astro-options";
+import type { OpenNavBuildResult } from "../types/open-nav-build-result";
+import type { OpenNavError } from "../types/open-nav-error";
 
 /**
  * Runs OpenNav for Astro static builds using the shared static-site SDK.
@@ -45,7 +46,7 @@ export class OpenNavAstroStaticBuildRunner {
    */
   public async build(
     input: OpenNavAstroBuildDoneHookInput,
-  ): Promise<Result<EngineExecuteResult, OpenNavError>> {
+  ): Promise<Result<OpenNavBuildResult, OpenNavError>> {
     if (this.astroBuildOutput === "server") {
       return err(this.createServerOutputError());
     }
@@ -112,7 +113,7 @@ export class OpenNavAstroStaticBuildRunner {
 
   private reportSuccessfulBuild(
     input: OpenNavAstroBuildDoneHookInput,
-    result: EngineExecuteResult,
+    result: OpenNavBuildResult,
   ): void {
     input.logger.info?.(
       `OpenNav wrote ${String(

@@ -1,12 +1,13 @@
-import type { EngineExecuteResult, OpenNavError } from "@opennav-ai/engine";
 import { ok, type Result } from "neverthrow";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { OpenNavBuildResult } from "./types/open-nav-build-result";
+import type { OpenNavError } from "./types/open-nav-error";
 import type { OpenNavStaticSiteBuildOptions } from "./types/open-nav-static-site-build-options";
 import type { OpenNavStaticSiteOptions } from "./types/open-nav-static-site-options";
 
 type BuildMethod = (
   options: OpenNavStaticSiteBuildOptions,
-) => Promise<Result<EngineExecuteResult, OpenNavError>>;
+) => Promise<Result<OpenNavBuildResult, OpenNavError>>;
 
 type MockStaticSite = {
   readonly build: BuildMethod;

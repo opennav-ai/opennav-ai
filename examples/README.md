@@ -2,8 +2,9 @@
 
 These examples show the public `@opennav-ai/opennav` package running against
 real static output. Each example is also a compatibility test: `npm run
-test:examples` builds local OpenNav packages, installs packed tarballs into the
-example projects, runs the example builds, and compares the final output files.
+test:examples` builds the local OpenNav package, installs its packed tarball
+into the example projects, runs the example builds, and compares the final
+output files.
 
 ## Table Of Contents
 
@@ -30,9 +31,10 @@ npm run test:examples
 
 The tests:
 
-- Build and pack `@opennav-ai/engine` and `@opennav-ai/opennav`.
-- Install those packed packages into each example instead of using workspace
-  symlinks.
+- Build and pack `@opennav-ai/opennav`.
+- Install that packed package into each example instead of using a workspace
+  symlink.
+- Verify the examples do not install the internal `@opennav-ai/engine` package.
 - Build the framework or static output.
 - Run OpenNav through the example's public integration point.
 - Snapshot the final output tree.

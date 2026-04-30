@@ -61,7 +61,6 @@ class NextStaticExample {
     await this.runner.installPackedOpenNavPackages(
       this.config.directory,
       this.config.name,
-      packages.engineTarballPath,
       packages.openNavTarballPath,
     );
     await this.runner.assertPackedOpenNavInstall(

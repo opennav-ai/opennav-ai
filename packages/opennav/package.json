@@ -2,30 +2,37 @@
   "name": "@opennav-ai/opennav",
   "version": "0.0.0",
   "type": "module",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.cts",
+  "main": "./dist/opennav/src/index.cjs",
+  "module": "./dist/opennav/src/index.js",
+  "types": "./dist/opennav/src/index.d.cts",
   "exports": {
     "./package.json": "./package.json",
     ".": {
-      "types": "./dist/index.d.cts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "types": "./dist/opennav/src/index.d.cts",
+      "import": "./dist/opennav/src/index.js",
+      "require": "./dist/opennav/src/index.cjs"
     },
     "./astro": {
-      "types": "./dist/astro.d.cts",
-      "import": "./dist/astro.js",
-      "require": "./dist/astro.cjs"
+      "types": "./dist/opennav/src/astro.d.cts",
+      "import": "./dist/opennav/src/astro.js",
+      "require": "./dist/opennav/src/astro.cjs"
     },
     "./next": {
-      "types": "./dist/next.d.cts",
-      "import": "./dist/next.js",
-      "require": "./dist/next.cjs"
+      "types": "./dist/opennav/src/next.d.cts",
+      "import": "./dist/opennav/src/next.js",
+      "require": "./dist/opennav/src/next.cjs"
+    }
+  },
+  "imports": {
+    "#opennav-engine": {
+      "types": "./dist/engine/src/index.d.cts",
+      "import": "./dist/engine/src/index.js",
+      "require": "./dist/engine/src/index.cjs"
     }
   },
   "bin": {
-    "opennav": "./dist/cli.cjs",
-    "opennav-ai": "./dist/cli.cjs"
+    "opennav": "./dist/opennav/src/cli.cjs",
+    "opennav-ai": "./dist/opennav/src/cli.cjs"
   },
   "files": [
     "dist"
@@ -49,9 +56,12 @@
     "test:package": "npm run build && node ../../scripts/check-opennav-package-exports.mjs"
   },
   "dependencies": {
-    "@opennav-ai/engine": "0.0.0",
     "commander": "^14.0.3",
-    "neverthrow": "^8.2.0"
+    "js-tiktoken": "^1.0.21",
+    "neverthrow": "^8.2.0",
+    "parse5": "^8.0.1",
+    "turndown": "^7.2.4",
+    "turndown-plugin-gfm": "^1.0.2"
   },
   "devDependencies": {
     "typescript": "^6.0.2",

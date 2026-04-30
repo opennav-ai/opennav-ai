@@ -7,16 +7,13 @@ import type { ExampleBuildTestRunner } from "./example-build-test-runner.ts";
  * Builds and packs local OpenNav workspace packages for example installs.
  */
 export class PackedOpenNavPackages {
-  private readonly engineTarballPathValue: string;
   private readonly openNavTarballPathValue: string;
   private readonly packageArchiveDirectoryValue: string;
 
   private constructor(
-    engineTarballPath: string,
     openNavTarballPath: string,
     packageArchiveDirectory: string,
   ) {
-    this.engineTarballPathValue = engineTarballPath;
     this.openNavTarballPathValue = openNavTarballPath;
     this.packageArchiveDirectoryValue = packageArchiveDirectory;
   }
@@ -32,26 +29,6 @@ export class PackedOpenNavPackages {
   ): Promise<PackedOpenNavPackages> {
     await runner.runCommand(
       "npm",
-      ["run", "build", "--workspace", "@opennav-ai/engine"],
-      runner.repositoryDirectory,
-      "build @opennav-ai/engine",
-    );
-    await runner.runCommand(
-      "npm",
-      [
-        "exec",
-        "tsc",
-        "--",
-        "--build",
-        "packages/engine/tsconfig.json",
-        "--force",
-        "--emitDeclarationOnly",
-      ],
-      runner.repositoryDirectory,
-      "refresh @opennav-ai/engine project references",
-    );
-    await runner.runCommand(
-      "npm",
       ["run", "build", "--workspace", "@opennav-ai/opennav"],
       runner.repositoryDirectory,
       "build @opennav-ai/opennav",
@@ -62,13 +39,6 @@ export class PackedOpenNavPackages {
     );
 
     try {
-      const engineTarballPath =
-        await PackedOpenNavPackages.packWorkspacePackage(
-          runner,
-          packageArchiveDirectory,
-          "packages/engine",
-          "pack @opennav-ai/engine",
-        );
       const openNavTarballPath =
         await PackedOpenNavPackages.packWorkspacePackage(
           runner,
@@ -78,7 +48,6 @@ export class PackedOpenNavPackages {
         );
 
       return new PackedOpenNavPackages(
-        engineTarballPath,
         openNavTarballPath,
         packageArchiveDirectory,
       );
@@ -90,15 +59,6 @@ export class PackedOpenNavPackages {
 
       throw error;
     }
-  }
-
-  /**
-   * Returns the packed engine package tarball path.
-   *
-   * @returns Absolute path to the `@opennav-ai/engine` tarball.
-   */
-  public get engineTarballPath(): string {
-    return this.engineTarballPathValue;
   }
 
   /**

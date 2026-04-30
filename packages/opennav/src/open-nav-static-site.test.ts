@@ -8,10 +8,11 @@ import {
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import type { EngineExecuteResult, OpenNavError } from "@opennav-ai/engine";
 import type { Result } from "neverthrow";
 import { afterEach, describe, expect, it } from "vitest";
 import { OpenNavStaticSite } from "./index";
+import type { OpenNavBuildResult } from "./types/open-nav-build-result";
+import type { OpenNavError } from "./types/open-nav-error";
 
 describe("OpenNavStaticSite", (): void => {
   let fixtureDirectory: string | undefined;
@@ -69,7 +70,7 @@ describe("OpenNavStaticSite", (): void => {
       outputDirectory,
     });
 
-    const result: Result<EngineExecuteResult, OpenNavError> =
+    const result: Result<OpenNavBuildResult, OpenNavError> =
       await staticSite.build({ dryRun: true });
 
     expect(result.isOk()).toEqual(true);
@@ -128,7 +129,7 @@ describe("OpenNavStaticSite", (): void => {
       outputDirectory,
     });
 
-    const result: Result<EngineExecuteResult, OpenNavError> =
+    const result: Result<OpenNavBuildResult, OpenNavError> =
       await staticSite.build();
 
     expect(result.isOk()).toEqual(true);

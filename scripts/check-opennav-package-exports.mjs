@@ -8,11 +8,11 @@ import { promisify } from "node:util";
 const execFileAsync = promisify(execFile);
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const repoDirectory = resolve(scriptDirectory, "..");
-const engineDirectory = join(repoDirectory, "packages/engine");
 const openNavDirectory = join(repoDirectory, "packages/opennav");
 const rootNodeModulesDirectory = join(repoDirectory, "node_modules");
 const npmCacheDirectory = join(repoDirectory, ".npm-cache");
 const packageDependencies = [
+  "commander",
   "js-tiktoken",
   "neverthrow",
   "parse5",
@@ -63,7 +63,7 @@ try {
       'import { OpenNavConfig, OpenNavStaticSite } from "@opennav-ai/opennav";',
       'import { OpenNavAstro } from "@opennav-ai/opennav/astro";',
       'import { OpenNavNext } from "@opennav-ai/opennav/next";',
-      'import type { EngineExecuteResult, OpenNavError } from "@opennav-ai/engine";',
+      'import type { OpenNavBuildResult, OpenNavError } from "@opennav-ai/opennav";',
       'import type { Result } from "neverthrow";',
       "",
       "const config = OpenNavConfig({",
@@ -77,7 +77,7 @@ try {
       '  outputDirectory: "dist",',
       "});",
       "",
-      "const build: Promise<Result<EngineExecuteResult, OpenNavError>> =",
+      "const build: Promise<Result<OpenNavBuildResult, OpenNavError>> =",
       "  staticSite.build({ dryRun: true });",
       "",
       "const astroIntegration = OpenNavAstro({",
@@ -95,6 +95,45 @@ try {
       "void build;",
       "void astroIntegration;",
       "void nextConfig;",
+      "",
+    ].join("\n"),
+  });
+
+  await checkEsmRuntimeConsumer({
+    extractedPackageDirectory,
+    source: [
+      'import assert from "node:assert/strict";',
+      'import { OpenNavConfig, OpenNavStaticSite } from "@opennav-ai/opennav";',
+      'import { OpenNavAstro } from "@opennav-ai/opennav/astro";',
+      'import { OpenNavNext } from "@opennav-ai/opennav/next";',
+      "",
+      "const config = OpenNavConfig({",
+      '  siteName: "Example Docs",',
+      '  siteUrl: "https://example.com",',
+      "});",
+      "const staticSite = new OpenNavStaticSite({",
+      '  siteName: "Example Docs",',
+      '  siteUrl: "https://example.com",',
+      '  outputDirectory: "dist",',
+      "});",
+      "const astroIntegration = OpenNavAstro({",
+      '  siteName: "Example Docs",',
+      "});",
+      "const nextConfig = OpenNavNext({",
+      '  siteName: "Example Docs",',
+      '  siteUrl: "https://example.com",',
+      '})({ output: "export" });',
+      "",
+      "assert.equal(typeof OpenNavStaticSite, 'function');",
+      "assert.deepEqual(config, {",
+      '  siteName: "Example Docs",',
+      '  siteUrl: "https://example.com",',
+      "});",
+      'assert.equal(astroIntegration.name, "@opennav-ai/opennav/astro");',
+      'assert.equal(typeof astroIntegration.hooks["astro:config:done"], "function");',
+      'assert.equal(typeof astroIntegration.hooks["astro:build:done"], "function");',
+      "assert.deepEqual(nextConfig, { output: 'export' });",
+      "void staticSite;",
       "",
     ].join("\n"),
   });
@@ -144,7 +183,7 @@ try {
       {
         ok: true,
         package: "@opennav-ai/opennav",
-        checks: ["esm-types", "cjs-runtime"],
+        checks: ["esm-types", "esm-runtime", "cjs-runtime"],
       },
       null,
       2,
@@ -190,6 +229,31 @@ async function checkCommonJsRuntimeConsumer(input) {
   });
   await writeFile(join(consumerDirectory, "index.cjs"), input.source, "utf8");
   await execFileAsync(process.execPath, ["index.cjs"], {
+    cwd: consumerDirectory,
+  });
+}
+
+/**
+ * @param {{
+ *   extractedPackageDirectory: string;
+ *   source: string;
+ * }} input
+ * @returns {Promise<void>}
+ */
+async function checkEsmRuntimeConsumer(input) {
+  const consumerDirectory = join(tempDirectory, "esm-runtime-consumer");
+
+  await prepareConsumer({
+    consumerDirectory,
+    extractedPackageDirectory: input.extractedPackageDirectory,
+  });
+  await writeJson(join(consumerDirectory, "package.json"), {
+    name: "opennav-esm-runtime-consumer",
+    private: true,
+    type: "module",
+  });
+  await writeFile(join(consumerDirectory, "index.mjs"), input.source, "utf8");
+  await execFileAsync(process.execPath, ["index.mjs"], {
     cwd: consumerDirectory,
   });
 }
@@ -296,9 +360,6 @@ async function prepareConsumer(input) {
     join(consumerScopeDirectory, "opennav"),
     { recursive: true },
   );
-  await cp(engineDirectory, join(consumerScopeDirectory, "engine"), {
-    recursive: true,
-  });
   await symlinkPackageDependencies(consumerNodeModulesDirectory);
 }
 

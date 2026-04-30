@@ -2,12 +2,10 @@ import { cp, mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { err, ok, type Result, ResultAsync } from "neverthrow";
-import {
-  Engine,
-  type EngineExecuteInput,
-  type EngineExecuteResult,
-  type OpenNavError,
-} from "../packages/engine/src/index.ts";
+import type { OpenNavError } from "../packages/engine/src/common/types/opennav-error.ts";
+import { Engine } from "../packages/engine/src/index.ts";
+import type { EngineExecuteInput } from "../packages/engine/src/types/engine-execute-input.ts";
+import type { EngineExecuteResult } from "../packages/engine/src/types/engine-execute-result.ts";
 
 interface ManualFixtureRunSuccessReport {
   readonly ok: true;

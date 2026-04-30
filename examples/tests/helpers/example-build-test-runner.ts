@@ -100,14 +100,12 @@ export class ExampleBuildTestRunner {
    *
    * @param exampleDirectory - Repository-relative example project directory.
    * @param exampleName - Human-readable example name used in command errors.
-   * @param engineTarballPath - Absolute path to the packed engine package.
    * @param openNavTarballPath - Absolute path to the packed OpenNav package.
-   * @returns Promise that resolves after both tarballs are installed.
+   * @returns Promise that resolves after the packed package is installed.
    */
   public async installPackedOpenNavPackages(
     exampleDirectory: string,
     exampleName: string,
-    engineTarballPath: string,
     openNavTarballPath: string,
   ): Promise<void> {
     await this.runCommand(
@@ -123,7 +121,6 @@ export class ExampleBuildTestRunner {
         "--fetch-retries=0",
         "--cache",
         "../../.npm-cache",
-        engineTarballPath,
         openNavTarballPath,
       ],
       this.resolveExampleDirectory(exampleDirectory),
@@ -132,11 +129,12 @@ export class ExampleBuildTestRunner {
   }
 
   /**
-   * Fails if an example resolves OpenNav packages through workspace symlinks.
+   * Fails if an example resolves OpenNav through workspace symlinks or still
+   * installs the internal engine package.
    *
    * @param exampleDirectory - Repository-relative example project directory.
    * @param exampleName - Human-readable example name used in command errors.
-   * @returns Promise that resolves after both packed package installs are
+   * @returns Promise that resolves after the packed package install is
    * verified.
    */
   public async assertPackedOpenNavInstall(
@@ -146,12 +144,12 @@ export class ExampleBuildTestRunner {
     await this.assertPackedPackageInstall(
       exampleDirectory,
       exampleName,
-      "node_modules/@opennav-ai/engine",
+      "node_modules/@opennav-ai/opennav",
     );
-    await this.assertPackedPackageInstall(
+    await this.assertPathAbsent(
       exampleDirectory,
       exampleName,
-      "node_modules/@opennav-ai/opennav",
+      "node_modules/@opennav-ai/engine",
     );
   }
 
@@ -284,6 +282,28 @@ export class ExampleBuildTestRunner {
     }
 
     await access(join(packagePath, "dist"));
+  }
+
+  private async assertPathAbsent(
+    exampleDirectory: string,
+    exampleName: string,
+    packagePath: string,
+  ): Promise<void> {
+    const absolutePackagePath = join(
+      this.resolveExampleDirectory(exampleDirectory),
+      packagePath,
+    );
+
+    const exists = await access(absolutePackagePath).then(
+      (): boolean => true,
+      (): boolean => false,
+    );
+
+    if (exists) {
+      throw new Error(
+        `${exampleName} should not install ${packagePath} because engine code is bundled inside @opennav-ai/opennav.`,
+      );
+    }
   }
 
   private describeCommandFailure(error: unknown): string {

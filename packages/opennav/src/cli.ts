@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-import type { OpenNavError } from "@opennav-ai/engine";
 import type { Result } from "neverthrow";
 import { runOpenNavCli } from "./cli-commander";
+import type { OpenNavError } from "./types/open-nav-error";
 
 void runOpenNavCli(process.argv).then(
   (cliResult: Result<void, OpenNavError>): void => {

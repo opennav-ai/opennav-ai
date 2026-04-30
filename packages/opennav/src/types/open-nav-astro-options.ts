@@ -1,4 +1,4 @@
-import type { EngineAccessGuidanceOptions } from "@opennav-ai/engine";
+import type { OpenNavAccessGuidanceOptions } from "./open-nav-access-guidance-options";
 
 /**
  * Options accepted by the Astro OpenNav integration.
@@ -34,5 +34,5 @@ export interface OpenNavAstroOptions {
    * When omitted, OpenNav should not create or edit `robots.txt` for Content
    * Signals policy.
    */
-  readonly accessGuidance?: EngineAccessGuidanceOptions | undefined;
+  readonly accessGuidance?: OpenNavAccessGuidanceOptions | undefined;
 }

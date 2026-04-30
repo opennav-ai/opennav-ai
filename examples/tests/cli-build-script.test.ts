@@ -34,7 +34,6 @@ class CliBuildScriptExample {
     await this.runner.installPackedOpenNavPackages(
       this.exampleDirectory,
       this.exampleName,
-      packages.engineTarballPath,
       packages.openNavTarballPath,
     );
     await this.runner.assertPackedOpenNavInstall(

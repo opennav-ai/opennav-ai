@@ -1,7 +1,8 @@
 import { resolve } from "node:path";
-import type { EngineExecuteResult, OpenNavError } from "@opennav-ai/engine";
 import { err, ok, type Result } from "neverthrow";
 import { OpenNavStaticSite } from "../index";
+import type { OpenNavBuildResult } from "../types/open-nav-build-result";
+import type { OpenNavError } from "../types/open-nav-error";
 import type { OpenNavNextConfig } from "../types/open-nav-next-config";
 import type { OpenNavNextOptions } from "../types/open-nav-next-options";
 
@@ -54,7 +55,7 @@ export class OpenNavNextStaticBuildRunner {
    *
    * @returns A typed engine report or a typed OpenNav failure.
    */
-  public async build(): Promise<Result<EngineExecuteResult, OpenNavError>> {
+  public async build(): Promise<Result<OpenNavBuildResult, OpenNavError>> {
     const staticSite = new OpenNavStaticSite({
       siteName: this.options.siteName,
       siteUrl: this.options.siteUrl,

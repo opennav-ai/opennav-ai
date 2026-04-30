@@ -1,4 +1,4 @@
-import type { EngineAccessGuidanceOptions } from "@opennav-ai/engine";
+import type { OpenNavAccessGuidanceOptions } from "./open-nav-access-guidance-options";
 import type { OpenNavStaticSitePreset } from "./open-nav-static-site-preset";
 
 /**
@@ -43,5 +43,5 @@ export interface OpenNavConfigOptions {
    * When omitted, OpenNav should not create or edit `robots.txt` for Content
    * Signals policy.
    */
-  readonly accessGuidance?: EngineAccessGuidanceOptions | undefined;
+  readonly accessGuidance?: OpenNavAccessGuidanceOptions | undefined;
 }

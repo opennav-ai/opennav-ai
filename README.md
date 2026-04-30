@@ -441,8 +441,8 @@ This repository is the public OpenNav AI npm workspace.
 
 ```txt
 packages/
-  engine/    @opennav-ai/engine, the static generation engine
-  opennav/   @opennav-ai/opennav, the public SDK, framework, and CLI shell
+  engine/    internal static generation engine compiled into the public package
+  opennav/   @opennav-ai/opennav, the public SDK, framework, and CLI package
 ```
 
 Implemented today:

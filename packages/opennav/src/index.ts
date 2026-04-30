@@ -1,21 +1,24 @@
 import type { Dirent } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
-import {
-  Engine,
-  type EngineExecuteResult,
-  type EngineFilePath,
-  type OpenNavError,
-} from "@opennav-ai/engine";
 import { err, ok, type Result, ResultAsync } from "neverthrow";
+import { Engine } from "#opennav-engine";
+import type { OpenNavBuildResult } from "./types/open-nav-build-result";
 import type { OpenNavConfigOptions } from "./types/open-nav-config";
+import type { OpenNavError } from "./types/open-nav-error";
+import type { OpenNavOutputFilePath } from "./types/open-nav-output-file-path";
 import type { OpenNavStaticSiteBuildOptions } from "./types/open-nav-static-site-build-options";
 import type { OpenNavStaticSiteOptions } from "./types/open-nav-static-site-options";
 
-export type { OpenNavError } from "@opennav-ai/engine";
+export type { OpenNavAccessGuidanceOptions } from "./types/open-nav-access-guidance-options";
 export type { OpenNavAstroOptions } from "./types/open-nav-astro-options";
+export type { OpenNavBuildResult } from "./types/open-nav-build-result";
 export type { OpenNavConfigOptions } from "./types/open-nav-config";
+export type { OpenNavContentSignalPermission } from "./types/open-nav-content-signal-permission";
+export type { OpenNavContentSignalsPolicy } from "./types/open-nav-content-signals-policy";
+export type { OpenNavError } from "./types/open-nav-error";
 export type { OpenNavNextOptions } from "./types/open-nav-next-options";
+export type { OpenNavOutputFilePath } from "./types/open-nav-output-file-path";
 export type { OpenNavStaticSiteBuildOptions } from "./types/open-nav-static-site-build-options";
 export type { OpenNavStaticSiteOptions } from "./types/open-nav-static-site-options";
 export type { OpenNavStaticSitePreset } from "./types/open-nav-static-site-preset";
@@ -41,11 +44,11 @@ export class OpenNavStaticSite {
    * directory.
    *
    * @param options - Optional build settings such as dry-run mode.
-   * @returns A typed engine report or a typed OpenNav error.
+   * @returns A typed build report or a typed OpenNav error.
    */
   public async build(
     options: OpenNavStaticSiteBuildOptions = {},
-  ): Promise<Result<EngineExecuteResult, OpenNavError>> {
+  ): Promise<Result<OpenNavBuildResult, OpenNavError>> {
     const filePathsResult = await this.collectFilePaths(
       this.options.outputDirectory,
       this.options.outputDirectory,
@@ -55,7 +58,7 @@ export class OpenNavStaticSite {
       return err(filePathsResult.error);
     }
 
-    return await Engine.execute(
+    const result = await Engine.execute(
       {
         siteName: this.options.siteName,
         baseUrl: this.options.siteUrl,
@@ -67,12 +70,18 @@ export class OpenNavStaticSite {
         dryRun: options.dryRun === true,
       },
     );
+
+    if (result.isErr()) {
+      return err(result.error);
+    }
+
+    return ok(result.value);
   }
 
   private async collectFilePaths(
     outputDirectory: string,
     directory: string,
-  ): Promise<Result<readonly EngineFilePath[], OpenNavError>> {
+  ): Promise<Result<readonly OpenNavOutputFilePath[], OpenNavError>> {
     const entriesResult = await ResultAsync.fromPromise(
       readdir(directory, { withFileTypes: true }),
       (cause: unknown): OpenNavError =>
@@ -83,7 +92,7 @@ export class OpenNavStaticSite {
       return err(entriesResult.error);
     }
 
-    const filePaths: EngineFilePath[] = [];
+    const filePaths: OpenNavOutputFilePath[] = [];
     const entries = [...entriesResult.value].sort(
       (first: Dirent, second: Dirent): number =>
         first.name.localeCompare(second.name),
@@ -114,8 +123,9 @@ export class OpenNavStaticSite {
     }
 
     return ok(
-      filePaths.sort((first: EngineFilePath, second: EngineFilePath): number =>
-        first.localeCompare(second),
+      filePaths.sort(
+        (first: OpenNavOutputFilePath, second: OpenNavOutputFilePath): number =>
+          first.localeCompare(second),
       ),
     );
   }
@@ -147,10 +157,10 @@ export class OpenNavStaticSite {
   private toOutputFilePath(
     outputDirectory: string,
     absoluteFilePath: string,
-  ): EngineFilePath {
+  ): OpenNavOutputFilePath {
     return relative(outputDirectory, absoluteFilePath)
       .split(sep)
-      .join("/") as EngineFilePath;
+      .join("/") as OpenNavOutputFilePath;
   }
 }
 
