@@ -104,22 +104,27 @@ fix(engine): reject missing output directory
 
 ## Package Structure
 
-This repository is the public OpenNav AI npm workspace. Do not use the old prototype `modules/*` layout here.
+This repository is the OpenNav AI npm workspace. The root package is private and uses `packages/*` as the workspace package pattern. Do not use the old prototype `modules/*` layout here.
 
 ```
+assets/       # shared repository assets
+docs/         # Astro documentation site for OpenNav AI
+examples/     # framework fixtures and example projects used by example tests
 packages/
-  engine/      # @opennav-ai/engine — shared core package for static site generation, validation, and AI Interface contracts
-  cli/         # @opennav-ai/cli — command shell for `opennav` and `opennav-ai`; keep minimal until CLI flow is agreed
+  engine/    # @opennav-ai/engine — private workspace package for static site generation, validation, and AI Interface contracts
+  opennav/   # @opennav-ai/opennav — published package with SDK exports, framework helpers, and the `opennav` / `opennav-ai` binaries
+scripts/      # repository checks and fixture runners
 ```
 
 Package rules:
 
-- `@opennav-ai/engine` is the shared package for engine behavior and contracts.
+- `@opennav-ai/engine` is the shared private workspace package for engine behavior and contracts. It is not published separately.
+- `@opennav-ai/opennav` is the package users install. It exposes the SDK entrypoint, `./astro`, `./next`, and the `opennav` / `opennav-ai` CLI binaries.
 - The engine exposes one public behavior entrypoint: `Engine.execute(...)`. Lower-level classes such as file kind detectors, file readers, validators, write planners, generators, and reporters are internal engine implementation details unless a public API change is explicitly discussed and agreed.
 - Shared engine contracts live inside `packages/engine/src/common/` for now. Do not create a separate `@opennav-ai/common` package unless the public API need is discussed and agreed.
 
 Each package is independent. No circular dependencies.
 
-- **Cross-package imports** — use TypeScript project references and npm workspace symlinks. Product packages should import shared behavior and contracts from `@opennav-ai/engine`. No manual relative imports across package boundaries.
+- **Cross-package imports** — use TypeScript project references and npm workspace symlinks. `packages/opennav` imports the private engine through the `#opennav-engine` package import alias, which points at `packages/engine/src/index.ts` during development and at the bundled engine output in the published package. No manual relative imports across package boundaries.
 
 ---
