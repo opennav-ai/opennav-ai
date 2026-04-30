@@ -13,6 +13,14 @@ export interface ResourceLinkBuildInput {
   readonly baseUrl: string;
 
   /**
+   * Full build fingerprint for the current engine run.
+   *
+   * Resource-link planning derives one short fingerprint from this value and
+   * writes it into every managed HTML `<link>` tag created during the run.
+   */
+  readonly buildFingerprint: string;
+
+  /**
    * Built pages available for resource-link planning.
    *
    * HTML pages are processed in this order. Markdown pages remain caller-owned

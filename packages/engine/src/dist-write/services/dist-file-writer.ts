@@ -274,11 +274,15 @@ export class DistFileWriter {
       existingResourceLinkRanges.length === 0
         ? contentAfterHead
         : contentAfterHead.replace(/^(?:[ \t]*\r?\n)+/u, "");
+    const headLinkMarkup =
+      existingResourceLinkRanges.length === 0
+        ? operation.headLinkMarkup
+        : `${operation.headLinkMarkup}\n`;
 
     return `${contentWithoutExistingLinks.slice(
       0,
       operation.headInsertionOffset,
-    )}${operation.headLinkMarkup}${normalizedContentAfterHead}`;
+    )}${headLinkMarkup}${normalizedContentAfterHead}`;
   }
 
   private async ensureCreateTargetIsMissing(

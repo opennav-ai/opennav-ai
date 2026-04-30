@@ -52,7 +52,7 @@ class ExampleBuildTestRunner {
    * static HTML output.
    */
   async run() {
-    await this.buildOpenNavPackage();
+    await this.buildOpenNavPackages();
 
     for (const example of this.examples) {
       await this.verifyExample(example);
@@ -60,11 +60,31 @@ class ExampleBuildTestRunner {
   }
 
   /**
-   * Builds the local public OpenNav package before fixture installs resolve it.
+   * Builds local OpenNav packages before fixture installs resolve them.
    *
-   * @returns {Promise<void>} Resolves after the package dist files are ready.
+   * @returns {Promise<void>} Resolves after package dist files are ready.
    */
-  async buildOpenNavPackage() {
+  async buildOpenNavPackages() {
+    await this.runCommand({
+      command: "npm",
+      args: ["run", "build", "--workspace", "@opennav-ai/engine"],
+      cwd: repoDirectory,
+      label: "build @opennav-ai/engine",
+    });
+    await this.runCommand({
+      command: "npm",
+      args: [
+        "exec",
+        "tsc",
+        "--",
+        "--build",
+        "packages/engine/tsconfig.json",
+        "--force",
+        "--emitDeclarationOnly",
+      ],
+      cwd: repoDirectory,
+      label: "refresh @opennav-ai/engine project references",
+    });
     await this.runCommand({
       command: "npm",
       args: ["run", "build", "--workspace", "@opennav-ai/opennav"],

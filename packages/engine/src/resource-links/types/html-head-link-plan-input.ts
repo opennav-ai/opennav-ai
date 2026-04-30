@@ -14,6 +14,15 @@ export interface HtmlHeadLinkPlanInput {
   readonly page: OpenNavPageMetadata;
 
   /**
+   * Short build fingerprint written into each managed HTML link for this run.
+   *
+   * Every OpenNav-managed `<link>` tag planned from one engine execution uses
+   * this same value so reruns can identify and replace the run's managed head
+   * links consistently.
+   */
+  readonly resourceLinkFingerprint: string;
+
+  /**
    * Exact UTF-8 HTML source body for the page.
    *
    * The planner parses this text with source locations enabled and only plans

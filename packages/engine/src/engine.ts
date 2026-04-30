@@ -141,6 +141,7 @@ export class Engine {
 
     const resourceLinkResult = resourceLinkBuilder.build({
       baseUrl: input.baseUrl,
+      buildFingerprint,
       pages: resourceLinkPagesResult.value,
     });
     const accessGuidanceResult = accessGuidanceBuilder.build({
@@ -354,9 +355,10 @@ export class Engine {
       fingerprintFiles.push({
         filePath: readResult.value.filePath,
         contentFingerprint:
-          input.buildFingerprintBuilder.buildContentFingerprint(
-            readResult.value.content,
-          ),
+          input.buildFingerprintBuilder.buildContentFingerprint({
+            content: readResult.value.content,
+            sourceContentKind: readResult.value.kind,
+          }),
       });
     }
 

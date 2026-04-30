@@ -39,6 +39,7 @@ const OPENNAV_MANAGED_MANIFEST_CONTENT =
   '{\n  "opennav": true,\n  "build_fingerprint": "sha256:stale"\n}\n';
 const REAL_WRITE_BUILD_FINGERPRINT =
   "sha256:c8b50fb2887b07d3a6b8624ee872f5eefdd50ab342b5226a2c5d3dfc292f1a24";
+const REAL_WRITE_RESOURCE_LINK_FINGERPRINT = "sha256:c8b50fb2887b";
 
 describe("Engine", (): void => {
   let fixtureDirectory: string | undefined;
@@ -628,6 +629,90 @@ describe("Engine", (): void => {
     }
   });
 
+  it("keeps the build fingerprint stable when rerun over managed HTML resource links", async (): Promise<void> => {
+    fixtureDirectory = await mkdtemp(join(tmpdir(), "opennav-engine-"));
+    const outputDirectory = join(fixtureDirectory, "dist");
+    await cp(PHASE_1_SMALL_SITE_FIXTURE_DIRECTORY, outputDirectory, {
+      recursive: true,
+    });
+    const firstRunInput: EngineExecuteInput = {
+      siteName: "Example Docs",
+      baseUrl: "https://example.com",
+      outputDirectory,
+      filePaths: [
+        "index.html",
+        "docs/getting-started/index.html",
+        "docs/api.html",
+        "docs/api/index.html",
+        "docs/reference/index.md",
+        "robots.txt",
+        "assets/logo.svg",
+      ],
+      accessGuidance: {
+        contentSignals: {
+          search: "allow",
+          aiInput: "allow",
+          aiTrain: "disallow",
+        },
+      },
+    };
+    const secondRunInput: EngineExecuteInput = {
+      ...firstRunInput,
+      filePaths: [
+        ...firstRunInput.filePaths,
+        "index.md",
+        "docs/getting-started/index.md",
+        "docs/api.md",
+        "docs/api/index.md",
+      ],
+    };
+
+    const firstResult: Result<EngineExecuteResult, OpenNavError> =
+      await Engine.execute(firstRunInput, { dryRun: false });
+    const secondResult: Result<EngineExecuteResult, OpenNavError> =
+      await Engine.execute(secondRunInput, { dryRun: false });
+
+    expect(firstResult.isOk()).toEqual(true);
+    expect(secondResult.isOk()).toEqual(true);
+    if (secondResult.isOk()) {
+      expect({
+        result: secondResult.value,
+        outputTree: await readOutputTree(outputDirectory),
+      }).toEqual({
+        result: {
+          createdFilePaths: [],
+          modifiedFilePaths: [
+            "llms.txt",
+            ".well-known/llms.txt",
+            "index.md",
+            "docs/getting-started/index.md",
+            "docs/api.md",
+            "docs/api/index.md",
+            "llms-full.txt",
+            ".well-known/llms-full.txt",
+            ".well-known/opennav.json",
+            "index.html",
+            "docs/getting-started/index.html",
+            "docs/api.html",
+            "docs/api/index.html",
+          ],
+          skippedFilePaths: ["assets/logo.svg"],
+          warnings: [
+            {
+              code: "ENGINE_FILE_UNSUPPORTED",
+              message: "The engine skipped an unsupported built site file.",
+              context: {
+                filePath: "assets/logo.svg",
+                kind: "unsupported",
+              },
+            },
+          ],
+        },
+        outputTree: createExpectedRealWriteOutputTree(),
+      });
+    }
+  });
+
   it("overwrites existing OpenNav-managed generated files during a real write", async (): Promise<void> => {
     fixtureDirectory = await mkdtemp(join(tmpdir(), "opennav-engine-"));
     const outputDirectory = join(fixtureDirectory, "dist");
@@ -800,31 +885,25 @@ function appendRealWriteHtmlMarker(content: string): string {
   return `${content}\n\n<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="${REAL_WRITE_BUILD_FINGERPRINT}" manifest="/.well-known/opennav.json" -->\n`;
 }
 
-function createExpectedHtmlResourceLinks(
-  markdownHref: string,
-  markdownSha: string,
-): string {
-  return `  <link rel="alternate" type="text/markdown" href="${markdownHref}" data-opennav="resource-link" data-opennav-sha="${markdownSha}">\n  <link rel="index" type="text/plain" href="https://example.com/llms.txt" title="LLMs text site index" data-opennav="resource-link" data-opennav-sha="sha256:0b40d257efac082b8fcf31d9b81e3629d67a80f2d8e659da0ec321869c09ed9c">\n`;
+function createExpectedHtmlResourceLinks(markdownHref: string): string {
+  return `  <link rel="alternate" type="text/markdown" href="${markdownHref}" data-opennav="resource-link" data-opennav-sha="${REAL_WRITE_RESOURCE_LINK_FINGERPRINT}">\n  <link rel="index" type="text/plain" href="https://example.com/llms.txt" title="LLMs text site index" data-opennav="resource-link" data-opennav-sha="${REAL_WRITE_RESOURCE_LINK_FINGERPRINT}">`;
 }
 
 function createExpectedApiHtmlContent(): string {
   return `<!doctype html>\n<html lang="en">\n  <head>\n${createExpectedHtmlResourceLinks(
     "https://example.com/docs/api/index.md",
-    "sha256:3cb051ea6fe6de557f6d606b6416c89a1e63e9a22a45b1275c4d6829201d3f08",
   )}\n    <meta charset="utf-8">\n    <title>API Reference</title>\n    <meta name="description" content="Use the engine from TypeScript.">\n  </head>\n  <body>\n    <main>\n      <h1>API Reference</h1>\n      <p>Use the engine from TypeScript.</p>\n      <a href="/docs/reference/">Reference Notes</a>\n    </main>\n  </body>\n</html>\n`;
 }
 
 function createExpectedApiRouteHtmlContent(): string {
   return `<!doctype html>\n<html lang="en">\n  <head>\n${createExpectedHtmlResourceLinks(
     "https://example.com/docs/api.md",
-    "sha256:b9a19634f59cc921f1606f8f372ff5ccff039f8e349e7fe102b2a2f4c1d7708c",
   )}\n    <meta charset="utf-8">\n    <title>API</title>\n    <meta name="description" content="Top-level API route for clients that do not use trailing slashes.">\n  </head>\n  <body>\n    <main>\n      <h1>API</h1>\n      <p>Top-level API route for clients that do not use trailing slashes.</p>\n      <div>\n        <p>Continue to the <a href="/docs/api/">API Reference</a> or read <a href="/docs/reference/">Reference Notes</a>.</p>\n      </div>\n    </main>\n  </body>\n</html>\n`;
 }
 
 function createExpectedGettingStartedHtmlContent(): string {
   return `<!doctype html>\n<html lang="en">\n  <head>\n${createExpectedHtmlResourceLinks(
     "https://example.com/docs/getting-started/index.md",
-    "sha256:385e9b9077c48286864ddeb10de75696915d295d677ee13f1b5ea8aad27d7168",
   )}\n    <meta charset="utf-8">\n    <title>Getting Started</title>\n    <meta name="description" content="Install and run OpenNav on a static site.">\n  </head>\n  <body>\n    <main>\n      <h1>Getting Started</h1>\n      <p>Install and run OpenNav on a static site.</p>\n      <a href="../api/">API Reference</a>\n    </main>\n  </body>\n</html>\n`;
 }
 
@@ -840,7 +919,6 @@ function createExpectedHomeHtmlContent(): string {
 function createExpectedHomeHtmlContentWithoutLanguageClasses(): string {
   return `<!doctype html>\n<html lang="en">\n\t<head>\n${createExpectedHtmlResourceLinks(
     "https://example.com/index.md",
-    "sha256:a348c8e1fc75f62942dc28432e57f8efc98268c0e1cdf0701f7c6621f39a47f0",
   )}\n\t\t<meta charset="utf-8" />\n\t\t<title>Home</title>\n\t\t<meta\n\t\t\tname="description"\n\t\t\tcontent="Start here for the OpenNav fixture docs."\n\t\t/>\n\t</head>\n\t<body>\n\t\t<main>\n\t\t\t<h1>Home</h1>\n\t\t\t<p>\n\t\t\t\tStart here for the OpenNav fixture docs.\n\t\t\t</p>\n\t\t\t<section>\n\t\t\t\t<h2>Explore the fixture</h2>\n\t\t\t\t<p>\n\t\t\t\t\tUse this page to inspect heading and\n\t\t\t\t\tparagraph conversion.\n\t\t\t\t</p>\n\t\t\t\t<div>\n\t\t\t\t\t<h3>Nested navigation</h3>\n\t\t\t\t\t<p>\n\t\t\t\t\t\tThese links sit inside nested div\n\t\t\t\t\t\telements.\n\t\t\t\t\t</p>\n\t\t\t\t\t<div>\n\t\t\t\t\t\t<div>\n\t\t\t\t\t\t\t<a href="/docs/getting-started/"\n\t\t\t\t\t\t\t\t>Getting Started</a\n\t\t\t\t\t\t\t>\n\t\t\t\t\t\t\t<a href="/docs/api">API Route</a>\n\t\t\t\t\t\t\t<a href="/docs/api/"\n\t\t\t\t\t\t\t\t>API Reference</a\n\t\t\t\t\t\t\t>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</section>\n\t\t\t<div>\n\t\t\t\t<h4>Inline examples</h4>\n\t\t\t\t<p>\n\t\t\t\t\tCommon tags include\n\t\t\t\t\t<span>span text</span>,\n\t\t\t\t\t<strong>strong text</strong>, and\n\t\t\t\t\t<code>inline code</code>.\n\t\t\t\t</p>\n\t\t\t\t<ul>\n\t\t\t\t\t<li>\n\t\t\t\t\t\tOpen the\n\t\t\t\t\t\t<a href="/docs/reference/"\n\t\t\t\t\t\t\t>reference notes</a\n\t\t\t\t\t\t>.\n\t\t\t\t\t</li>\n\t\t\t\t\t<li>\n\t\t\t\t\t\tCompare nested links with generated\n\t\t\t\t\t\tMarkdown paths.\n\t\t\t\t\t</li>\n\t\t\t\t</ul>\n\t\t\t\t<h4>Code blocks</h4>\n\t\t\t\t<p>\n\t\t\t\t\tThe fixture includes source-style and\n\t\t\t\t\tshell-style blocks.\n\t\t\t\t</p>\n\t\t\t\t<pre><code>const result = await Engine.execute(input, {\n  dryRun: false,\n});\n\nif (result.isOk()) {\n  console.log(result.value.createdFilePaths);\n}</code></pre>\n\t\t\t\t<pre><code>npm run fixture:engine:phase1:write\nfind packages/engine/.manual-runs/phase-1-small-site/dist -maxdepth 3 -type f | sort\ncat packages/engine/.manual-runs/phase-1-small-site/build-result.json</code></pre>\n\t\t\t</div>\n\t\t</main>\n\t</body>\n</html>\n`;
 }
 

@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { err, ok, type Result } from "neverthrow";
 import { type DefaultTreeAdapterTypes, parse } from "parse5";
 import type { OpenNavError } from "../../common/types/opennav-error";
@@ -38,7 +37,10 @@ export class HtmlHeadLinkPlanner {
       sourceFilePath: input.page.sourceFilePath,
       headInsertionOffset,
       links: input.links,
-      headLinkMarkup: this.serializeHeadLinkMarkup(input.links),
+      headLinkMarkup: this.serializeHeadLinkMarkup(
+        input.links,
+        input.resourceLinkFingerprint,
+      ),
     });
   }
 
@@ -100,18 +102,26 @@ export class HtmlHeadLinkPlanner {
     return "childNodes" in node;
   }
 
-  private serializeHeadLinkMarkup(links: readonly ResourceLink[]): string {
+  private serializeHeadLinkMarkup(
+    links: readonly ResourceLink[],
+    resourceLinkFingerprint: string,
+  ): string {
     return `\n${links
-      .map((link: ResourceLink): string => `  ${this.serializeLinkTag(link)}`)
-      .join("\n")}\n`;
+      .map(
+        (link: ResourceLink): string =>
+          `  ${this.serializeLinkTag(link, resourceLinkFingerprint)}`,
+      )
+      .join("\n")}`;
   }
 
-  private serializeLinkTag(link: ResourceLink): string {
+  private serializeLinkTag(
+    link: ResourceLink,
+    resourceLinkFingerprint: string,
+  ): string {
     const titleAttribute =
       link.title === undefined
         ? ""
         : ` title="${this.escapeHtmlAttribute(link.title)}"`;
-    const openNavSha = this.createOpenNavSha(link);
 
     return `<link rel="${this.escapeHtmlAttribute(
       link.relation,
@@ -119,17 +129,6 @@ export class HtmlHeadLinkPlanner {
       link.mediaType,
     )}" href="${this.escapeHtmlAttribute(
       link.href,
-    )}"${titleAttribute} data-opennav="resource-link" data-opennav-sha="${this.escapeHtmlAttribute(openNavSha)}">`;
-  }
-
-  private createOpenNavSha(link: ResourceLink): string {
-    const content = JSON.stringify({
-      href: link.href,
-      mediaType: link.mediaType,
-      relation: link.relation,
-      title: link.title ?? null,
-    });
-
-    return `sha256:${createHash("sha256").update(content).digest("hex")}`;
+    )}"${titleAttribute} data-opennav="resource-link" data-opennav-sha="${this.escapeHtmlAttribute(resourceLinkFingerprint)}">`;
   }
 }

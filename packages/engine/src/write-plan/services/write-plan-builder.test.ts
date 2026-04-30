@@ -40,7 +40,7 @@ const BUILD_FINGERPRINT = "sha256:build";
 const HTML_BUILD_MARKER = `<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="${BUILD_FINGERPRINT}" manifest="/.well-known/opennav.json" -->\n`;
 const LINE_BUILD_MARKER = `# opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="${BUILD_FINGERPRINT}" manifest="/.well-known/opennav.json"\n`;
 const INDEX_HEAD_LINK_MARKUP =
-  '\n  <link rel="alternate" type="text/markdown" href="https://example.com/index.md" data-opennav="resource-link" data-opennav-sha="sha256:a348c8e1fc75f62942dc28432e57f8efc98268c0e1cdf0701f7c6621f39a47f0">\n  <link rel="index" type="text/plain" href="https://example.com/llms.txt" title="LLMs text site index" data-opennav="resource-link" data-opennav-sha="sha256:0b40d257efac082b8fcf31d9b81e3629d67a80f2d8e659da0ec321869c09ed9c">\n';
+  '\n  <link rel="alternate" type="text/markdown" href="https://example.com/index.md" data-opennav="resource-link" data-opennav-sha="sha256:build">\n  <link rel="index" type="text/plain" href="https://example.com/llms.txt" title="LLMs text site index" data-opennav="resource-link" data-opennav-sha="sha256:build">';
 
 function appendOpenNavBuildMarker(content: string): string {
   return `${content}\n${HTML_BUILD_MARKER}`;

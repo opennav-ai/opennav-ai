@@ -3,6 +3,9 @@ import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
 import type { ResourceLinkBuildResult } from "../types/resource-link-build-result";
 import { ResourceLinkBuilder } from "./resource-link-builder";
 
+const BUILD_FINGERPRINT = "sha256:0123456789abcdef";
+const RESOURCE_LINK_FINGERPRINT = "sha256:0123456789ab";
+
 function createHtmlPage(
   sourceFilePath: string,
   route: string,
@@ -35,6 +38,7 @@ describe("ResourceLinkBuilder", (): void => {
 
     const result: ResourceLinkBuildResult = builder.build({
       baseUrl: "https://example.com",
+      buildFingerprint: BUILD_FINGERPRINT,
       pages: [
         {
           page: createHtmlPage(
@@ -70,8 +74,7 @@ describe("ResourceLinkBuilder", (): void => {
               title: "LLMs text site index",
             },
           ],
-          headLinkMarkup:
-            '\n  <link rel="alternate" type="text/markdown" href="https://example.com/docs/api/index.md" data-opennav="resource-link" data-opennav-sha="sha256:3cb051ea6fe6de557f6d606b6416c89a1e63e9a22a45b1275c4d6829201d3f08">\n  <link rel="index" type="text/plain" href="https://example.com/llms.txt" title="LLMs text site index" data-opennav="resource-link" data-opennav-sha="sha256:0b40d257efac082b8fcf31d9b81e3629d67a80f2d8e659da0ec321869c09ed9c">\n',
+          headLinkMarkup: `\n  <link rel="alternate" type="text/markdown" href="https://example.com/docs/api/index.md" data-opennav="resource-link" data-opennav-sha="${RESOURCE_LINK_FINGERPRINT}">\n  <link rel="index" type="text/plain" href="https://example.com/llms.txt" title="LLMs text site index" data-opennav="resource-link" data-opennav-sha="${RESOURCE_LINK_FINGERPRINT}">`,
         },
       ],
       warnings: [],
@@ -83,6 +86,7 @@ describe("ResourceLinkBuilder", (): void => {
 
     const result: ResourceLinkBuildResult = builder.build({
       baseUrl: "https://example.com/docs/",
+      buildFingerprint: BUILD_FINGERPRINT,
       pages: [
         {
           page: createHtmlPage(

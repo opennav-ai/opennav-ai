@@ -5,6 +5,8 @@ import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
 import type { ResourceLinkPageEdit } from "../types/resource-link-page-edit";
 import { HtmlHeadLinkPlanner } from "./html-head-link-planner";
 
+const RESOURCE_LINK_FINGERPRINT = "sha256:0123456789ab";
+
 function createHtmlPage(): OpenNavPageMetadata {
   return {
     sourceFilePath: "docs/api/index.html",
@@ -22,6 +24,7 @@ describe("HtmlHeadLinkPlanner", (): void => {
 
     const result: Result<ResourceLinkPageEdit, OpenNavError> = planner.plan({
       page: createHtmlPage(),
+      resourceLinkFingerprint: RESOURCE_LINK_FINGERPRINT,
       sourceContent:
         "<html><head><title>API</title></head><body><h1>API</h1></body></html>",
       links: [
@@ -58,7 +61,7 @@ describe("HtmlHeadLinkPlanner", (): void => {
           },
         ],
         headLinkMarkup:
-          '\n  <link rel="alternate" type="text/markdown" href="https://example.com/docs/api/index.md" data-opennav="resource-link" data-opennav-sha="sha256:3cb051ea6fe6de557f6d606b6416c89a1e63e9a22a45b1275c4d6829201d3f08">\n  <link rel="index" type="text/plain" href="https://example.com/llms.txt" title="LLMs text site index" data-opennav="resource-link" data-opennav-sha="sha256:0b40d257efac082b8fcf31d9b81e3629d67a80f2d8e659da0ec321869c09ed9c">\n',
+          '\n  <link rel="alternate" type="text/markdown" href="https://example.com/docs/api/index.md" data-opennav="resource-link" data-opennav-sha="sha256:0123456789ab">\n  <link rel="index" type="text/plain" href="https://example.com/llms.txt" title="LLMs text site index" data-opennav="resource-link" data-opennav-sha="sha256:0123456789ab">',
       });
     }
   });
@@ -68,6 +71,7 @@ describe("HtmlHeadLinkPlanner", (): void => {
 
     const result: Result<ResourceLinkPageEdit, OpenNavError> = planner.plan({
       page: createHtmlPage(),
+      resourceLinkFingerprint: RESOURCE_LINK_FINGERPRINT,
       sourceContent: "<main><h1>API</h1></main>",
       links: [
         {

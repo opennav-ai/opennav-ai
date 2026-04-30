@@ -1,5 +1,6 @@
 import { MarkdownPageArtifactPathBuilder } from "../../agent-content/services/markdown-page-artifact-path-builder";
 import type { MarkdownPageArtifactPathBuildResult } from "../../agent-content/types/markdown-page-artifact-path-build-result";
+import { BuildFingerprintBuilder } from "../../build-fingerprint/services/build-fingerprint-builder";
 import type { OpenNavError } from "../../common/types/opennav-error";
 import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
 import type { ResourceLink } from "../types/resource-link";
@@ -9,6 +10,7 @@ import type { ResourceLinkPageEdit } from "../types/resource-link-page-edit";
 import { HtmlHeadLinkPlanner } from "./html-head-link-planner";
 
 interface ResourceLinkBuilderDependencies {
+  readonly buildFingerprintBuilder?: BuildFingerprintBuilder;
   readonly htmlHeadLinkPlanner?: HtmlHeadLinkPlanner;
   readonly markdownPageArtifactPathBuilder?: MarkdownPageArtifactPathBuilder;
 }
@@ -17,6 +19,7 @@ interface ResourceLinkBuilderDependencies {
  * Builds in-memory resource-link page edits for HTML pages.
  */
 export class ResourceLinkBuilder {
+  readonly #buildFingerprintBuilder: BuildFingerprintBuilder;
   readonly #htmlHeadLinkPlanner: HtmlHeadLinkPlanner;
   readonly #markdownPageArtifactPathBuilder: MarkdownPageArtifactPathBuilder;
 
@@ -26,6 +29,8 @@ export class ResourceLinkBuilder {
    * @param dependencies - Optional collaborator overrides for focused tests.
    */
   public constructor(dependencies: ResourceLinkBuilderDependencies = {}) {
+    this.#buildFingerprintBuilder =
+      dependencies.buildFingerprintBuilder ?? new BuildFingerprintBuilder();
     this.#htmlHeadLinkPlanner =
       dependencies.htmlHeadLinkPlanner ?? new HtmlHeadLinkPlanner();
     this.#markdownPageArtifactPathBuilder =
@@ -42,6 +47,10 @@ export class ResourceLinkBuilder {
   public build(input: ResourceLinkBuildInput): ResourceLinkBuildResult {
     const pageEdits: ResourceLinkPageEdit[] = [];
     const warnings: OpenNavError[] = [];
+    const resourceLinkFingerprint =
+      this.#buildFingerprintBuilder.buildShortFingerprint(
+        input.buildFingerprint,
+      );
 
     for (const buildPage of input.pages) {
       if (buildPage.page.sourceContentType !== "html") {
@@ -51,6 +60,7 @@ export class ResourceLinkBuilder {
       const links = this.createLinks(input.baseUrl, buildPage.page);
       const pageEditResult = this.#htmlHeadLinkPlanner.plan({
         page: buildPage.page,
+        resourceLinkFingerprint,
         sourceContent: buildPage.sourceContent,
         links,
       });
