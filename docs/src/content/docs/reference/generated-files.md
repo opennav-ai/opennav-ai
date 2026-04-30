@@ -21,11 +21,27 @@ OpenNav skips unsupported files such as JavaScript, CSS, source maps, images,
 fonts, media, archives, framework payload files, platform routing files, and
 static HTTP error pages like `404.html` and `500.html`.
 
-## Result Fields
+## Build Result
 
-| Result field | Meaning |
-| ------------ | ------- |
-| `createdFilePaths` | Output-directory-relative paths OpenNav created, or would create during `--dry-run`. |
-| `modifiedFilePaths` | Existing output-directory-relative paths OpenNav edited, or would edit during `--dry-run`. |
-| `skippedFilePaths` | Paths OpenNav saw but intentionally ignored, such as assets or unsupported files. |
-| `warnings` | Non-fatal typed issues, such as unsupported files or recoverable guidance conflicts. |
+OpenNav returns output-directory-relative paths for files it created, modified,
+or intentionally skipped.
+
+```typescript
+type OpenNavOutputFilePath = string;
+
+interface OpenNavError {
+  readonly code: string;
+  readonly message: string;
+  readonly context: Readonly<Record<string, unknown>>;
+}
+
+interface OpenNavBuildResult {
+  readonly createdFilePaths: readonly OpenNavOutputFilePath[];
+  readonly modifiedFilePaths: readonly OpenNavOutputFilePath[];
+  readonly skippedFilePaths: readonly OpenNavOutputFilePath[];
+  readonly warnings: readonly OpenNavError[];
+}
+```
+
+During `--dry-run`, `createdFilePaths` and `modifiedFilePaths` report files
+OpenNav would create or update without changing the output folder.

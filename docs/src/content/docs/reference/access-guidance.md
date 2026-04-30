@@ -10,6 +10,53 @@ Use it when you want the generated static output to include machine-readable
 content-use preferences in `robots.txt`.
 
 ```typescript
+interface OpenNavAccessGuidanceOptions {
+  readonly contentSignals?: {
+    readonly search?: "allow" | "disallow";
+    readonly aiInput?: "allow" | "disallow";
+    readonly aiTrain?: "allow" | "disallow";
+  };
+}
+```
+
+## `contentSignals`
+
+Optional. Content-use preferences OpenNav writes into `robots.txt`.
+
+The configured fields become one `Content-signal` directive.
+
+<div class="opennav-nested-field-list" aria-label="Content Signals fields">
+  <section class="opennav-nested-field">
+    <h4><code>search</code></h4>
+    <p>
+      Writes <code>search=yes</code> for <code>"allow"</code> or
+      <code>search=no</code> for <code>"disallow"</code>. Use this field for
+      search indexing and search snippets.
+    </p>
+  </section>
+
+  <section class="opennav-nested-field">
+    <h4><code>aiInput</code></h4>
+    <p>
+      Writes <code>ai-input=yes</code> for <code>"allow"</code> or
+      <code>ai-input=no</code> for <code>"disallow"</code>. Use this field for
+      real-time AI input use, such as grounding or retrieval.
+    </p>
+  </section>
+
+  <section class="opennav-nested-field">
+    <h4><code>aiTrain</code></h4>
+    <p>
+      Writes <code>ai-train=yes</code> for <code>"allow"</code> or
+      <code>ai-train=no</code> for <code>"disallow"</code>. Use this field for
+      model training or fine-tuning use.
+    </p>
+  </section>
+</div>
+
+Example configuration:
+
+```typescript
 accessGuidance: {
   contentSignals: {
     search: "allow",
@@ -18,14 +65,6 @@ accessGuidance: {
   }
 }
 ```
-
-The configured fields become one `Content-signal` directive.
-
-| Field | `allow` writes | `disallow` writes | Meaning |
-| ----- | -------------- | ----------------- | ------- |
-| `search` | `search=yes` | `search=no` | Whether search indexing and search snippets are allowed. |
-| `aiInput` | `ai-input=yes` | `ai-input=no` | Whether real-time AI input use, such as grounding or retrieval, is allowed. |
-| `aiTrain` | `ai-train=yes` | `ai-train=no` | Whether model training or fine-tuning use is allowed. |
 
 With the example above, OpenNav writes:
 

@@ -51,13 +51,105 @@ if (result.isErr()) {
 console.log(result.value);
 ```
 
-## Options
+## `OpenNavStaticSite(options)`
 
-| SDK option | Required | What it means | File outcome |
-| ---------- | -------- | ------------- | ------------ |
-| `siteName` | Yes | Human-readable site or docs name. | Appears in generated OpenNav files. |
-| `siteUrl` | Yes | Public deployed site URL, including protocol and host. | Controls generated links and manifest URLs. |
-| `outputDirectory` | Yes | Built static folder to read and modify. | OpenNav reads from and writes to this folder only. |
-| `preset` | No | Framework hint. Supported values are `"astro"` and `"next-export"`. | Uses framework-specific static folder conventions when available. |
-| `accessGuidance` | No | Site-owner access preferences for generated policy guidance. | Only affects `robots.txt`, and only when configured. |
-| `build({ dryRun })` | No | Preview mode when `dryRun: true`. | Leaves files unchanged when enabled. |
+Creates a static-site runner for one built output folder.
+
+```typescript
+interface OpenNavStaticSiteOptions {
+  readonly siteName: string;
+  readonly siteUrl: string;
+  readonly outputDirectory: string;
+  readonly preset?: "astro" | "next-export";
+  readonly accessGuidance?: {
+    readonly contentSignals?: {
+      readonly search?: "allow" | "disallow";
+      readonly aiInput?: "allow" | "disallow";
+      readonly aiTrain?: "allow" | "disallow";
+    };
+  };
+}
+```
+
+### `siteName`
+
+Required. Human-readable site or docs name written into generated OpenNav
+files, including `llms.txt`, page Markdown files, and
+`.well-known/opennav.json` inside `outputDirectory`.
+
+### `siteUrl`
+
+Required. Public absolute URL used for generated links and manifest URLs. The
+value should include the protocol and host, such as `https://example.com`.
+
+### `outputDirectory`
+
+Required. Built static output folder OpenNav scans and updates.
+
+OpenNav reads from and writes to this folder only. Relative paths are resolved
+by the calling script from the current project root.
+
+### `preset`
+
+Optional. Framework hint for static-folder conventions.
+
+Supported values are `"astro"` and `"next-export"`. When omitted, OpenNav
+treats `outputDirectory` as a generic static site folder.
+
+### `accessGuidance`
+
+Optional. Controls whether OpenNav creates or updates its managed Content
+Signals block in `robots.txt` inside `outputDirectory`.
+
+When omitted, OpenNav does not create or edit `robots.txt` for access guidance.
+
+### `accessGuidance.contentSignals`
+
+Optional. Content-use preferences OpenNav writes into `robots.txt`.
+
+At least one nested field must be configured before OpenNav creates or updates
+its managed Content Signals block.
+
+<div class="opennav-nested-field-list" aria-label="Content Signals fields">
+  <section class="opennav-nested-field">
+    <h4><code>search</code></h4>
+    <p>
+      Optional. Writes <code>search=yes</code> for <code>"allow"</code> or
+      <code>search=no</code> for <code>"disallow"</code>. When omitted, OpenNav
+      does not express a search-use preference.
+    </p>
+  </section>
+
+  <section class="opennav-nested-field">
+    <h4><code>aiInput</code></h4>
+    <p>
+      Optional. Writes <code>ai-input=yes</code> for <code>"allow"</code> or
+      <code>ai-input=no</code> for <code>"disallow"</code>. When omitted,
+      OpenNav does not express an AI-input preference.
+    </p>
+  </section>
+
+  <section class="opennav-nested-field">
+    <h4><code>aiTrain</code></h4>
+    <p>
+      Optional. Writes <code>ai-train=yes</code> for <code>"allow"</code> or
+      <code>ai-train=no</code> for <code>"disallow"</code>. When omitted,
+      OpenNav does not express an AI-training preference.
+    </p>
+  </section>
+</div>
+
+## `build(options)`
+
+Runs OpenNav against the configured output folder.
+
+```typescript
+interface OpenNavStaticSiteBuildOptions {
+  readonly dryRun?: boolean;
+}
+```
+
+### `dryRun`
+
+Optional. Set to `true` to preview created, modified, skipped, and warning paths
+without changing files.

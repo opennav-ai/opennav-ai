@@ -15,17 +15,50 @@ opennav build --static \
 
 Add `--dry-run` to preview without writing files.
 
-## Options
+## `opennav build --static`
 
-| CLI option | Required | What it means | File outcome |
-| ---------- | -------- | ------------- | ------------ |
-| `build` | Yes | Runs the build command. | Starts the static OpenNav workflow. |
-| `--static` | Yes | Treats `--output` as a finished static-site folder. | OpenNav scans existing HTML, Markdown, and `robots.txt` files in the folder. |
-| `--output <directory>` | Yes | Built output folder, such as `dist`, `out`, or `build`. | All created and modified files stay inside this folder. |
-| `--site-url <url>` | Yes | Public deployed site URL, including protocol and host. | Generated artifacts use this URL. |
-| `--site-name <name>` | Yes | Human-readable site or docs name. | Appears in generated `llms` files and metadata. |
-| `--preset <preset>` | No | Framework hint. Supported values are `astro` and `next-export`. | Passes the preset to the static SDK. |
-| `--dry-run` | No | Preview mode. | Reports planned created, modified, skipped, and warning paths without changing files. |
+Runs OpenNav against an existing static output folder.
+
+```bash
+opennav build --static \
+  --output <directory> \
+  --site-url <url> \
+  --site-name <name> \
+  [--preset <preset>] \
+  [--dry-run]
+```
+
+### `--static`
+
+Required. Treats `--output` as a finished static-site folder. OpenNav scans
+existing HTML, Markdown, and `robots.txt` files in that folder.
+
+### `--output <directory>`
+
+Required. Built output folder, such as `dist`, `out`, or `build`.
+
+All created and modified files stay inside this folder.
+
+### `--site-url <url>`
+
+Required. Public deployed site URL used for generated links and manifest URLs.
+The value should include the protocol and host, such as `https://example.com`.
+
+### `--site-name <name>`
+
+Required. Human-readable site or docs name written into generated `llms` files
+and metadata.
+
+### `--preset <preset>`
+
+Optional. Framework hint for static-folder conventions.
+
+Supported values are `astro` and `next-export`.
+
+### `--dry-run`
+
+Optional. Reports planned created, modified, skipped, and warning paths without
+changing files.
 
 The CLI writes files by default. There is no `--full-run` flag for the current
 static workflow.
