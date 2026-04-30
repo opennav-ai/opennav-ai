@@ -1,6 +1,6 @@
 {
   "name": "@opennav-ai/opennav",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
   "main": "./dist/opennav/src/index.cjs",
   "module": "./dist/opennav/src/index.js",
@@ -33,6 +33,9 @@
   "bin": {
     "opennav": "./dist/opennav/src/cli.cjs",
     "opennav-ai": "./dist/opennav/src/cli.cjs"
+  },
+  "publishConfig": {
+    "access": "restricted"
   },
   "files": [
     "dist"
