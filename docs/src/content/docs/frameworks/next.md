@@ -59,6 +59,37 @@ export default OpenNavNext({
 
 ## Server-Side Support
 
-Next.js server output support is coming soon. Static exports are supported
-today; runtime Markdown content negotiation will follow through server-side
-middleware. See the [server-side framework roadmap](/frameworks/server-side/).
+Next.js server output is the next open-source track. This is the future of
+agent-ready websites: the same route can serve HTML to people and Markdown to
+agents through content negotiation.
+
+Planned launch shape:
+
+```typescript
+import { OpenNavNextServer } from "@opennav-ai/opennav/next/server";
+import type { NextRequest } from "next/server";
+
+const opennav = OpenNavNextServer({
+  siteName: "Example Docs",
+  markdown: {
+    mode: "content-negotiation",
+    routes: ["/docs/:path*", "/blog/:path*"],
+  },
+});
+
+export function proxy(request: NextRequest) {
+  return opennav.handle(request);
+}
+
+export const config = {
+  matcher: ["/docs/:path*", "/blog/:path*"],
+};
+```
+
+When a request prefers `text/markdown`, OpenNav will return an agent-readable
+Markdown representation from the same URL. Browser requests still receive HTML,
+and responses include `Vary: Accept` so caches keep both representations
+correct.
+
+See the [server-side framework roadmap](/frameworks/server-side/) for the
+shared Astro and Next.js launch shape.

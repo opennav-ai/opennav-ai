@@ -130,7 +130,11 @@ opennav build --static --output dist --site-url https://example.com --site-name 
 The package also exposes an `opennav-ai` binary as a fallback if another package
 already owns the `opennav` command in your project.
 
-## What OpenNav Adds
+## The OpenNav Standard
+
+What we create: a predictable set of files and resource links that let AI
+agents discover, read, and respect your static site without scraping the visual
+HTML.
 
 OpenNav reads a finished static output folder such as `dist`, `out`, `build`,
 or `site`, then creates or updates files inside that folder only.
@@ -149,14 +153,14 @@ dist/
   robots.txt                         # optional Content Signals guidance
 ```
 
-| Output | Why agents use it |
-| ------ | ----------------- |
-| `llms.txt` | Find the important readable resources for the site. |
-| `llms-full.txt` | Read combined page content when the site fits within the token budget. |
-| `/.well-known/opennav.json` | Check compatibility metadata, generated artifact paths, and build fingerprint. |
-| `*.md` page mirrors | Read clean Markdown for HTML pages. |
-| HTML resource links | Discover Markdown mirrors and `llms` files from the original page. |
-| `robots.txt` guidance | Read optional site-owner Content Signals preferences. |
+| Filename | What agents can use it for |
+| -------- | -------------------------- |
+| `llms.txt` | Discover the readable site index. |
+| `llms-full.txt` | Read combined page content when the site fits the configured limit. |
+| `/.well-known/opennav.json` | Check static compatibility metadata and generated artifact paths. |
+| `*.md` page artifacts | Read page content without parsing visual HTML. |
+| HTML resource links | Discover Markdown mirrors and `llms.txt` from each page. |
+| `robots.txt` guidance | Read configured Content Signals preferences when provided. |
 
 Successful runs return output-directory-relative paths:
 

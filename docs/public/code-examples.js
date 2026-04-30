@@ -56,7 +56,7 @@ function createCodeThemePicker() {
   const selectedTheme =
     document.documentElement.dataset.codeTheme ?? getInitialCodeTheme();
   const wrapper = document.createElement("div");
-  wrapper.className = "opennav-code-theme-picker";
+  wrapper.className = "opennav-code-theme-picker not-content";
 
   const label = document.createElement("label");
   label.htmlFor = "opennav-code-theme";

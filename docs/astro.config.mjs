@@ -80,6 +80,35 @@ export default defineConfig({
             { slug: "reference/access-guidance" },
           ],
         },
+        {
+          label: "External",
+          items: [
+            {
+              label: "AcceptMarkdown",
+              link: "https://acceptmarkdown.com/",
+              attrs: {
+                rel: "noopener noreferrer",
+                target: "_blank",
+              },
+            },
+            {
+              label: "Cloudflare Agent Readiness",
+              link: "https://blog.cloudflare.com/agent-readiness/",
+              attrs: {
+                rel: "noopener noreferrer",
+                target: "_blank",
+              },
+            },
+            {
+              label: "Is It Agent Ready?",
+              link: "https://isitagentready.com/",
+              attrs: {
+                rel: "noopener noreferrer",
+                target: "_blank",
+              },
+            },
+          ],
+        },
       ],
       head: [
         {
