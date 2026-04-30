@@ -18,7 +18,7 @@ packages/
 ```
 
 `@opennav-ai/engine` is private. It remains useful as a workspace boundary and
-as a focused place for engine tests, but it is not published for Phase 1.
+as a focused place for engine tests, but it is not published for Day 1 release.
 
 `@opennav-ai/opennav` is the public package. It owns:
 
