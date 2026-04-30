@@ -45,6 +45,10 @@ function createCodeThemePicker() {
     return;
   }
 
+  if (window.location.pathname === "/how-it-works/") {
+    return;
+  }
+
   const firstCodeBlock = document.querySelector(".expressive-code");
 
   if (firstCodeBlock === null) {
