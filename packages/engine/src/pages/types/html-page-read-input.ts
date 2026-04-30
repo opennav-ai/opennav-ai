@@ -1,17 +1,9 @@
-import type { EngineFileReference } from "../../input/types/engine-file-reference";
+import type { EngineFile } from "../../input/types/engine-file";
 
 /**
- * Input needed to create lightweight page metadata from one HTML file.
+ * Input needed to create lightweight page metadata from one already-read HTML file.
  */
 export interface HtmlPageReadInput {
-  /**
-   * Built static site output directory that contains the source HTML file.
-   *
-   * The reader uses this directory only to read the one referenced file while
-   * extracting metadata; the returned page does not retain the file body.
-   */
-  readonly outputDirectory: string;
-
   /**
    * Public site root used to build the page canonical URL.
    *
@@ -21,10 +13,10 @@ export interface HtmlPageReadInput {
   readonly baseUrl: string;
 
   /**
-   * Lightweight supported file reference for the HTML source page.
+   * Source file content and output-directory-relative path for the HTML page.
    *
-   * The reference must have `kind: "html"`; other file kinds are rejected
-   * because they require different extraction rules.
+   * The file must have `kind: "html"`; other file kinds are rejected because
+   * they require different extraction rules.
    */
-  readonly fileReference: EngineFileReference;
+  readonly file: EngineFile;
 }

@@ -83,10 +83,7 @@ export class Engine {
     );
     const fileMetadataResult = await fileMetadataReader.read({
       baseUrl: input.baseUrl,
-      outputDirectory: input.outputDirectory,
-      fileReferences: Engine.createFileReferences(
-        sourceFilesForPlanning.sourceFiles,
-      ),
+      files: sourceFilesForPlanning.sourceFiles,
     });
 
     if (fileMetadataResult.isErr()) {
@@ -234,17 +231,6 @@ export class Engine {
     }
 
     return ok(buildPages);
-  }
-
-  private static createFileReferences(
-    sourceFiles: readonly EngineFile[],
-  ): readonly EngineFileReference[] {
-    return sourceFiles.map(
-      (sourceFile: EngineFile): EngineFileReference => ({
-        filePath: sourceFile.filePath,
-        kind: sourceFile.kind,
-      }),
-    );
   }
 
   private static filterSourceFilesForPlanning(

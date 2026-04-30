@@ -1,25 +1,12 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import type { Result } from "neverthrow";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { OpenNavError } from "../../common/types/opennav-error";
+import type { EngineFile } from "../../input/types/engine-file";
 import type { OpenNavPageMetadata } from "../types/opennav-page";
 import { HtmlPageReader } from "./html-page-reader";
 
 describe("HtmlPageReader", (): void => {
-  let fixtureDirectory: string | undefined;
-
-  afterEach(async (): Promise<void> => {
-    if (fixtureDirectory !== undefined) {
-      await rm(fixtureDirectory, { force: true, recursive: true });
-      fixtureDirectory = undefined;
-    }
-  });
-
-  it("returns exact metadata-only page data for an HTML file", async (): Promise<void> => {
-    fixtureDirectory = await mkdtemp(join(tmpdir(), "opennav-html-page-"));
-    const outputDirectory = join(fixtureDirectory, "dist");
+  it("returns exact metadata-only page data for an already-read HTML file", async (): Promise<void> => {
     const filePath = "index.html";
     const content = [
       "<!doctype html>",
@@ -31,18 +18,17 @@ describe("HtmlPageReader", (): void => {
       "<body><h1>Docs Home</h1></body>",
       "</html>",
     ].join("");
-    await mkdir(outputDirectory);
-    await writeFile(join(outputDirectory, filePath), content, "utf8");
+    const file: EngineFile = {
+      filePath,
+      kind: "html",
+      content,
+    };
 
     const reader = new HtmlPageReader();
     const result: Result<OpenNavPageMetadata, OpenNavError> = await reader.read(
       {
         baseUrl: "https://example.com",
-        outputDirectory,
-        fileReference: {
-          filePath,
-          kind: "html",
-        },
+        file,
       },
     );
 
@@ -60,8 +46,6 @@ describe("HtmlPageReader", (): void => {
   });
 
   it("returns exact metadata-only page data for a nested HTML index file", async (): Promise<void> => {
-    fixtureDirectory = await mkdtemp(join(tmpdir(), "opennav-html-page-"));
-    const outputDirectory = join(fixtureDirectory, "dist");
     const filePath = "docs/getting-started/index.html";
     const content = [
       "<html>",
@@ -72,20 +56,17 @@ describe("HtmlPageReader", (): void => {
       "<body></body>",
       "</html>",
     ].join("");
-    await mkdir(join(outputDirectory, "docs/getting-started"), {
-      recursive: true,
-    });
-    await writeFile(join(outputDirectory, filePath), content, "utf8");
+    const file: EngineFile = {
+      filePath,
+      kind: "html",
+      content,
+    };
 
     const reader = new HtmlPageReader();
     const result: Result<OpenNavPageMetadata, OpenNavError> = await reader.read(
       {
         baseUrl: "https://example.com",
-        outputDirectory,
-        fileReference: {
-          filePath,
-          kind: "html",
-        },
+        file,
       },
     );
 
@@ -103,8 +84,6 @@ describe("HtmlPageReader", (): void => {
   });
 
   it("uses the HTML title before the first h1 when both exist", async (): Promise<void> => {
-    fixtureDirectory = await mkdtemp(join(tmpdir(), "opennav-html-page-"));
-    const outputDirectory = join(fixtureDirectory, "dist");
     const filePath = "reference.html";
     const content = [
       "<html>",
@@ -112,18 +91,17 @@ describe("HtmlPageReader", (): void => {
       "<body><h1>Reference Heading</h1></body>",
       "</html>",
     ].join("");
-    await mkdir(outputDirectory);
-    await writeFile(join(outputDirectory, filePath), content, "utf8");
+    const file: EngineFile = {
+      filePath,
+      kind: "html",
+      content,
+    };
 
     const reader = new HtmlPageReader();
     const result: Result<OpenNavPageMetadata, OpenNavError> = await reader.read(
       {
         baseUrl: "https://example.com",
-        outputDirectory,
-        fileReference: {
-          filePath,
-          kind: "html",
-        },
+        file,
       },
     );
 
@@ -141,22 +119,19 @@ describe("HtmlPageReader", (): void => {
   });
 
   it("uses the first h1 as the title when the HTML title is missing", async (): Promise<void> => {
-    fixtureDirectory = await mkdtemp(join(tmpdir(), "opennav-html-page-"));
-    const outputDirectory = join(fixtureDirectory, "dist");
     const filePath = "reference.html";
     const content = "<html><body><h1>Reference Heading</h1></body></html>";
-    await mkdir(outputDirectory);
-    await writeFile(join(outputDirectory, filePath), content, "utf8");
+    const file: EngineFile = {
+      filePath,
+      kind: "html",
+      content,
+    };
 
     const reader = new HtmlPageReader();
     const result: Result<OpenNavPageMetadata, OpenNavError> = await reader.read(
       {
         baseUrl: "https://example.com",
-        outputDirectory,
-        fileReference: {
-          filePath,
-          kind: "html",
-        },
+        file,
       },
     );
 

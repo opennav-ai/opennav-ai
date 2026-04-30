@@ -1,7 +1,6 @@
 import { err, ok, type Result } from "neverthrow";
 import type { OpenNavError } from "../../common/types/opennav-error";
-import { EngineFileReader } from "../../input/services/engine-file-reader";
-import type { EngineFileReference } from "../../input/types/engine-file-reference";
+import type { EngineFile } from "../../input/types/engine-file";
 import type { MarkdownPageReadInput } from "../types/markdown-page-read-input";
 import type { OpenNavPageMetadata } from "../types/opennav-page";
 import { PageUrlBuilder } from "./page-url-builder";
@@ -9,69 +8,52 @@ import { PageUrlBuilder } from "./page-url-builder";
 /**
  * Creates lightweight internal page metadata from one Markdown source file.
  *
- * The reader loads a single Markdown file only long enough to extract the page
- * title and description. It returns source path, route, URL, and metadata, but
- * it does not store the Markdown body on `OpenNavPageMetadata`; later content artifact
- * generators can read one page body at a time when they actually need it.
+ * The reader uses already-read Markdown content to extract the page title and
+ * description. It returns source path, route, URL, and metadata, but it does not
+ * store the Markdown body on `OpenNavPageMetadata`.
  */
 export class MarkdownPageReader {
-  readonly #fileReader: EngineFileReader;
   readonly #pageUrlBuilder: PageUrlBuilder;
 
-  public constructor(
-    fileReader: EngineFileReader = new EngineFileReader(),
-    pageUrlBuilder: PageUrlBuilder = new PageUrlBuilder(),
-  ) {
-    this.#fileReader = fileReader;
+  public constructor(pageUrlBuilder: PageUrlBuilder = new PageUrlBuilder()) {
     this.#pageUrlBuilder = pageUrlBuilder;
   }
 
   /**
-   * Reads one Markdown file and returns metadata-only internal page data.
+   * Extracts metadata-only internal page data from one Markdown file.
    *
-   * @param input - Output directory, site base URL, and Markdown file reference to read.
+   * @param input - Site base URL and already-read Markdown file.
    * @returns Internal page metadata or a typed OpenNav AI error.
    */
   public async read(
     input: MarkdownPageReadInput,
   ): Promise<Result<OpenNavPageMetadata, OpenNavError>> {
-    if (input.fileReference.kind !== "markdown") {
-      return err(this.createUnsupportedFileKindError(input.fileReference));
-    }
-
-    const fileResult = await this.#fileReader.read({
-      outputDirectory: input.outputDirectory,
-      filePath: input.fileReference.filePath,
-    });
-
-    if (fileResult.isErr()) {
-      return err(fileResult.error);
+    if (input.file.kind !== "markdown") {
+      return err(this.createUnsupportedFileKindError(input.file));
     }
 
     const pageUrl = this.#pageUrlBuilder.build({
       baseUrl: input.baseUrl,
-      filePath: input.fileReference.filePath,
+      filePath: input.file.filePath,
     });
 
     return ok({
-      sourceFilePath: input.fileReference.filePath,
+      sourceFilePath: input.file.filePath,
       sourceContentType: "markdown",
       route: pageUrl.route,
       canonicalUrl: pageUrl.canonicalUrl,
-      title: this.extractTitle(fileResult.value.content),
-      description: this.extractDescription(fileResult.value.content),
+      title: this.extractTitle(input.file.content),
+      description: this.extractDescription(input.file.content),
     });
   }
 
-  private createUnsupportedFileKindError(
-    fileReference: EngineFileReference,
-  ): OpenNavError {
+  private createUnsupportedFileKindError(file: EngineFile): OpenNavError {
     return {
       code: "MARKDOWN_PAGE_READER_UNSUPPORTED_FILE_KIND",
       message: "The Markdown page reader can only read Markdown files.",
       context: {
-        filePath: fileReference.filePath,
-        kind: fileReference.kind,
+        filePath: file.filePath,
+        kind: file.kind,
       },
     };
   }

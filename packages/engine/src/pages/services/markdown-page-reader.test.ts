@@ -1,39 +1,25 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import type { Result } from "neverthrow";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { OpenNavError } from "../../common/types/opennav-error";
+import type { EngineFile } from "../../input/types/engine-file";
 import type { OpenNavPageMetadata } from "../types/opennav-page";
 import { MarkdownPageReader } from "./markdown-page-reader";
 
 describe("MarkdownPageReader", (): void => {
-  let fixtureDirectory: string | undefined;
-
-  afterEach(async (): Promise<void> => {
-    if (fixtureDirectory !== undefined) {
-      await rm(fixtureDirectory, { force: true, recursive: true });
-      fixtureDirectory = undefined;
-    }
-  });
-
-  it("returns exact metadata-only page data for a Markdown file", async (): Promise<void> => {
-    fixtureDirectory = await mkdtemp(join(tmpdir(), "opennav-markdown-page-"));
-    const outputDirectory = join(fixtureDirectory, "dist");
+  it("returns exact metadata-only page data for an already-read Markdown file", async (): Promise<void> => {
     const filePath = "docs/api.md";
     const content = "# API\n\nUse the OpenNav AI engine.\n\nMore details.";
-    await mkdir(join(outputDirectory, "docs"), { recursive: true });
-    await writeFile(join(outputDirectory, filePath), content, "utf8");
+    const file: EngineFile = {
+      filePath,
+      kind: "markdown",
+      content,
+    };
 
     const reader = new MarkdownPageReader();
     const result: Result<OpenNavPageMetadata, OpenNavError> = await reader.read(
       {
         baseUrl: "https://example.com",
-        outputDirectory,
-        fileReference: {
-          filePath,
-          kind: "markdown",
-        },
+        file,
       },
     );
 
@@ -51,22 +37,19 @@ describe("MarkdownPageReader", (): void => {
   });
 
   it("uses the first top-level Markdown heading as the title", async (): Promise<void> => {
-    fixtureDirectory = await mkdtemp(join(tmpdir(), "opennav-markdown-page-"));
-    const outputDirectory = join(fixtureDirectory, "dist");
     const filePath = "guide/index.md";
     const content = "Intro paragraph.\n\n# Guide\n\nSecond paragraph.";
-    await mkdir(join(outputDirectory, "guide"), { recursive: true });
-    await writeFile(join(outputDirectory, filePath), content, "utf8");
+    const file: EngineFile = {
+      filePath,
+      kind: "markdown",
+      content,
+    };
 
     const reader = new MarkdownPageReader();
     const result: Result<OpenNavPageMetadata, OpenNavError> = await reader.read(
       {
         baseUrl: "https://example.com/docs/",
-        outputDirectory,
-        fileReference: {
-          filePath,
-          kind: "markdown",
-        },
+        file,
       },
     );
 

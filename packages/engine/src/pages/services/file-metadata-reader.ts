@@ -1,6 +1,6 @@
 import { err, ok, type Result } from "neverthrow";
 import type { OpenNavError } from "../../common/types/opennav-error";
-import type { EngineFileReference } from "../../input/types/engine-file-reference";
+import type { EngineFile } from "../../input/types/engine-file";
 import type { FileMetadataReadInput } from "../types/file-metadata-read-input";
 import type { FileMetadataReadResult } from "../types/file-metadata-read-result";
 import type { OpenNavPageMetadata } from "../types/opennav-page";
@@ -8,7 +8,7 @@ import { HtmlPageReader } from "./html-page-reader";
 import { MarkdownPageReader } from "./markdown-page-reader";
 
 /**
- * Creates page metadata from supported built site file references.
+ * Creates page metadata from already-read supported built site files.
  */
 export class FileMetadataReader {
   readonly #htmlPageReader: HtmlPageReader;
@@ -23,9 +23,9 @@ export class FileMetadataReader {
   }
 
   /**
-   * Reads HTML and Markdown references into page metadata.
+   * Extracts HTML and Markdown source files into page metadata.
    *
-   * @param input - Output directory, public base URL, and discovered file references.
+   * @param input - Public base URL and source files already read from the output directory.
    * @returns Page metadata for supported page files, or a typed OpenNav AI error.
    */
   public async read(
@@ -33,12 +33,9 @@ export class FileMetadataReader {
   ): Promise<Result<FileMetadataReadResult, OpenNavError>> {
     const pageMetadata: OpenNavPageMetadata[] = [];
 
-    for (const fileReference of input.fileReferences) {
-      if (fileReference.kind === "html" || fileReference.kind === "markdown") {
-        const pageMetadataResult = await this.getPageMetadata(
-          input,
-          fileReference,
-        );
+    for (const file of input.files) {
+      if (file.kind === "html" || file.kind === "markdown") {
+        const pageMetadataResult = await this.getPageMetadata(input, file);
 
         if (pageMetadataResult.isErr()) {
           return err(pageMetadataResult.error);
@@ -59,20 +56,18 @@ export class FileMetadataReader {
 
   private async getPageMetadata(
     input: FileMetadataReadInput,
-    fileReference: EngineFileReference,
+    file: EngineFile,
   ): Promise<Result<OpenNavPageMetadata, OpenNavError>> {
-    if (fileReference.kind === "html") {
+    if (file.kind === "html") {
       return await this.#htmlPageReader.read({
         baseUrl: input.baseUrl,
-        outputDirectory: input.outputDirectory,
-        fileReference,
+        file,
       });
     }
 
     return await this.#markdownPageReader.read({
       baseUrl: input.baseUrl,
-      outputDirectory: input.outputDirectory,
-      fileReference,
+      file,
     });
   }
 }
