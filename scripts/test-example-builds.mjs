@@ -705,6 +705,7 @@ const runner = new ExampleBuildTestRunner([
     name: "Astro 6 static",
     directory: "examples/astro-6-static",
     outputDirectory: "dist",
+    expectedOpenNavBuildFingerprint: "sha256:01a79e9b268b",
     expectedHtmlPages: [
       {
         filePath: "dist/index.html",
@@ -719,11 +720,26 @@ const runner = new ExampleBuildTestRunner([
         expectedText: "OpenNav Astro 6 Setup Fixture",
       },
     ],
+    expectedOutputFiles: [
+      {
+        filePath: "dist/llms.txt",
+        expectedText: "OpenNav Astro 6 Static Fixture",
+      },
+      {
+        filePath: "dist/llms-full.txt",
+        expectedText: "OpenNav Astro 6 Docs Fixture",
+      },
+      {
+        filePath: "dist/.well-known/opennav.json",
+        expectedText: "https://astro-6.example.com",
+      },
+    ],
   },
   {
     name: "Astro 5 static",
     directory: "examples/astro-5-static",
     outputDirectory: "dist",
+    expectedOpenNavBuildFingerprint: "sha256:b6eea95e4743",
     expectedHtmlPages: [
       {
         filePath: "dist/index.html",
@@ -738,11 +754,26 @@ const runner = new ExampleBuildTestRunner([
         expectedText: "OpenNav Astro 5 Setup Fixture",
       },
     ],
+    expectedOutputFiles: [
+      {
+        filePath: "dist/llms.txt",
+        expectedText: "OpenNav Astro 5 Static Fixture",
+      },
+      {
+        filePath: "dist/llms-full.txt",
+        expectedText: "OpenNav Astro 5 Docs Fixture",
+      },
+      {
+        filePath: "dist/.well-known/opennav.json",
+        expectedText: "https://astro-5.example.com",
+      },
+    ],
   },
   {
     name: "Astro 4 static",
     directory: "examples/astro-4-static",
     outputDirectory: "dist",
+    expectedOpenNavBuildFingerprint: "sha256:fb9c17a5d6fe",
     expectedHtmlPages: [
       {
         filePath: "dist/index.html",
@@ -755,6 +786,20 @@ const runner = new ExampleBuildTestRunner([
       {
         filePath: "dist/guides/setup/index.html",
         expectedText: "OpenNav Astro 4 Setup Fixture",
+      },
+    ],
+    expectedOutputFiles: [
+      {
+        filePath: "dist/llms.txt",
+        expectedText: "OpenNav Astro 4 Static Fixture",
+      },
+      {
+        filePath: "dist/llms-full.txt",
+        expectedText: "OpenNav Astro 4 Docs Fixture",
+      },
+      {
+        filePath: "dist/.well-known/opennav.json",
+        expectedText: "https://astro-4.example.com",
       },
     ],
   },

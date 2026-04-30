@@ -1,3 +1,5 @@
+import type { OpenNavAstroHooks } from "./open-nav-astro-hooks";
+
 /**
  * Minimal Astro integration shape returned without depending on Astro types.
  */
@@ -13,8 +15,8 @@ export interface OpenNavAstroIntegration {
   /**
    * Astro hook map installed by the integration.
    *
-   * Milestone 12 leaves this empty; later milestones populate build hooks for
-   * static output detection and execution.
+   * Static mode installs `astro:config:done` to capture the site URL and
+   * `astro:build:done` to run OpenNav against Astro's generated `dist` folder.
    */
-  readonly hooks: Readonly<Record<string, unknown>>;
+  readonly hooks: OpenNavAstroHooks;
 }

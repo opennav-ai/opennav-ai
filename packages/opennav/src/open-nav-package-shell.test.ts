@@ -24,15 +24,24 @@ describe("OpenNav public package shell", (): void => {
     expect(staticSite).toBeInstanceOf(OpenNavStaticSite);
   });
 
-  it("exports an Astro-compatible integration-shaped stub", (): void => {
+  it("exports an Astro-compatible integration with static build hooks", (): void => {
     const integration: OpenNavAstroIntegration = OpenNavAstro({
       siteName: "Example Docs",
       mode: "static",
     });
 
-    expect(integration).toEqual({
+    expect({
+      name: integration.name,
+      hooks: {
+        configDone: typeof integration.hooks["astro:config:done"],
+        buildDone: typeof integration.hooks["astro:build:done"],
+      },
+    }).toEqual({
       name: "@opennav-ai/opennav/astro",
-      hooks: {},
+      hooks: {
+        configDone: "function",
+        buildDone: "function",
+      },
     });
   });
 
