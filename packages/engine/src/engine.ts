@@ -1,5 +1,6 @@
 import { err, ok, type Result } from "neverthrow";
 import { AccessGuidanceBuilder } from "./access-guidance/services/access-guidance-builder";
+import { ContentSignalsGuidanceBuilder } from "./access-guidance/services/content-signals-guidance-builder";
 import type { RobotsTxtSourceFile } from "./access-guidance/types/robots-txt-source-file";
 import { DEFAULT_LLMS_FULL_MAX_CONTENT_TOKENS } from "./agent-content/constants/default-llms-full-max-content-tokens";
 import { AgentContentFileBuilder } from "./agent-content/services/agent-content-file-builder";
@@ -18,8 +19,6 @@ import { BuildResultReporter } from "./reporting/services/build-result-reporter"
 import { ResourceLinkBuilder } from "./resource-links/services/resource-link-builder";
 import type { ResourceLinkBuildPage } from "./resource-links/types/resource-link-build-page";
 import { OpenNavSiteValidator } from "./site-validation/services/opennav-site-validator";
-import type { EngineAccessGuidanceOptions } from "./types/engine-access-guidance-options";
-import type { EngineContentSignalPermission } from "./types/engine-content-signal-permission";
 import type { EngineExecuteInput } from "./types/engine-execute-input";
 import type { EngineExecuteOptions } from "./types/engine-execute-options";
 import type { EngineExecuteResult } from "./types/engine-execute-result";
@@ -28,7 +27,8 @@ import { WritePlanBuilder } from "./write-plan/services/write-plan-builder";
 
 interface SourceFilesForPlanning {
   readonly fingerprintFiles: readonly BuildFingerprintFileInput[];
-  readonly sourceFiles: readonly EngineFile[];
+  readonly pageMetadata: readonly OpenNavPageMetadata[];
+  readonly sourceFileReferences: readonly EngineFileReference[];
 }
 
 /**
@@ -55,6 +55,7 @@ export class Engine {
     const agentContentFileBuilder = new AgentContentFileBuilder();
     const resourceLinkBuilder = new ResourceLinkBuilder();
     const accessGuidanceBuilder = new AccessGuidanceBuilder();
+    const contentSignalsGuidanceBuilder = new ContentSignalsGuidanceBuilder();
     const writePlanBuilder = new WritePlanBuilder();
     const distFileWriter = new DistFileWriter();
     const buildResultReporter = new BuildResultReporter();
@@ -71,29 +72,21 @@ export class Engine {
       outputDirectory: input.outputDirectory,
       fileReferences: fileListResult.value.fileReferences,
       fileReader,
+      fileMetadataReader,
       buildFingerprintBuilder,
+      baseUrl: input.baseUrl,
     });
 
     if (sourceFilesResult.isErr()) {
       return err(sourceFilesResult.error);
     }
 
-    const sourceFilesForPlanning = Engine.filterSourceFilesForPlanning(
-      sourceFilesResult.value,
-    );
-    const fileMetadataResult = await fileMetadataReader.read({
-      baseUrl: input.baseUrl,
-      files: sourceFilesForPlanning.sourceFiles,
-    });
-
-    if (fileMetadataResult.isErr()) {
-      return err(fileMetadataResult.error);
-    }
+    const sourceFilesForPlanning = sourceFilesResult.value;
 
     const validationResult = siteValidator.validate({
       siteName: input.siteName,
       baseUrl: input.baseUrl,
-      pages: fileMetadataResult.value.pageMetadata,
+      pages: sourceFilesForPlanning.pageMetadata,
       mode: "strict",
     });
 
@@ -105,7 +98,9 @@ export class Engine {
       siteName: input.siteName,
       baseUrl: input.baseUrl,
       sourceFiles: sourceFilesForPlanning.fingerprintFiles,
-      contentSignals: Engine.serializeContentSignals(input.accessGuidance),
+      contentSignals: contentSignalsGuidanceBuilder.buildFingerprintSignals({
+        contentSignals: input.accessGuidance?.contentSignals,
+      }),
     });
 
     const agentContentResult = agentContentFileBuilder.build({
@@ -113,23 +108,27 @@ export class Engine {
       baseUrl: input.baseUrl,
       buildFingerprint,
       contentSignalsConfigured:
-        input.accessGuidance?.contentSignals !== undefined,
+        contentSignalsGuidanceBuilder.hasConfiguredSignals({
+          contentSignals: input.accessGuidance?.contentSignals,
+        }),
       maxLlmsFullContentTokens: DEFAULT_LLMS_FULL_MAX_CONTENT_TOKENS,
-      pages: fileMetadataResult.value.pageMetadata.map(
+      pages: sourceFilesForPlanning.pageMetadata.map(
         (page: OpenNavPageMetadata): AgentContentBuildPage => ({
           page,
           getSourceContent: async (): Promise<Result<string, OpenNavError>> =>
             Engine.readPageSourceContent({
-              sourceFiles: sourceFilesForPlanning.sourceFiles,
+              outputDirectory: input.outputDirectory,
+              fileReader,
               sourceFilePath: page.sourceFilePath,
             }),
         }),
       ),
     });
 
-    const resourceLinkPagesResult = Engine.createResourceLinkPages({
-      pages: fileMetadataResult.value.pageMetadata,
-      sourceFiles: sourceFilesForPlanning.sourceFiles,
+    const resourceLinkPagesResult = await Engine.createResourceLinkPages({
+      outputDirectory: input.outputDirectory,
+      pages: sourceFilesForPlanning.pageMetadata,
+      fileReader,
     });
 
     if (resourceLinkPagesResult.isErr()) {
@@ -141,11 +140,19 @@ export class Engine {
       buildFingerprint,
       pages: resourceLinkPagesResult.value,
     });
+    const robotsTxtSourceFileResult = await Engine.findRobotsTxtSourceFile({
+      outputDirectory: input.outputDirectory,
+      sourceFileReferences: sourceFilesForPlanning.sourceFileReferences,
+      fileReader,
+    });
+
+    if (robotsTxtSourceFileResult.isErr()) {
+      return err(robotsTxtSourceFileResult.error);
+    }
+
     const accessGuidanceResult = accessGuidanceBuilder.build({
       buildFingerprint,
-      robotsTxtFile: Engine.findRobotsTxtSourceFile(
-        sourceFilesForPlanning.sourceFiles,
-      ),
+      robotsTxtFile: robotsTxtSourceFileResult.value,
       contentSignals: input.accessGuidance?.contentSignals,
     });
     const writePlanResult = await writePlanBuilder.build({
@@ -196,63 +203,35 @@ export class Engine {
     });
   }
 
-  private static createSourceFileMissingError(
-    sourceFilePath: EngineFilePath,
-  ): OpenNavError {
-    return {
-      code: "ENGINE_SOURCE_FILE_MISSING",
-      message: "The engine could not find source content for a planned page.",
-      context: {
-        sourceFilePath,
-      },
-    };
-  }
-
-  private static createResourceLinkPages(input: {
+  private static async createResourceLinkPages(input: {
+    readonly outputDirectory: string;
     readonly pages: readonly OpenNavPageMetadata[];
-    readonly sourceFiles: readonly EngineFile[];
-  }): Result<readonly ResourceLinkBuildPage[], OpenNavError> {
+    readonly fileReader: EngineFileReader;
+  }): Promise<Result<readonly ResourceLinkBuildPage[], OpenNavError>> {
     const buildPages: ResourceLinkBuildPage[] = [];
 
     for (const page of input.pages) {
-      const sourceFile = Engine.findSourceFile(
-        input.sourceFiles,
-        page.sourceFilePath,
-      );
+      if (page.sourceContentType !== "html") {
+        continue;
+      }
 
-      if (sourceFile === undefined) {
-        return err(Engine.createSourceFileMissingError(page.sourceFilePath));
+      const sourceContentResult = await Engine.readPageSourceContent({
+        outputDirectory: input.outputDirectory,
+        fileReader: input.fileReader,
+        sourceFilePath: page.sourceFilePath,
+      });
+
+      if (sourceContentResult.isErr()) {
+        return err(sourceContentResult.error);
       }
 
       buildPages.push({
         page,
-        sourceContent: sourceFile.content,
+        sourceContent: sourceContentResult.value,
       });
     }
 
     return ok(buildPages);
-  }
-
-  private static filterSourceFilesForPlanning(
-    input: SourceFilesForPlanning,
-  ): SourceFilesForPlanning {
-    const sourceFiles = input.sourceFiles.filter(
-      (sourceFile: EngineFile): boolean =>
-        !Engine.isOpenNavManagedMarkdownSourceFile(sourceFile),
-    );
-    const sourceFilePaths = new Set(
-      sourceFiles.map(
-        (sourceFile: EngineFile): EngineFilePath => sourceFile.filePath,
-      ),
-    );
-
-    return {
-      sourceFiles,
-      fingerprintFiles: input.fingerprintFiles.filter(
-        (fingerprintFile: BuildFingerprintFileInput): boolean =>
-          sourceFilePaths.has(fingerprintFile.filePath),
-      ),
-    };
   }
 
   private static isOpenNavManagedMarkdownSourceFile(
@@ -265,67 +244,63 @@ export class Engine {
     );
   }
 
-  private static findRobotsTxtSourceFile(
-    sourceFiles: readonly EngineFile[],
-  ): RobotsTxtSourceFile | undefined {
-    const robotsTxtFile = sourceFiles.find(
-      (sourceFile: EngineFile): boolean => sourceFile.kind === "robots",
+  private static async findRobotsTxtSourceFile(input: {
+    readonly outputDirectory: string;
+    readonly sourceFileReferences: readonly EngineFileReference[];
+    readonly fileReader: EngineFileReader;
+  }): Promise<Result<RobotsTxtSourceFile | undefined, OpenNavError>> {
+    const robotsTxtFile = input.sourceFileReferences.find(
+      (sourceFile: EngineFileReference): boolean =>
+        sourceFile.kind === "robots",
     );
 
     if (robotsTxtFile === undefined) {
-      return undefined;
+      return ok(undefined);
     }
 
-    return {
+    const readResult = await input.fileReader.read({
+      outputDirectory: input.outputDirectory,
       filePath: robotsTxtFile.filePath,
-      content: robotsTxtFile.content,
-    };
-  }
+    });
 
-  private static findSourceFile(
-    sourceFiles: readonly EngineFile[],
-    sourceFilePath: EngineFilePath,
-  ): EngineFile | undefined {
-    return sourceFiles.find(
-      (sourceFile: EngineFile): boolean =>
-        sourceFile.filePath === sourceFilePath,
-    );
-  }
-
-  private static formatContentSignalPermission(
-    permission: EngineContentSignalPermission,
-  ): string {
-    if (permission === "allow") {
-      return "yes";
+    if (readResult.isErr()) {
+      return err(readResult.error);
     }
 
-    return "no";
+    return ok({
+      filePath: readResult.value.filePath,
+      content: readResult.value.content,
+    });
   }
 
   private static async readPageSourceContent(input: {
-    readonly sourceFiles: readonly EngineFile[];
+    readonly outputDirectory: string;
+    readonly fileReader: EngineFileReader;
     readonly sourceFilePath: EngineFilePath;
   }): Promise<Result<string, OpenNavError>> {
-    const sourceFile = Engine.findSourceFile(
-      input.sourceFiles,
-      input.sourceFilePath,
-    );
+    const readResult = await input.fileReader.read({
+      outputDirectory: input.outputDirectory,
+      filePath: input.sourceFilePath,
+    });
 
-    if (sourceFile === undefined) {
-      return err(Engine.createSourceFileMissingError(input.sourceFilePath));
+    if (readResult.isErr()) {
+      return err(readResult.error);
     }
 
-    return ok(sourceFile.content);
+    return ok(readResult.value.content);
   }
 
   private static async readSourceFilesForPlanning(input: {
+    readonly baseUrl: string;
     readonly outputDirectory: string;
     readonly fileReferences: readonly EngineFileReference[];
     readonly fileReader: EngineFileReader;
+    readonly fileMetadataReader: FileMetadataReader;
     readonly buildFingerprintBuilder: BuildFingerprintBuilder;
   }): Promise<Result<SourceFilesForPlanning, OpenNavError>> {
-    const sourceFiles: EngineFile[] = [];
     const fingerprintFiles: BuildFingerprintFileInput[] = [];
+    const pageMetadata: OpenNavPageMetadata[] = [];
+    const sourceFileReferences: EngineFileReference[] = [];
 
     for (const fileReference of input.fileReferences) {
       const readResult = await input.fileReader.read({
@@ -337,7 +312,14 @@ export class Engine {
         return err(readResult.error);
       }
 
-      sourceFiles.push(readResult.value);
+      if (Engine.isOpenNavManagedMarkdownSourceFile(readResult.value)) {
+        continue;
+      }
+
+      sourceFileReferences.push({
+        filePath: readResult.value.filePath,
+        kind: readResult.value.kind,
+      });
       fingerprintFiles.push({
         filePath: readResult.value.filePath,
         contentFingerprint:
@@ -346,47 +328,23 @@ export class Engine {
             sourceContentKind: readResult.value.kind,
           }),
       });
+
+      const fileMetadataResult = await input.fileMetadataReader.read({
+        baseUrl: input.baseUrl,
+        files: [readResult.value],
+      });
+
+      if (fileMetadataResult.isErr()) {
+        return err(fileMetadataResult.error);
+      }
+
+      pageMetadata.push(...fileMetadataResult.value.pageMetadata);
     }
 
     return ok({
-      sourceFiles,
       fingerprintFiles,
+      pageMetadata,
+      sourceFileReferences,
     });
-  }
-
-  private static serializeContentSignals(
-    accessGuidance: EngineAccessGuidanceOptions | undefined,
-  ): readonly string[] | undefined {
-    const contentSignals = accessGuidance?.contentSignals;
-
-    if (contentSignals === undefined) {
-      return undefined;
-    }
-
-    const serializedSignals: string[] = [];
-
-    if (contentSignals.search !== undefined) {
-      serializedSignals.push(
-        `search=${Engine.formatContentSignalPermission(contentSignals.search)}`,
-      );
-    }
-
-    if (contentSignals.aiInput !== undefined) {
-      serializedSignals.push(
-        `ai-input=${Engine.formatContentSignalPermission(
-          contentSignals.aiInput,
-        )}`,
-      );
-    }
-
-    if (contentSignals.aiTrain !== undefined) {
-      serializedSignals.push(
-        `ai-train=${Engine.formatContentSignalPermission(
-          contentSignals.aiTrain,
-        )}`,
-      );
-    }
-
-    return serializedSignals;
   }
 }

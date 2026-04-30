@@ -12,10 +12,12 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Result } from "neverthrow";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { OpenNavError } from "./common/types/opennav-error";
 import { Engine } from "./engine";
 import * as publicExports from "./index";
+import { EngineFileReader } from "./input/services/engine-file-reader";
+import type { EngineFileReadInput } from "./input/types/engine-file-read-input";
 import type { EngineExecuteInput } from "./types/engine-execute-input";
 import type { EngineExecuteResult } from "./types/engine-execute-result";
 
@@ -241,6 +243,64 @@ describe("Engine", (): void => {
           filePath,
           cause: `ENOENT: no such file or directory, access '${absoluteFilePath}'`,
         },
+      });
+    }
+  });
+
+  it("re-reads page source content when generated files are materialized", async (): Promise<void> => {
+    fixtureDirectory = await mkdtemp(join(tmpdir(), "opennav-engine-"));
+    const outputDirectory = join(fixtureDirectory, "dist");
+    const htmlFilePath = "index.html";
+    await mkdir(outputDirectory);
+    await writeFile(
+      join(outputDirectory, htmlFilePath),
+      "<html><head><title>Home</title></head><body><h1>Home</h1><p>Start here.</p></body></html>",
+      "utf8",
+    );
+    const input: EngineExecuteInput = {
+      siteName: "Example Docs",
+      baseUrl: "https://example.com",
+      outputDirectory,
+      filePaths: [htmlFilePath],
+    };
+    const originalRead: EngineFileReader["read"] =
+      EngineFileReader.prototype.read;
+    const readFilePaths: string[] = [];
+    const readSpy = vi
+      .spyOn(EngineFileReader.prototype, "read")
+      .mockImplementation(async function (
+        this: EngineFileReader,
+        readInput: EngineFileReadInput,
+      ): ReturnType<EngineFileReader["read"]> {
+        readFilePaths.push(readInput.filePath);
+
+        return await originalRead.call(this, readInput);
+      });
+
+    const result: Result<EngineExecuteResult, OpenNavError> =
+      await Engine.execute(input, { dryRun: false });
+    readSpy.mockRestore();
+
+    expect(result.isOk()).toEqual(true);
+    if (result.isOk()) {
+      expect({
+        result: result.value,
+        readFilePaths,
+      }).toEqual({
+        result: {
+          createdFilePaths: [
+            "llms.txt",
+            ".well-known/llms.txt",
+            "index.md",
+            "llms-full.txt",
+            ".well-known/llms-full.txt",
+            ".well-known/opennav.json",
+          ],
+          modifiedFilePaths: [htmlFilePath],
+          skippedFilePaths: [],
+          warnings: [],
+        },
+        readFilePaths: [htmlFilePath, htmlFilePath, htmlFilePath, htmlFilePath],
       });
     }
   });

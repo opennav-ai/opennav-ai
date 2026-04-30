@@ -15,6 +15,28 @@ export class ContentSignalsGuidanceBuilder {
   public build(
     input: ContentSignalsGuidanceBuildInput,
   ): ContentSignalsGuidanceBuildResult {
+    const signalParts = this.buildFingerprintSignals(input);
+
+    if (signalParts.length === 0) {
+      return {
+        contentSignalLine: undefined,
+      };
+    }
+
+    return {
+      contentSignalLine: `Content-signal: ${signalParts.join(", ")}`,
+    };
+  }
+
+  /**
+   * Builds deterministic Content Signals parts for the OpenNav build fingerprint.
+   *
+   * @param input - Caller-configured content-use preferences.
+   * @returns Serialized signal assignments without the `Content-signal:` directive prefix.
+   */
+  public buildFingerprintSignals(
+    input: ContentSignalsGuidanceBuildInput,
+  ): readonly string[] {
     const signalParts: string[] = [];
     const contentSignals = input.contentSignals;
 
@@ -36,15 +58,19 @@ export class ContentSignalsGuidanceBuilder {
       );
     }
 
-    if (signalParts.length === 0) {
-      return {
-        contentSignalLine: undefined,
-      };
-    }
+    return signalParts;
+  }
 
-    return {
-      contentSignalLine: `Content-signal: ${signalParts.join(", ")}`,
-    };
+  /**
+   * Checks whether the caller explicitly configured Content Signals.
+   *
+   * @param input - Caller-provided content-use preferences.
+   * @returns `true` when the policy object exists, including an empty policy.
+   */
+  public hasConfiguredSignals(
+    input: ContentSignalsGuidanceBuildInput,
+  ): boolean {
+    return input.contentSignals !== undefined;
   }
 
   private formatPermission(permission: EngineContentSignalPermission): string {

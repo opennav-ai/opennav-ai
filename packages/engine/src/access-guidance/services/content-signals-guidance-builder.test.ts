@@ -52,4 +52,37 @@ describe("ContentSignalsGuidanceBuilder", (): void => {
       contentSignalLine: undefined,
     });
   });
+
+  it("serializes exact fingerprint signals in deterministic order", (): void => {
+    const builder = new ContentSignalsGuidanceBuilder();
+    const result: readonly string[] = builder.buildFingerprintSignals({
+      contentSignals: {
+        aiTrain: "disallow",
+        search: "allow",
+        aiInput: "allow",
+      },
+    });
+
+    expect(result).toEqual(["search=yes", "ai-input=yes", "ai-train=no"]);
+  });
+
+  it("keeps empty configured policy distinct from omitted Content Signals", (): void => {
+    const builder = new ContentSignalsGuidanceBuilder();
+
+    expect({
+      omitted: builder.hasConfiguredSignals({}),
+      empty: builder.hasConfiguredSignals({ contentSignals: {} }),
+      emptyFingerprintSignals: builder.buildFingerprintSignals({
+        contentSignals: {},
+      }),
+      emptyDirective: builder.build({ contentSignals: {} }),
+    }).toEqual({
+      omitted: false,
+      empty: true,
+      emptyFingerprintSignals: [],
+      emptyDirective: {
+        contentSignalLine: undefined,
+      },
+    });
+  });
 });
