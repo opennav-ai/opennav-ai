@@ -98,8 +98,17 @@ describe("OpenNavStaticSite", (): void => {
             ".well-known/opennav.json",
           ],
           modifiedFilePaths: ["docs/about.html", "index.html"],
-          skippedFilePaths: [],
-          warnings: [],
+          skippedFilePaths: ["assets/logo.svg"],
+          warnings: [
+            {
+              code: "ENGINE_FILE_UNSUPPORTED",
+              message: "The engine skipped an unsupported built site file.",
+              context: {
+                filePath: "assets/logo.svg",
+                kind: "unsupported",
+              },
+            },
+          ],
         },
         generatedPathExists: {
           llmsTxt: false,
@@ -149,8 +158,17 @@ describe("OpenNavStaticSite", (): void => {
             ".well-known/opennav.json",
           ],
           modifiedFilePaths: ["docs/about.html", "index.html"],
-          skippedFilePaths: [],
-          warnings: [],
+          skippedFilePaths: ["assets/logo.svg"],
+          warnings: [
+            {
+              code: "ENGINE_FILE_UNSUPPORTED",
+              message: "The engine skipped an unsupported built site file.",
+              context: {
+                filePath: "assets/logo.svg",
+                kind: "unsupported",
+              },
+            },
+          ],
         },
         generatedContent: {
           llmsTxt: `# Example Docs\n\n## Root\n\n- [Home](https://example.com/index.md): Start here.\n\n## Docs\n\n- [About](https://example.com/docs/about.md): Learn about OpenNav.\n\n<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="${buildFingerprint}" manifest="/.well-known/opennav.json" -->\n`,

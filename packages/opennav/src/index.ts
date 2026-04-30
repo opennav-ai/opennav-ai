@@ -55,17 +55,12 @@ export class OpenNavStaticSite {
       return err(filePathsResult.error);
     }
 
-    const filePaths = filePathsResult.value.filter(
-      (filePath: EngineFilePath): boolean =>
-        this.isEngineInputFilePath(filePath),
-    );
-
     return await Engine.execute(
       {
         siteName: this.options.siteName,
         baseUrl: this.options.siteUrl,
         outputDirectory: this.options.outputDirectory,
-        filePaths,
+        filePaths: filePathsResult.value,
         accessGuidance: this.options.accessGuidance,
       },
       {
@@ -147,14 +142,6 @@ export class OpenNavStaticSite {
     }
 
     return String(cause);
-  }
-
-  private isEngineInputFilePath(filePath: EngineFilePath): boolean {
-    return (
-      filePath === "robots.txt" ||
-      filePath.endsWith(".html") ||
-      filePath.endsWith(".md")
-    );
   }
 
   private toOutputFilePath(
