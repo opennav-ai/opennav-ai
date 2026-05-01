@@ -193,6 +193,20 @@ describe("CLI build-script example", (): void => {
 
     expect(
       cloudflareHeadersExpectation.normalize(await example.readHeadersFile()),
-    ).toEqual(cloudflareHeadersExpectation.expectedNormalizedContent());
+    ).toEqual(
+      cloudflareHeadersExpectation.expectedNormalizedContent({
+        siteUrl: "https://cli.example.com",
+        pages: [
+          {
+            route: "/",
+            markdownPath: "index.md",
+          },
+          {
+            route: "/docs/about",
+            markdownPath: "docs/about.md",
+          },
+        ],
+      }),
+    );
   }, 600_000);
 });

@@ -280,7 +280,25 @@ describe("static site SDK example", (): void => {
 
       expect(
         cloudflareHeadersExpectation.normalize(await example.readHeadersFile()),
-      ).toEqual(cloudflareHeadersExpectation.expectedNormalizedContent());
+      ).toEqual(
+        cloudflareHeadersExpectation.expectedNormalizedContent({
+          siteUrl: "https://static-sdk.example.com",
+          pages: [
+            {
+              route: "/",
+              markdownPath: "index.md",
+            },
+            {
+              route: "/docs/about",
+              markdownPath: "docs/about.md",
+            },
+            {
+              route: "/guides/setup",
+              markdownPath: "guides/setup.md",
+            },
+          ],
+        }),
+      );
     } finally {
       await example.restoreBuildScript(buildScript);
     }

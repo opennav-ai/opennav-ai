@@ -215,6 +215,9 @@ Supported values are `"cloudflare-pages"`. When
 `platform: "cloudflare-pages"` is passed, OpenNav creates or updates
 `dist/_headers` by default so Cloudflare Pages serves generated Markdown,
 `llms` files, and the OpenNav manifest with explicit response content types.
+The same `_headers` block also adds per-page HTTP `Link` headers to HTML routes
+so agents can discover each page's Markdown alternate and the root `llms.txt`
+index from response headers.
 
 Omit `platform` for a generic Astro static build. More platform values will be
 added as OpenNav gains first-class support for additional static hosts.

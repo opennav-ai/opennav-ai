@@ -473,7 +473,29 @@ export default nextConfig;
 
       expect(
         cloudflareHeadersExpectation.normalize(await example.readHeadersFile()),
-      ).toEqual(cloudflareHeadersExpectation.expectedNormalizedContent());
+      ).toEqual(
+        cloudflareHeadersExpectation.expectedNormalizedContent({
+          siteUrl: "https://next-16.example.com",
+          pages: [
+            {
+              route: "/",
+              markdownPath: "index.md",
+            },
+            {
+              route: "/_not-found",
+              markdownPath: "_not-found.md",
+            },
+            {
+              route: "/docs",
+              markdownPath: "docs.md",
+            },
+            {
+              route: "/guides/setup",
+              markdownPath: "guides/setup.md",
+            },
+          ],
+        }),
+      );
     } finally {
       await example.restoreOpenNavConfig(openNavConfig);
     }

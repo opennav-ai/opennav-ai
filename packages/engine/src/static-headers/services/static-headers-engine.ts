@@ -2,6 +2,7 @@ import { err, ok, type Result } from "neverthrow";
 import type { AccessGuidanceFile } from "../../access-guidance/types/access-guidance-file";
 import type { OpenNavError } from "../../common/types/opennav-error";
 import { EngineFileReader } from "../../input/services/engine-file-reader";
+import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
 import type {
   EngineStaticHeadersOptions,
   EngineStaticPlatform,
@@ -22,7 +23,9 @@ interface StaticHeadersEngineInput {
 }
 
 interface StaticHeadersEngineBuildInput extends StaticHeadersEngineInput {
+  readonly baseUrl?: string | undefined;
   readonly buildFingerprint: string;
+  readonly pages?: readonly OpenNavPageMetadata[] | undefined;
 }
 
 interface StaticHeadersEngineBuildResult {
@@ -125,8 +128,10 @@ export class StaticHeadersEngine {
 
     const cloudflarePagesHeadersResult =
       this.#cloudflarePagesHeadersBuilder.build({
+        baseUrl: input.baseUrl,
         buildFingerprint: input.buildFingerprint,
         existingContent: existingContentResult.value,
+        pages: input.pages,
       });
 
     return ok({

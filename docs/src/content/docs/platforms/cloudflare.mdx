@@ -240,12 +240,65 @@ The generated `_headers` block sets:
 | `/*.md` | Serves generated Markdown mirrors as `text/markdown; charset=utf-8`. |
 | `/llms.txt`, `/llms-full.txt`, and `.well-known` copies | Serves generated indexes as `text/plain; charset=utf-8`. |
 | `/.well-known/opennav.json` | Serves the compatibility manifest as `application/json; charset=utf-8`. |
+| HTML page routes such as `/`, `/docs/page`, or `/docs/page/` | Adds HTTP `Link` headers pointing to that page's generated Markdown alternate and the root `llms.txt` index. |
 
 OpenNav also sets `X-Content-Type-Options: nosniff` for those generated
 artifacts. In a request flow, an agent can fetch `https://example.com/llms.txt`
 or `https://example.com/docs/page/index.md`, and Cloudflare Pages will return
 the file with a concrete content type instead of relying on generic static-file
 detection.
+
+For HTML responses, the generated page route block looks like this:
+
+```txt
+/docs/page
+  Link: <https://example.com/docs/page.md>; rel="alternate"; type="text/markdown"
+  Link: <https://example.com/llms.txt>; rel="index"; type="text/plain"
+```
+
+For a small site with a home page and one docs page, the complete generated
+`dist/_headers` file can look like this:
+
+```txt
+# Begin OpenNav AI
+# opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:123456789abc" manifest="/.well-known/opennav.json"
+/llms.txt
+  Content-Type: text/plain; charset=utf-8
+  X-Content-Type-Options: nosniff
+
+/llms-full.txt
+  Content-Type: text/plain; charset=utf-8
+  X-Content-Type-Options: nosniff
+
+/.well-known/llms.txt
+  Content-Type: text/plain; charset=utf-8
+  X-Content-Type-Options: nosniff
+
+/.well-known/llms-full.txt
+  Content-Type: text/plain; charset=utf-8
+  X-Content-Type-Options: nosniff
+
+/.well-known/opennav.json
+  Content-Type: application/json; charset=utf-8
+  X-Content-Type-Options: nosniff
+
+/*.md
+  Content-Type: text/markdown; charset=utf-8
+  X-Content-Type-Options: nosniff
+
+/
+  Link: <https://example.com/index.md>; rel="alternate"; type="text/markdown"
+  Link: <https://example.com/llms.txt>; rel="index"; type="text/plain"
+
+/docs/page
+  Link: <https://example.com/docs/page.md>; rel="alternate"; type="text/markdown"
+  Link: <https://example.com/llms.txt>; rel="index"; type="text/plain"
+# End OpenNav AI
+```
+
+That does not implement runtime `Accept: text/markdown` negotiation. It gives
+agents a response-header discovery path for the same Markdown alternate and
+site index that OpenNav already advertises inside the HTML `<head>`.
 
 OpenNav preserves caller-owned `_headers` rules and replaces only the block
 between `# Begin OpenNav AI` and `# End OpenNav AI`. If an existing caller-owned

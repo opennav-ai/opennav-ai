@@ -1,5 +1,8 @@
+import { MarkdownPageArtifactPathBuilder } from "../../agent-content/services/markdown-page-artifact-path-builder";
+import type { MarkdownPageArtifactPathBuildResult } from "../../agent-content/types/markdown-page-artifact-path-build-result";
 import { BuildFingerprintCommentBuilder } from "../../build-fingerprint/services/build-fingerprint-comment-builder";
 import type { OpenNavError } from "../../common/types/opennav-error";
+import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
 import type { EngineFilePath } from "../../types/engine-file-path";
 
 const CLOUDFLARE_HEADERS_OUTPUT_FILE_PATH: EngineFilePath = "_headers";
@@ -15,8 +18,10 @@ const OPENNAV_EXACT_HEADER_TARGETS: readonly string[] = [
 const OPENNAV_MARKDOWN_HEADER_PATTERN = "/*.md";
 
 interface CloudflarePagesHeadersBuildInput {
+  readonly baseUrl?: string | undefined;
   readonly buildFingerprint: string;
   readonly existingContent?: string | undefined;
+  readonly pages?: readonly OpenNavPageMetadata[] | undefined;
 }
 
 interface CloudflarePagesHeadersBuildResult {
@@ -43,6 +48,7 @@ interface ManagedBlockScanResult {
 
 interface CloudflarePagesHeadersBuilderDependencies {
   readonly buildFingerprintCommentBuilder?: BuildFingerprintCommentBuilder;
+  readonly markdownPageArtifactPathBuilder?: MarkdownPageArtifactPathBuilder;
 }
 
 /**
@@ -50,6 +56,7 @@ interface CloudflarePagesHeadersBuilderDependencies {
  */
 export class CloudflarePagesHeadersBuilder {
   readonly #buildFingerprintCommentBuilder: BuildFingerprintCommentBuilder;
+  readonly #markdownPageArtifactPathBuilder: MarkdownPageArtifactPathBuilder;
 
   /**
    * Creates a builder with default managed-block comment formatting.
@@ -62,6 +69,9 @@ export class CloudflarePagesHeadersBuilder {
     this.#buildFingerprintCommentBuilder =
       dependencies.buildFingerprintCommentBuilder ??
       new BuildFingerprintCommentBuilder();
+    this.#markdownPageArtifactPathBuilder =
+      dependencies.markdownPageArtifactPathBuilder ??
+      new MarkdownPageArtifactPathBuilder();
   }
 
   /**
@@ -93,6 +103,7 @@ export class CloudflarePagesHeadersBuilder {
     );
     const conflictingRules = this.findConflictingRouteRules(
       contentOutsideManagedBlock,
+      this.createOpenNavHeaderTargets(input),
     );
 
     if (conflictingRules.length > 0) {
@@ -135,7 +146,7 @@ export class CloudflarePagesHeadersBuilder {
   ): string {
     return `${existingContent}${this.buildAppendPrefix(
       existingContent,
-    )}${this.createManagedBlock(input.buildFingerprint)}`;
+    )}${this.createManagedBlock(input)}`;
   }
 
   private buildAppendPrefix(existingContent: string): string {
@@ -164,10 +175,10 @@ export class CloudflarePagesHeadersBuilder {
     };
   }
 
-  private createManagedBlock(buildFingerprint: string): string {
+  private createManagedBlock(input: CloudflarePagesHeadersBuildInput): string {
     const marker = this.#buildFingerprintCommentBuilder.build({
       format: "line-comment",
-      buildFingerprint,
+      buildFingerprint: input.buildFingerprint,
     });
 
     return `${OPENNAV_BLOCK_BEGIN_MARKER}
@@ -193,9 +204,48 @@ ${marker.content}/*.md
 
 /.well-known/opennav.json
   Content-Type: application/json; charset=utf-8
-  X-Content-Type-Options: nosniff
+  X-Content-Type-Options: nosniff${this.createHtmlPageLinkHeaderBlocks(input)}
 ${OPENNAV_BLOCK_END_MARKER}
 `;
+  }
+
+  private createHtmlPageLinkHeaderBlocks(
+    input: CloudflarePagesHeadersBuildInput,
+  ): string {
+    if (input.baseUrl === undefined || input.pages === undefined) {
+      return "";
+    }
+
+    const baseUrl = input.baseUrl;
+    const pageBlocks = this.getHtmlPages(input.pages).map(
+      (page: OpenNavPageMetadata): string =>
+        this.createHtmlPageLinkHeaderBlock(baseUrl, page),
+    );
+
+    if (pageBlocks.length === 0) {
+      return "";
+    }
+
+    return `\n\n${pageBlocks.join("\n\n")}`;
+  }
+
+  private createHtmlPageLinkHeaderBlock(
+    baseUrl: string,
+    page: OpenNavPageMetadata,
+  ): string {
+    const markdownArtifactPath: MarkdownPageArtifactPathBuildResult =
+      this.#markdownPageArtifactPathBuilder.build({
+        baseUrl,
+        page,
+      });
+
+    return `${page.route}
+  Link: <${markdownArtifactPath.publicUrl}>; rel="alternate"; type="text/markdown"
+  Link: <${this.buildSiteIndexUrl(baseUrl)}>; rel="index"; type="text/plain"`;
+  }
+
+  private buildSiteIndexUrl(baseUrl: string): string {
+    return `${baseUrl.replace(/\/+$/, "")}/llms.txt`;
   }
 
   private createManagedBlockInvalidWarning(
@@ -225,10 +275,13 @@ ${OPENNAV_BLOCK_END_MARKER}
     return count;
   }
 
-  private findConflictingRouteRules(content: string): readonly string[] {
+  private findConflictingRouteRules(
+    content: string,
+    targets: readonly string[],
+  ): readonly string[] {
     return this.parseRules(content)
       .filter((rule: HeaderRule): boolean =>
-        this.canOverlapOpenNavHeaderTargets(rule.pattern),
+        this.canOverlapOpenNavHeaderTargets(rule.pattern, targets),
       )
       .map((rule: HeaderRule): string => rule.pattern);
   }
@@ -243,12 +296,47 @@ ${OPENNAV_BLOCK_END_MARKER}
     return nextNewlineOffset + 1;
   }
 
-  private canOverlapOpenNavHeaderTargets(pattern: string): boolean {
-    return (
-      this.patternMatchesTarget(pattern, OPENNAV_MARKDOWN_HEADER_PATTERN) ||
-      OPENNAV_EXACT_HEADER_TARGETS.some((target: string): boolean =>
-        this.patternMatchesTarget(pattern, target),
+  private createOpenNavHeaderTargets(
+    input: CloudflarePagesHeadersBuildInput,
+  ): readonly string[] {
+    return [
+      OPENNAV_MARKDOWN_HEADER_PATTERN,
+      ...OPENNAV_EXACT_HEADER_TARGETS,
+      ...this.createHtmlPageHeaderTargets(input.pages),
+    ];
+  }
+
+  private createHtmlPageHeaderTargets(
+    pages: readonly OpenNavPageMetadata[] | undefined,
+  ): readonly string[] {
+    if (pages === undefined) {
+      return [];
+    }
+
+    return this.getHtmlPages(pages).map(
+      (page: OpenNavPageMetadata): string => page.route,
+    );
+  }
+
+  private getHtmlPages(
+    pages: readonly OpenNavPageMetadata[],
+  ): readonly OpenNavPageMetadata[] {
+    return [...pages]
+      .filter(
+        (page: OpenNavPageMetadata): boolean =>
+          page.sourceContentType === "html",
       )
+      .sort((first: OpenNavPageMetadata, second: OpenNavPageMetadata): number =>
+        first.route.localeCompare(second.route),
+      );
+  }
+
+  private canOverlapOpenNavHeaderTargets(
+    pattern: string,
+    targets: readonly string[],
+  ): boolean {
+    return targets.some((target: string): boolean =>
+      this.patternMatchesTarget(pattern, target),
     );
   }
 
@@ -349,7 +437,7 @@ ${OPENNAV_BLOCK_END_MARKER}
     return `${existingContent.slice(
       0,
       managedBlock.startOffset,
-    )}${this.createManagedBlock(input.buildFingerprint)}${existingContent.slice(
+    )}${this.createManagedBlock(input)}${existingContent.slice(
       managedBlock.endOffset,
     )}`;
   }

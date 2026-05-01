@@ -249,6 +249,14 @@ describe("OpenNavStaticSite", (): void => {
 /.well-known/opennav.json
   Content-Type: application/json; charset=utf-8
   X-Content-Type-Options: nosniff
+
+/
+  Link: <https://example.com/index.md>; rel="alternate"; type="text/markdown"
+  Link: <https://example.com/llms.txt>; rel="index"; type="text/plain"
+
+/docs/about
+  Link: <https://example.com/docs/about.md>; rel="alternate"; type="text/markdown"
+  Link: <https://example.com/llms.txt>; rel="index"; type="text/plain"
 # End OpenNav AI
 `,
       });
@@ -322,6 +330,14 @@ describe("OpenNavStaticSite", (): void => {
 /.well-known/opennav.json
   Content-Type: application/json; charset=utf-8
   X-Content-Type-Options: nosniff
+
+/
+  Link: <https://example.com/index.md>; rel="alternate"; type="text/markdown"
+  Link: <https://example.com/llms.txt>; rel="index"; type="text/plain"
+
+/docs/about
+  Link: <https://example.com/docs/about.md>; rel="alternate"; type="text/markdown"
+  Link: <https://example.com/llms.txt>; rel="index"; type="text/plain"
 # End OpenNav AI
 `,
       });

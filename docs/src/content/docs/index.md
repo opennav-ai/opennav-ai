@@ -65,7 +65,8 @@ Cloudflare site, start with the static layer first: publish `llms.txt`, Markdown
 page mirrors, `/.well-known/opennav.json`, and optional Content Signals guidance
 with the same deploy. On Cloudflare Pages, `platform: "cloudflare-pages"` or
 `--platform cloudflare-pages` also creates `_headers` by default so those
-generated files ship with explicit response content types.
+generated files ship with explicit response content types and HTML routes expose
+HTTP `Link` headers for Markdown alternates and `llms.txt`.
 
 | Cloudflare path | Start here |
 | --------------- | ---------- |

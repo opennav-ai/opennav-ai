@@ -16,7 +16,7 @@ folder.
 | `*.md` page artifacts | Markdown mirrors for HTML pages, such as `docs/api/index.md`. |
 | `*.html` pages | Safe `<head>` links pointing to Markdown mirrors and `llms.txt`. |
 | `robots.txt` | Optional Content Signals guidance when configured by the caller. |
-| `_headers` | Optional platform response-header artifact. Created by default for Cloudflare Pages when `platform: "cloudflare-pages"` or `--platform cloudflare-pages` is configured. |
+| `_headers` | Optional platform response-header artifact. Created by default for Cloudflare Pages when `platform: "cloudflare-pages"` or `--platform cloudflare-pages` is configured. It sets content types for generated artifacts and per-page `Link` headers for HTML routes. |
 
 OpenNav skips unsupported files such as JavaScript, CSS, source maps, images,
 fonts, media, archives, framework payload files, platform routing files, and

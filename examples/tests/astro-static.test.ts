@@ -296,7 +296,25 @@ describe("Astro static examples", (): void => {
 
       expect(
         cloudflareHeadersExpectation.normalize(await example.readHeadersFile()),
-      ).toEqual(cloudflareHeadersExpectation.expectedNormalizedContent());
+      ).toEqual(
+        cloudflareHeadersExpectation.expectedNormalizedContent({
+          siteUrl: astroSixStaticExample.siteUrl,
+          pages: [
+            {
+              route: "/",
+              markdownPath: "index.md",
+            },
+            {
+              route: "/docs/",
+              markdownPath: "docs/index.md",
+            },
+            {
+              route: "/guides/setup/",
+              markdownPath: "guides/setup/index.md",
+            },
+          ],
+        }),
+      );
     } finally {
       await example.restoreOpenNavConfig(openNavConfig);
     }

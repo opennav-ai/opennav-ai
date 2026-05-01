@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
 import { CloudflarePagesHeadersBuilder } from "./cloudflare-pages-headers-builder";
 
 const BUILD_FINGERPRINT = "sha256:build";
@@ -29,6 +30,80 @@ const MANAGED_BLOCK = `# Begin OpenNav AI
   X-Content-Type-Options: nosniff
 # End OpenNav AI
 `;
+const MANAGED_BLOCK_WITH_PAGE_LINKS = `# Begin OpenNav AI
+# opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="${BUILD_FINGERPRINT}" manifest="/.well-known/opennav.json"
+/*.md
+  Content-Type: text/markdown; charset=utf-8
+  X-Content-Type-Options: nosniff
+
+/llms.txt
+  Content-Type: text/plain; charset=utf-8
+  X-Content-Type-Options: nosniff
+
+/llms-full.txt
+  Content-Type: text/plain; charset=utf-8
+  X-Content-Type-Options: nosniff
+
+/.well-known/llms.txt
+  Content-Type: text/plain; charset=utf-8
+  X-Content-Type-Options: nosniff
+
+/.well-known/llms-full.txt
+  Content-Type: text/plain; charset=utf-8
+  X-Content-Type-Options: nosniff
+
+/.well-known/opennav.json
+  Content-Type: application/json; charset=utf-8
+  X-Content-Type-Options: nosniff
+
+/
+  Link: <https://example.com/index.md>; rel="alternate"; type="text/markdown"
+  Link: <https://example.com/llms.txt>; rel="index"; type="text/plain"
+
+/docs/about
+  Link: <https://example.com/docs/about.md>; rel="alternate"; type="text/markdown"
+  Link: <https://example.com/llms.txt>; rel="index"; type="text/plain"
+
+/guides/
+  Link: <https://example.com/guides/index.md>; rel="alternate"; type="text/markdown"
+  Link: <https://example.com/llms.txt>; rel="index"; type="text/plain"
+# End OpenNav AI
+`;
+
+const PAGES: readonly OpenNavPageMetadata[] = [
+  {
+    sourceFilePath: "index.html",
+    sourceContentType: "html",
+    route: "/",
+    canonicalUrl: "https://example.com/",
+    title: "Home",
+    description: "Start here.",
+  },
+  {
+    sourceFilePath: "docs/about.html",
+    sourceContentType: "html",
+    route: "/docs/about",
+    canonicalUrl: "https://example.com/docs/about",
+    title: "About",
+    description: "Learn about OpenNav.",
+  },
+  {
+    sourceFilePath: "guides/index.html",
+    sourceContentType: "html",
+    route: "/guides/",
+    canonicalUrl: "https://example.com/guides/",
+    title: "Guides",
+    description: "Read the guides.",
+  },
+  {
+    sourceFilePath: "reference.md",
+    sourceContentType: "markdown",
+    route: "/reference",
+    canonicalUrl: "https://example.com/reference",
+    title: "Reference",
+    description: "API reference.",
+  },
+];
 
 describe("CloudflarePagesHeadersBuilder", (): void => {
   it("creates an OpenNav-managed Cloudflare Pages headers file", (): void => {
@@ -41,6 +116,24 @@ describe("CloudflarePagesHeadersBuilder", (): void => {
         {
           outputFilePath: "_headers",
           content: MANAGED_BLOCK,
+        },
+      ],
+      warnings: [],
+    });
+  });
+
+  it("creates per-page Link headers for HTML Markdown alternates and the site index", (): void => {
+    const result = new CloudflarePagesHeadersBuilder().build({
+      buildFingerprint: BUILD_FINGERPRINT,
+      baseUrl: "https://example.com",
+      pages: PAGES,
+    });
+
+    expect(result).toEqual({
+      files: [
+        {
+          outputFilePath: "_headers",
+          content: MANAGED_BLOCK_WITH_PAGE_LINKS,
         },
       ],
       warnings: [],
@@ -211,6 +304,32 @@ ${MANAGED_BLOCK}
           context: {
             filePath: "_headers",
             conflictingRules: ["/*"],
+          },
+        },
+      ],
+    });
+  });
+
+  it("skips caller-owned page routes that overlap with OpenNav Link headers", (): void => {
+    const result = new CloudflarePagesHeadersBuilder().build({
+      buildFingerprint: BUILD_FINGERPRINT,
+      baseUrl: "https://example.com",
+      pages: PAGES,
+      existingContent: `/docs/about
+  Cache-Control: no-store
+`,
+    });
+
+    expect(result).toEqual({
+      files: [],
+      warnings: [
+        {
+          code: "STATIC_HEADERS_ROUTE_CONFLICT",
+          message:
+            "Existing _headers route rules overlap with OpenNav static headers.",
+          context: {
+            filePath: "_headers",
+            conflictingRules: ["/docs/about"],
           },
         },
       ],

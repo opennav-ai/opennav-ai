@@ -142,9 +142,11 @@ export class Engine {
     }
 
     const staticHeadersResult = await staticHeadersEngine.build({
+      baseUrl,
       buildFingerprint,
       outputDirectory: input.outputDirectory,
       filePaths: input.filePaths,
+      pages: fileMetadataResult.value.pageMetadata,
       platform: input.platform,
       staticHeaders: input.staticHeaders,
     });

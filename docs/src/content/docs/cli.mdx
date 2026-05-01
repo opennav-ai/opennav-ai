@@ -71,8 +71,10 @@ Optional. Static hosting platform for platform-specific generated files.
 
 Supported values are `cloudflare-pages`. When `--platform cloudflare-pages` is
 passed, OpenNav creates or updates the Cloudflare Pages `_headers` file by
-default so generated Markdown, `llms.txt`, and manifest files deploy with
-explicit response content types.
+default. That file gives generated Markdown, `llms.txt`, and manifest files
+explicit response content types, and adds per-page HTTP `Link` headers on HTML
+routes so agents can discover each page's Markdown alternate and the root
+`llms.txt` index from response headers.
 
 If an existing caller-owned `_headers` route overlaps OpenNav's generated
 routes, OpenNav leaves `_headers` untouched and reports a warning.
