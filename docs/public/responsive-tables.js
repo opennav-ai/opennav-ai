@@ -4,7 +4,9 @@ class ResponsiveMarkdownTables {
   }
 
   enhance() {
-    const tables = this.root.querySelectorAll(".sl-markdown-content table");
+    const tables = this.root.querySelectorAll(
+      ".sl-markdown-content table:not([data-opennav-responsive-table='skip'])",
+    );
 
     if (tables.length === 0) {
       return;

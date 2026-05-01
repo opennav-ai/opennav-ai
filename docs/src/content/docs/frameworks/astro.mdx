@@ -79,6 +79,72 @@ interface OpenNavAstroOptions {
 }
 ```
 
+<div
+  class="opennav-options-table-preview not-content"
+  aria-label="OpenNavAstro options table prototype"
+>
+  <table data-opennav-responsive-table="skip">
+    <thead>
+      <tr>
+        <th scope="col">Property</th>
+        <th scope="col">Type</th>
+        <th scope="col">Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          <code>siteName</code>
+        </td>
+        <td>
+          <code>string</code>
+        </td>
+        <td>
+          Required. Human-readable site or docs name written into generated
+          OpenNav files, including <code>dist/llms.txt</code>, page Markdown
+          files, and <code>dist/.well-known/opennav.json</code>.
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <code>siteUrl</code>
+        </td>
+        <td>
+          <code>string</code>
+        </td>
+        <td>
+          Optional when Astro's top-level <code>site</code> config is set.
+          Public absolute URL used for generated links and manifest URLs.
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <code>mode</code>
+        </td>
+        <td>
+          <code>"static"</code>
+        </td>
+        <td>
+          Optional. Static mode is the supported Astro integration mode and is
+          used when <code>mode</code> is omitted.
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <code>accessGuidance</code>
+        </td>
+        <td>
+          <code>OpenNavAccessGuidance</code>
+        </td>
+        <td>
+          Optional. Controls whether OpenNav creates or updates its managed
+          Content Signals block in <code>dist/robots.txt</code>.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
 ### `siteName`
 
 Required. Human-readable site or docs name written into generated OpenNav
