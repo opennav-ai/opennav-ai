@@ -40,7 +40,23 @@ export default defineConfig({
         alt: "OpenNav AI",
       },
       plugins: [starlightThemeRapide(), lightOnlyDocsPlugin()],
-      social: [],
+      social: [
+        {
+          icon: "x.com",
+          label: "OpenNav AI on X",
+          href: "https://x.com/OpenNavAI",
+        },
+        {
+          icon: "x.com",
+          label: "Joshua Bellew on X",
+          href: "https://x.com/manofyear93",
+        },
+        {
+          icon: "email",
+          label: "Email Joshua Bellew",
+          href: "mailto:joshua@opennav.ai",
+        },
+      ],
       expressiveCode: {
         themes: ["light-plus"],
         useStarlightDarkModeSwitch: false,
