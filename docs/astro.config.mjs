@@ -1,5 +1,8 @@
 import starlight from "@astrojs/starlight";
 import { OpenNavAstro } from "@opennav-ai/opennav/astro";
+import sitemap from "@astrojs/sitemap";
+import { copyFile } from "node:fs/promises";
+import { join } from "node:path";
 import { defineConfig } from "astro/config";
 import starlightThemeRapide from "starlight-theme-rapide";
 
@@ -26,6 +29,22 @@ function lightOnlyDocsPlugin() {
             "./src/styles/light-only.css",
           ],
         });
+      },
+    },
+  };
+}
+
+function conventionalSitemapPlugin() {
+  return {
+    name: "opennav-conventional-sitemap",
+    hooks: {
+      "astro:build:done": async ({ dir }) => {
+        const outputDirectory = dir.pathname;
+
+        await copyFile(
+          join(outputDirectory, "sitemap-index.xml"),
+          join(outputDirectory, "sitemap.xml"),
+        );
       },
     },
   };
@@ -221,6 +240,8 @@ export default defineConfig({
         },
       ],
     }),
+    sitemap(),
+    conventionalSitemapPlugin(),
     OpenNavAstro({
       siteName: "OpenNav AI",
       mode: "static",
