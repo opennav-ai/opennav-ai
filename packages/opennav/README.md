@@ -7,8 +7,8 @@ your static site build and it adds predictable files, Markdown page mirrors,
 machine-checkable compatibility metadata, and safe page links that agents can
 discover without reverse-engineering your visual layout.
 
-- Website: [opennav-ai.com](https://opennav-ai.com)
-- Docs: [docs.opennav-ai.com](https://docs.opennav-ai.com)
+- Website: [OpenNav.ai](https://OpenNav.ai)
+- Docs: [docs.opennav.ai](https://docs.opennav.ai)
 - Package: `@opennav-ai/opennav`
 
 ## Install
@@ -252,8 +252,8 @@ change server behavior.
 
 ## Learn More
 
-- Getting started: [docs.opennav-ai.com/getting-started](https://docs.opennav-ai.com/getting-started/)
-- SDK reference: [docs.opennav-ai.com/sdk](https://docs.opennav-ai.com/sdk/)
-- Astro guide: [docs.opennav-ai.com/frameworks/astro](https://docs.opennav-ai.com/frameworks/astro/)
-- Next.js guide: [docs.opennav-ai.com/frameworks/next](https://docs.opennav-ai.com/frameworks/next/)
-- Server-side roadmap: [docs.opennav-ai.com/frameworks/server-side](https://docs.opennav-ai.com/frameworks/server-side/)
+- Getting started: [docs.opennav.ai/getting-started](https://docs.opennav.ai/getting-started/)
+- SDK reference: [docs.opennav.ai/sdk](https://docs.opennav.ai/sdk/)
+- Astro guide: [docs.opennav.ai/frameworks/astro](https://docs.opennav.ai/frameworks/astro/)
+- Next.js guide: [docs.opennav.ai/frameworks/next](https://docs.opennav.ai/frameworks/next/)
+- Server-side roadmap: [docs.opennav.ai/frameworks/server-side](https://docs.opennav.ai/frameworks/server-side/)

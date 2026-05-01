@@ -19,5 +19,5 @@ npm run build
 The static site is written to `dist/`. Cloudflare Pages can use this folder as
 the project root, run `npm run build`, and publish `dist/`.
 
-The current configured site URL is `https://docs.opennav-ai.com`. Update
+The current configured site URL is `https://docs.opennav.ai`. Update
 `astro.config.mjs` if the docs domain changes before launch.

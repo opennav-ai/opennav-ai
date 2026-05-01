@@ -27,7 +27,7 @@ function lightOnlyDocsPlugin() {
 }
 
 export default defineConfig({
-  site: "https://docs.opennav-ai.com",
+  site: "https://docs.opennav.ai",
   output: "static",
   integrations: [
     starlight({

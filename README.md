@@ -34,7 +34,8 @@ OpenNav does not call an LLM, crawl the public internet, edit your source files,
 or deploy your site. Your existing build and hosting workflow stays in charge.
 
 - Package: `@opennav-ai/opennav`
-- Docs site: [docs.opennav-ai.com](https://docs.opennav-ai.com)
+- Website: [OpenNav.ai](https://OpenNav.ai)
+- Docs site: [docs.opennav.ai](https://docs.opennav.ai)
 - Local docs source: [`docs/`](./docs/)
 
 ## Start Quickly
@@ -266,14 +267,14 @@ can serve HTML to people and Markdown to agents from the same URL.
 
 ## Learn More
 
-- Getting started: [docs.opennav-ai.com/getting-started](https://docs.opennav-ai.com/getting-started/)
-- CLI reference: [docs.opennav-ai.com/cli](https://docs.opennav-ai.com/cli/)
-- SDK reference: [docs.opennav-ai.com/sdk](https://docs.opennav-ai.com/sdk/)
-- Astro guide: [docs.opennav-ai.com/frameworks/astro](https://docs.opennav-ai.com/frameworks/astro/)
-- Next.js guide: [docs.opennav-ai.com/frameworks/next](https://docs.opennav-ai.com/frameworks/next/)
-- Generated files reference: [docs.opennav-ai.com/reference/generated-files](https://docs.opennav-ai.com/reference/generated-files/)
-- Access guidance reference: [docs.opennav-ai.com/reference/access-guidance](https://docs.opennav-ai.com/reference/access-guidance/)
-- Server-side roadmap: [docs.opennav-ai.com/frameworks/server-side](https://docs.opennav-ai.com/frameworks/server-side/)
+- Getting started: [docs.opennav.ai/getting-started](https://docs.opennav.ai/getting-started/)
+- CLI reference: [docs.opennav.ai/cli](https://docs.opennav.ai/cli/)
+- SDK reference: [docs.opennav.ai/sdk](https://docs.opennav.ai/sdk/)
+- Astro guide: [docs.opennav.ai/frameworks/astro](https://docs.opennav.ai/frameworks/astro/)
+- Next.js guide: [docs.opennav.ai/frameworks/next](https://docs.opennav.ai/frameworks/next/)
+- Generated files reference: [docs.opennav.ai/reference/generated-files](https://docs.opennav.ai/reference/generated-files/)
+- Access guidance reference: [docs.opennav.ai/reference/access-guidance](https://docs.opennav.ai/reference/access-guidance/)
+- Server-side roadmap: [docs.opennav.ai/frameworks/server-side](https://docs.opennav.ai/frameworks/server-side/)
 - Cloudflare Agent Readiness: [blog.cloudflare.com/agent-readiness](https://blog.cloudflare.com/agent-readiness/)
 
 ## Workspace
