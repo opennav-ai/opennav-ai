@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@astrojs/starlight": "^0.38.4",
-    "@opennav-ai/opennav": "file:../packages/opennav",
+    "@opennav-ai/opennav": "^0.1.1",
     "astro": "^6.2.0",
     "starlight-theme-rapide": "^0.5.2"
   },

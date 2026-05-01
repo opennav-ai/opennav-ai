@@ -224,6 +224,8 @@ export default defineConfig({
     OpenNavAstro({
       siteName: "OpenNav AI",
       mode: "static",
+      platform: "cloudflare-pages",
+      staticHeaders: { enabled: true },
       accessGuidance: {
         contentSignals: {
           search: "allow",
