@@ -11,6 +11,8 @@ function lightOnlyDocsPlugin() {
         updateConfig({
           components: {
             ...(config.components ?? {}),
+            Header: "./src/components/OpenNavHeader.astro",
+            SiteTitle: "./src/components/OpenNavSiteTitle.astro",
             ThemeProvider: "./src/components/LightThemeProvider.astro",
             ThemeSelect: "./src/components/NoThemeSelect.astro",
           },
