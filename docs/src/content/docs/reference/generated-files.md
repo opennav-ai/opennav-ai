@@ -10,7 +10,7 @@ folder.
 | ---- | ------- |
 | `llms.txt` | Root agent-readable site index. |
 | `.well-known/llms.txt` | Well-known copy of the site index. |
-| `llms-full.txt` | Combined readable page content when the site fits within the configured token limit. |
+| `llms-full.txt` | Combined readable page content, capped at complete page blocks when the configured token limit is reached. |
 | `.well-known/llms-full.txt` | Well-known copy of the full readable content file. |
 | `.well-known/opennav.json` | Static compatibility manifest with artifact paths and build fingerprint. |
 | `*.md` page artifacts | Markdown mirrors for HTML pages, such as `docs/api/index.md`. By default these are converted from the whole HTML `<body>`; `contentExtraction.stripLayout` can remove documented layout elements first. |

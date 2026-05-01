@@ -32,10 +32,10 @@ export interface LlmsFullTxtGenerateInput {
   /**
    * Maximum allowed token count for the complete `llms-full.txt` content.
    *
-   * The caller must provide this value explicitly. If the final complete file
-   * would exceed this limit according to the configured token counter, the
-   * generator skips the whole file instead of truncating or partially writing
-   * page bodies.
+   * The caller must provide this value explicitly. If adding the next complete
+   * page block would exceed this limit according to the configured token
+   * counter, the generator stops before that page and reports a warning instead
+   * of truncating the page body mid-block.
    */
   readonly maxContentTokens: number;
 

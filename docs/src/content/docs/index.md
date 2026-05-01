@@ -90,7 +90,7 @@ let agents discover, read, and respect a site without scraping the visual HTML.
 | File or edit | What agents can use it for |
 | ------------ | -------------------------- |
 | `llms.txt` | Discover the readable site index. |
-| `llms-full.txt` | Read combined page content when the site fits the configured limit. |
+| `llms-full.txt` | Read combined page content, capped at complete page blocks when needed. |
 | `*.md` page artifacts | Read page content without parsing visual HTML. |
 | `/.well-known/opennav.json` | Check static compatibility metadata and generated artifact paths. |
 | HTML resource links | Discover Markdown mirrors and `llms.txt` from each page. |
