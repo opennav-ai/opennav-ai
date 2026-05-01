@@ -57,6 +57,40 @@ body {
   background-attachment: fixed;
 }
 
+html[data-has-hero] body {
+  background-image:
+    linear-gradient(
+      90deg,
+      var(--opennav-docs-page-bg) 0%,
+      rgb(247 246 241 / 0.96) 29%,
+      rgb(247 246 241 / 0.62) 52%,
+      rgb(247 246 241 / 0.18) 72%
+    ),
+    linear-gradient(
+      180deg,
+      rgb(247 246 241 / 0.76) 0%,
+      rgb(247 246 241 / 0.18) 24%,
+      rgb(247 246 241 / 0.18) 72%,
+      rgb(247 246 241 / 0.86) 100%
+    ),
+    url("/site/opennav-compass-document-layers-desktop.webp");
+}
+
+html[data-has-hero]:not([data-has-sidebar]) {
+  --sl-content-width: 52rem;
+}
+
+html[data-has-hero] .content-panel > .sl-container {
+  max-width: 52rem;
+  margin-inline: max(1rem, calc((100vw - 76rem) / 2)) auto;
+  background: linear-gradient(
+    90deg,
+    rgb(247 246 241 / 0.86) 0%,
+    rgb(247 246 241 / 0.78) 72%,
+    rgb(247 246 241 / 0) 100%
+  );
+}
+
 .page,
 .main-frame,
 .main-pane,
