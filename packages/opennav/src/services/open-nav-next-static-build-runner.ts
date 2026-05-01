@@ -79,7 +79,13 @@ export class OpenNavNextStaticBuildRunner {
       siteUrl: this.options.siteUrl,
       outputDirectory: resolve(outputDirectoryResult.value),
       preset: "next-export",
+      ...(this.options.platform === undefined
+        ? {}
+        : { platform: this.options.platform }),
       accessGuidance: this.options.accessGuidance,
+      ...(this.options.staticHeaders === undefined
+        ? {}
+        : { staticHeaders: this.options.staticHeaders }),
     });
 
     return await staticSite.build();

@@ -1,11 +1,13 @@
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { CloudflareHeadersExpectation } from "./helpers/cloudflare-headers-expectation.ts";
 import { ExampleBuildTestRunner } from "./helpers/example-build-test-runner.ts";
 import { ExampleOutputSnapshot } from "./helpers/example-output-snapshot.ts";
 import { PackedOpenNavPackages } from "./helpers/packed-opennav-packages.ts";
 
 class StaticSiteSdkExample {
+  private readonly buildScriptFilePath = "scripts/build.ts";
   private readonly exampleDirectory = "examples/static-site-sdk";
   private readonly exampleName = "Static site SDK";
   private readonly outputDirectory = "dist";
@@ -49,6 +51,55 @@ class StaticSiteSdkExample {
    */
   public async runTypecheck(): Promise<void> {
     await this.runner.runTypecheck(this.exampleDirectory, this.exampleName);
+  }
+
+  /**
+   * Reads the checked-in SDK example build script.
+   *
+   * @returns Exact UTF-8 content of `scripts/build.ts`.
+   */
+  public async readBuildScript(): Promise<string> {
+    return await this.runner.readExampleFile(
+      this.exampleDirectory,
+      this.buildScriptFilePath,
+    );
+  }
+
+  /**
+   * Restores the SDK example build script after a temporary test edit.
+   *
+   * @param content - Exact build script content previously read from disk.
+   * @returns Promise that resolves after `scripts/build.ts` is restored.
+   */
+  public async restoreBuildScript(content: string): Promise<void> {
+    await this.runner.writeExampleFile(
+      this.exampleDirectory,
+      this.buildScriptFilePath,
+      content,
+    );
+  }
+
+  /**
+   * Writes a temporary SDK build script with Cloudflare Pages configured.
+   *
+   * @param content - Checked-in SDK build script content to extend.
+   * @returns Promise that resolves after the temporary script is written.
+   */
+  public async writeCloudflareBuildScript(content: string): Promise<void> {
+    const cloudflareContent = content.replace(
+      '  outputDirectory: join(exampleDirectory, "dist"),\n};',
+      '  outputDirectory: join(exampleDirectory, "dist"),\n  platform: "cloudflare-pages",\n};',
+    );
+
+    if (cloudflareContent === content) {
+      throw new Error("Static SDK example build script shape changed.");
+    }
+
+    await this.runner.writeExampleFile(
+      this.exampleDirectory,
+      this.buildScriptFilePath,
+      cloudflareContent,
+    );
   }
 
   /**
@@ -146,6 +197,18 @@ class StaticSiteSdkExample {
   }
 
   /**
+   * Reads the generated Cloudflare Pages `_headers` file.
+   *
+   * @returns Exact UTF-8 content of `dist/_headers`.
+   */
+  public async readHeadersFile(): Promise<string> {
+    return await this.runner.readExampleFile(
+      this.exampleDirectory,
+      join(this.outputDirectory, "_headers"),
+    );
+  }
+
+  /**
    * Reads the current static output tree as an exact snapshot.
    *
    * @returns Output file paths and exact UTF-8 contents.
@@ -169,6 +232,7 @@ describe("static site SDK example", (): void => {
   );
   const runner = new ExampleBuildTestRunner(repositoryDirectory);
   const example = new StaticSiteSdkExample(runner);
+  const cloudflareHeadersExpectation = new CloudflareHeadersExpectation();
   let packages: PackedOpenNavPackages | undefined;
 
   beforeAll(async (): Promise<void> => {
@@ -197,5 +261,28 @@ describe("static site SDK example", (): void => {
     expect(await example.readOutputSnapshot()).toMatchSnapshot(
       "OpenNav static SDK output",
     );
+  }, 600_000);
+
+  it("writes Cloudflare Pages headers through the packed static SDK", async (): Promise<void> => {
+    if (packages === undefined) {
+      throw new Error("Packed OpenNav packages were not created.");
+    }
+
+    await example.install(packages);
+
+    const buildScript = await example.readBuildScript();
+
+    try {
+      await example.writeCloudflareBuildScript(buildScript);
+      await example.runTypecheck();
+      await example.writeBaselineOutput();
+      await example.runOpenNavBuild();
+
+      expect(
+        cloudflareHeadersExpectation.normalize(await example.readHeadersFile()),
+      ).toEqual(cloudflareHeadersExpectation.expectedNormalizedContent());
+    } finally {
+      await example.restoreBuildScript(buildScript);
+    }
   }, 600_000);
 });

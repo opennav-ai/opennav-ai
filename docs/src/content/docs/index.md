@@ -63,7 +63,9 @@ step before that folder ships.
 If you are exploring Workers, AI Gateway, or agent access patterns around a
 Cloudflare site, start with the static layer first: publish `llms.txt`, Markdown
 page mirrors, `/.well-known/opennav.json`, and optional Content Signals guidance
-with the same deploy.
+with the same deploy. On Cloudflare Pages, `platform: "cloudflare-pages"` or
+`--platform cloudflare-pages` also creates `_headers` by default so those
+generated files ship with explicit response content types.
 
 | Cloudflare path | Start here |
 | --------------- | ---------- |
@@ -92,6 +94,7 @@ let agents discover, read, and respect a site without scraping the visual HTML.
 | `/.well-known/opennav.json` | Check static compatibility metadata and generated artifact paths. |
 | HTML resource links | Discover Markdown mirrors and `llms.txt` from each page. |
 | `robots.txt` guidance | Read configured Content Signals preferences when provided. |
+| `_headers` | Use Cloudflare Pages response headers when `platform: "cloudflare-pages"` is configured. |
 
 ## Pick Your Hook
 

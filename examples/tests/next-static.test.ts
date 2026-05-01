@@ -1,6 +1,7 @@
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { CloudflareHeadersExpectation } from "./helpers/cloudflare-headers-expectation.ts";
 import { ExampleBuildTestRunner } from "./helpers/example-build-test-runner.ts";
 import { ExampleOutputSnapshot } from "./helpers/example-output-snapshot.ts";
 import { PackedOpenNavPackages } from "./helpers/packed-opennav-packages.ts";
@@ -121,6 +122,29 @@ class NextStaticExample {
   }
 
   /**
+   * Writes a temporary Next config with Cloudflare Pages configured.
+   *
+   * @param content - Checked-in Next config content to extend.
+   * @returns Promise that resolves after the temporary config is written.
+   */
+  public async writeCloudflareOpenNavConfig(content: string): Promise<void> {
+    const cloudflareContent = content.replace(
+      '  mode: "static",\n})(nextConfig);',
+      '  mode: "static",\n  platform: "cloudflare-pages",\n})(nextConfig);',
+    );
+
+    if (cloudflareContent === content) {
+      throw new Error("Next example OpenNav config shape changed.");
+    }
+
+    await this.runner.writeExampleFile(
+      this.config.directory,
+      this.config.configFilePath,
+      cloudflareContent,
+    );
+  }
+
+  /**
    * Runs Next with the current `next.config.mjs`.
    *
    * @returns Promise that resolves after static files are emitted.
@@ -134,6 +158,18 @@ class NextStaticExample {
       this.config.directory,
       this.config.name,
       "build",
+    );
+  }
+
+  /**
+   * Reads the generated Cloudflare Pages `_headers` file.
+   *
+   * @returns Exact UTF-8 content of the output `_headers` file.
+   */
+  public async readHeadersFile(): Promise<string> {
+    return await this.runner.readExampleFile(
+      this.config.directory,
+      join(this.config.outputDirectory, "_headers"),
     );
   }
 
@@ -301,18 +337,18 @@ describe("Next static examples", (): void => {
   );
   const runner = new ExampleBuildTestRunner(repositoryDirectory);
   let packages: PackedOpenNavPackages | undefined;
-  const examples: readonly NextStaticExampleConfig[] = [
-    {
-      name: "Next 16 static",
-      directory: "examples/next-16-static",
-      outputDirectory: "out",
-      configFilePath: "next.config.ts",
-      expectedOpenNavOutputFilePaths: [
-        "_not-found.md",
-        ...standardOpenNavOutputFilePaths.slice(0, 3),
-        ...standardOpenNavOutputFilePaths.slice(3),
-      ],
-      baselineConfigContent: `import { dirname } from "node:path";
+  const cloudflareHeadersExpectation = new CloudflareHeadersExpectation();
+  const nextSixteenStaticExample: NextStaticExampleConfig = {
+    name: "Next 16 static",
+    directory: "examples/next-16-static",
+    outputDirectory: "out",
+    configFilePath: "next.config.ts",
+    expectedOpenNavOutputFilePaths: [
+      "_not-found.md",
+      ...standardOpenNavOutputFilePaths.slice(0, 3),
+      ...standardOpenNavOutputFilePaths.slice(3),
+    ],
+    baselineConfigContent: `import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { NextConfig } from "next";
 
@@ -327,7 +363,9 @@ const nextConfig = {
 
 export default nextConfig;
 `,
-    },
+  };
+  const examples: readonly NextStaticExampleConfig[] = [
+    nextSixteenStaticExample,
     {
       name: "Next 15 static",
       directory: "examples/next-15-static",
@@ -416,6 +454,30 @@ export default nextConfig;
       }
     }, 600_000);
   }
+
+  it("writes Cloudflare Pages headers through the packed Next SDK", async (): Promise<void> => {
+    if (packages === undefined) {
+      throw new Error("Packed OpenNav packages were not created.");
+    }
+
+    const example = new NextStaticExample(nextSixteenStaticExample, runner);
+
+    await example.install(packages);
+
+    const openNavConfig = await example.readOpenNavConfig();
+
+    try {
+      await example.writeCloudflareOpenNavConfig(openNavConfig);
+      await example.runTypecheck();
+      await example.runBuild();
+
+      expect(
+        cloudflareHeadersExpectation.normalize(await example.readHeadersFile()),
+      ).toEqual(cloudflareHeadersExpectation.expectedNormalizedContent());
+    } finally {
+      await example.restoreOpenNavConfig(openNavConfig);
+    }
+  }, 600_000);
 });
 
 function filterOpenNavOutputFilePaths(

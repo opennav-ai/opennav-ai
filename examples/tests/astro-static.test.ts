@@ -1,6 +1,7 @@
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { CloudflareHeadersExpectation } from "./helpers/cloudflare-headers-expectation.ts";
 import { ExampleBuildTestRunner } from "./helpers/example-build-test-runner.ts";
 import { ExampleOutputSnapshot } from "./helpers/example-output-snapshot.ts";
 import { PackedOpenNavPackages } from "./helpers/packed-opennav-packages.ts";
@@ -14,6 +15,7 @@ interface AstroStaticExampleConfig {
 
 class AstroStaticExample {
   private readonly baselineConfigFilePath = "astro.config.opennav-baseline.mjs";
+  private readonly openNavConfigFilePath = "astro.config.ts";
   private readonly config: AstroStaticExampleConfig;
   private readonly runner: ExampleBuildTestRunner;
 
@@ -60,6 +62,55 @@ class AstroStaticExample {
    */
   public async runTypecheck(): Promise<void> {
     await this.runner.runTypecheck(this.config.directory, this.config.name);
+  }
+
+  /**
+   * Reads the checked-in Astro config that installs `OpenNavAstro(...)`.
+   *
+   * @returns Exact UTF-8 content of `astro.config.ts`.
+   */
+  public async readOpenNavConfig(): Promise<string> {
+    return await this.runner.readExampleFile(
+      this.config.directory,
+      this.openNavConfigFilePath,
+    );
+  }
+
+  /**
+   * Restores the checked-in Astro config after a temporary test edit.
+   *
+   * @param content - Exact Astro config content previously read from disk.
+   * @returns Promise that resolves after `astro.config.ts` is restored.
+   */
+  public async restoreOpenNavConfig(content: string): Promise<void> {
+    await this.runner.writeExampleFile(
+      this.config.directory,
+      this.openNavConfigFilePath,
+      content,
+    );
+  }
+
+  /**
+   * Writes a temporary Astro config with Cloudflare Pages configured.
+   *
+   * @param content - Checked-in Astro config content to extend.
+   * @returns Promise that resolves after the temporary config is written.
+   */
+  public async writeCloudflareOpenNavConfig(content: string): Promise<void> {
+    const cloudflareContent = content.replace(
+      '  mode: "static",\n});',
+      '  mode: "static",\n  platform: "cloudflare-pages",\n});',
+    );
+
+    if (cloudflareContent === content) {
+      throw new Error("Astro example OpenNav config shape changed.");
+    }
+
+    await this.runner.writeExampleFile(
+      this.config.directory,
+      this.openNavConfigFilePath,
+      cloudflareContent,
+    );
   }
 
   /**
@@ -131,6 +182,18 @@ export default defineConfig({
   }
 
   /**
+   * Reads the generated Cloudflare Pages `_headers` file.
+   *
+   * @returns Exact UTF-8 content of the output `_headers` file.
+   */
+  public async readHeadersFile(): Promise<string> {
+    return await this.runner.readExampleFile(
+      this.config.directory,
+      join(this.config.outputDirectory, "_headers"),
+    );
+  }
+
+  /**
    * Reads the current Astro output tree as an exact snapshot.
    *
    * @returns Output file paths and exact UTF-8 contents.
@@ -154,13 +217,15 @@ describe("Astro static examples", (): void => {
   );
   const runner = new ExampleBuildTestRunner(repositoryDirectory);
   let packages: PackedOpenNavPackages | undefined;
+  const cloudflareHeadersExpectation = new CloudflareHeadersExpectation();
+  const astroSixStaticExample: AstroStaticExampleConfig = {
+    name: "Astro 6 static",
+    directory: "examples/astro-6-static",
+    outputDirectory: "dist",
+    siteUrl: "https://astro-6.example.com",
+  };
   const examples: readonly AstroStaticExampleConfig[] = [
-    {
-      name: "Astro 6 static",
-      directory: "examples/astro-6-static",
-      outputDirectory: "dist",
-      siteUrl: "https://astro-6.example.com",
-    },
+    astroSixStaticExample,
     {
       name: "Astro 5 static",
       directory: "examples/astro-5-static",
@@ -212,4 +277,28 @@ describe("Astro static examples", (): void => {
       }
     }, 600_000);
   }
+
+  it("writes Cloudflare Pages headers through the packed Astro SDK", async (): Promise<void> => {
+    if (packages === undefined) {
+      throw new Error("Packed OpenNav packages were not created.");
+    }
+
+    const example = new AstroStaticExample(astroSixStaticExample, runner);
+
+    await example.install(packages);
+
+    const openNavConfig = await example.readOpenNavConfig();
+
+    try {
+      await example.writeCloudflareOpenNavConfig(openNavConfig);
+      await example.runTypecheck();
+      await example.runOpenNavBuild();
+
+      expect(
+        cloudflareHeadersExpectation.normalize(await example.readHeadersFile()),
+      ).toEqual(cloudflareHeadersExpectation.expectedNormalizedContent());
+    } finally {
+      await example.restoreOpenNavConfig(openNavConfig);
+    }
+  }, 600_000);
 });

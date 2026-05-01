@@ -67,7 +67,13 @@ export class OpenNavAstroStaticBuildRunner {
       siteUrl,
       outputDirectory: fileURLToPath(input.dir),
       preset: "astro",
+      ...(this.options.platform === undefined
+        ? {}
+        : { platform: this.options.platform }),
       accessGuidance: this.options.accessGuidance,
+      ...(this.options.staticHeaders === undefined
+        ? {}
+        : { staticHeaders: this.options.staticHeaders }),
     });
     const result = await staticSite.build();
 

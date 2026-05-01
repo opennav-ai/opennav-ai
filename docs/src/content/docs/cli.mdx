@@ -33,6 +33,8 @@ opennav build --static \
   --site-url <url> \
   --site-name <name> \
   [--preset <preset>] \
+  [--platform <platform>] \
+  [--static-headers] \
   [--dry-run]
 ```
 
@@ -62,6 +64,31 @@ and metadata.
 Optional. Framework hint for static-folder conventions.
 
 Supported values are `astro` and `next-export`.
+
+### `--platform <platform>`
+
+Optional. Static hosting platform for platform-specific generated files.
+
+Supported values are `cloudflare-pages`. When `--platform cloudflare-pages` is
+passed, OpenNav creates or updates the Cloudflare Pages `_headers` file by
+default so generated Markdown, `llms.txt`, and manifest files deploy with
+explicit response content types.
+
+If an existing caller-owned `_headers` route overlaps OpenNav's generated
+routes, OpenNav leaves `_headers` untouched and reports a warning.
+
+Omit `--platform` for a generic static build. Additional platform values will
+be added as OpenNav gains first-class support for more static hosts.
+
+### `--static-headers`
+
+Optional. Explicitly requests the platform response-header artifact.
+
+For Cloudflare Pages, this is already enabled by default when
+`--platform cloudflare-pages` is passed. The flag is mainly useful when you want
+the command to fail if no platform was supplied, because static header files are
+platform-specific. Passing `--static-headers` without `--platform` aborts with a
+clear error.
 
 ### `--dry-run`
 

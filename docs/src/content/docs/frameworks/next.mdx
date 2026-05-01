@@ -49,6 +49,7 @@ export default OpenNavNext({
   siteName: "Example Docs",
   siteUrl: "https://example.com",
   mode: "static",
+  platform: "cloudflare-pages",
   accessGuidance: {
     contentSignals: {
       search: "allow",
@@ -87,6 +88,10 @@ interface OpenNavNextOptions {
   readonly siteUrl: string;
   readonly mode?: "static";
   readonly outputDirectory?: string;
+  readonly platform?: "cloudflare-pages";
+  readonly staticHeaders?: {
+    readonly enabled: boolean;
+  };
   readonly accessGuidance?: {
     readonly contentSignals?: {
       readonly search?: "allow" | "disallow";
@@ -126,6 +131,58 @@ configured for the Next static export. Relative paths are resolved from the
 working directory that runs `next build`, so monorepo setups can use paths such
 as `apps/docs/out`. Absolute paths are rejected, and trailing slashes are
 handled automatically.
+
+### `platform`
+
+Optional. Static hosting platform for platform-specific generated files.
+
+Supported values are `"cloudflare-pages"`. When
+`platform: "cloudflare-pages"` is passed, OpenNav creates or updates `_headers`
+inside the static export folder by default so Cloudflare Pages serves generated
+Markdown, `llms` files, and the OpenNav manifest with explicit response content
+types.
+
+Omit `platform` for a generic Next static export build. More platform values
+will be added as OpenNav gains first-class support for additional static hosts.
+
+```typescript
+export default OpenNavNext({
+  siteName: "Example Docs",
+  siteUrl: "https://example.com",
+  platform: "cloudflare-pages",
+})(nextConfig);
+```
+
+### `staticHeaders`
+
+Optional. Controls platform response-header artifacts such as Cloudflare Pages
+`_headers`.
+
+When omitted, OpenNav uses the configured platform default. The current
+Cloudflare Pages default is enabled, so `platform: "cloudflare-pages"` creates
+or updates `_headers` in the static export folder unless you opt out.
+
+If an existing caller-owned `_headers` route overlaps OpenNav's generated
+routes, OpenNav leaves `_headers` untouched and reports a warning.
+
+```typescript
+export default OpenNavNext({
+  siteName: "Example Docs",
+  siteUrl: "https://example.com",
+  platform: "cloudflare-pages",
+  staticHeaders: {
+    enabled: false,
+  },
+})(nextConfig);
+```
+
+### `staticHeaders.enabled`
+
+Required inside `staticHeaders`. Set to `false` to keep platform metadata such
+as `platform: "cloudflare-pages"` without creating or editing the platform
+header file. Set to `true` to explicitly request the platform header file. When
+`true`, `platform` must also be configured because each host has its own
+header-file format.
 
 ### `accessGuidance`
 

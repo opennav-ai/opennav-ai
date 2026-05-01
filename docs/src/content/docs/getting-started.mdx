@@ -39,7 +39,7 @@ folder of files, OpenNav can run before you upload that folder.
 
 | Platform style | Example output | How OpenNav fits |
 | -------------- | -------------- | ---------------- |
-| Cloudflare Pages | `dist/` or framework output | Run OpenNav after the build, then deploy the same folder. |
+| Cloudflare Pages | `dist/` or framework output | Run OpenNav after the build with `--platform cloudflare-pages`, then deploy the same folder. |
 | Netlify | `dist/`, `build/`, or framework output | Add OpenNav as the final build step before publish. |
 | Vercel static output | `out/` or generated assets | Run OpenNav for exported static routes before upload. |
 | GitHub Pages or CDN hosting | Plain HTML folder | Run OpenNav locally or in CI, then publish the generated files. |

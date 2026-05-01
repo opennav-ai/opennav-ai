@@ -1,4 +1,8 @@
 import type { OpenNavAccessGuidanceOptions } from "./open-nav-policy";
+import type {
+  OpenNavStaticHeadersOptions,
+  OpenNavStaticPlatform,
+} from "./open-nav-static-site";
 
 /**
  * Minimal Astro logger methods used by the OpenNav integration.
@@ -176,10 +180,28 @@ export interface OpenNavAstroOptions {
   readonly mode?: "static" | undefined;
 
   /**
+   * Optional static hosting platform for platform-specific output behavior.
+   *
+   * `"cloudflare-pages"` creates or updates the Cloudflare Pages `_headers`
+   * file inside Astro's output directory unless `staticHeaders.enabled` is
+   * `false`.
+   */
+  readonly platform?: OpenNavStaticPlatform | undefined;
+
+  /**
    * Optional access guidance preferences for generated static policy files.
    *
    * When omitted, OpenNav should not create or edit `robots.txt` for Content
    * Signals policy.
    */
   readonly accessGuidance?: OpenNavAccessGuidanceOptions | undefined;
+
+  /**
+   * Optional static hosting response-header artifact settings.
+   *
+   * When omitted and `platform` is configured, OpenNav should use the platform
+   * default. Set `enabled` to `false` to opt out of files such as Cloudflare
+   * Pages `_headers`.
+   */
+  readonly staticHeaders?: OpenNavStaticHeadersOptions | undefined;
 }

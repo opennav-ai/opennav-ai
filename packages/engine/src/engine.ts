@@ -12,6 +12,7 @@ import { BuildResultReporter } from "./reporting/services/build-result-reporter"
 import { ResourceLinkBuilder } from "./resource-links/services/resource-link-builder";
 import { OpenNavSiteValidator } from "./site-validation/services/opennav-site-validator";
 import { SiteBaseUrlNormalizer } from "./site-validation/services/site-base-url-normalizer";
+import { StaticHeadersEngine } from "./static-headers/services/static-headers-engine";
 import type { EngineExecuteInput } from "./types/engine-execute-input";
 import type { EngineExecuteOptions } from "./types/engine-execute-options";
 import type { EngineExecuteResult } from "./types/engine-execute-result";
@@ -43,6 +44,18 @@ export class Engine {
     }
 
     const baseUrl = normalizedBaseUrlResult.value.baseUrl;
+    const staticHeadersEngine = new StaticHeadersEngine();
+    const contentFilePathsResult = staticHeadersEngine.getContentFilePaths({
+      outputDirectory: input.outputDirectory,
+      filePaths: input.filePaths,
+      platform: input.platform,
+      staticHeaders: input.staticHeaders,
+    });
+
+    if (contentFilePathsResult.isErr()) {
+      return err(contentFilePathsResult.error);
+    }
+
     const fileListReader = new EngineFileListReader();
     const fileMetadataReader = new FileMetadataReader();
     const siteValidator = new OpenNavSiteValidator();
@@ -56,7 +69,7 @@ export class Engine {
     const buildResultReporter = new BuildResultReporter();
     const fileListResult = await fileListReader.read({
       outputDirectory: input.outputDirectory,
-      filePaths: input.filePaths,
+      filePaths: contentFilePathsResult.value,
     });
 
     if (fileListResult.isErr()) {
@@ -128,11 +141,26 @@ export class Engine {
       return err(accessGuidanceResult.error);
     }
 
+    const staticHeadersResult = await staticHeadersEngine.build({
+      buildFingerprint,
+      outputDirectory: input.outputDirectory,
+      filePaths: input.filePaths,
+      platform: input.platform,
+      staticHeaders: input.staticHeaders,
+    });
+
+    if (staticHeadersResult.isErr()) {
+      return err(staticHeadersResult.error);
+    }
+
     const writePlanResult = await writePlanBuilder.build({
       outputDirectory: input.outputDirectory,
       generatedFiles: agentContentResult.files,
       pageEdits: resourceLinkResult.value.pageEdits,
-      accessGuidanceFiles: accessGuidanceResult.value.files,
+      accessGuidanceFiles: [
+        ...accessGuidanceResult.value.files,
+        ...staticHeadersResult.value.files,
+      ],
     });
 
     if (writePlanResult.isErr()) {
@@ -150,6 +178,7 @@ export class Engine {
       ...agentContentResult.warnings,
       ...resourceLinkResult.value.warnings,
       ...accessGuidanceResult.value.warnings,
+      ...staticHeadersResult.value.warnings,
       ...writePlanResult.value.warnings,
     ];
 

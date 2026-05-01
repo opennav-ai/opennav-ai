@@ -6,6 +6,25 @@ import type { OpenNavAccessGuidanceOptions } from "./open-nav-policy";
 export type OpenNavStaticSitePreset = "astro" | "next-export";
 
 /**
+ * Static hosting platform recognized by the public package.
+ */
+export type OpenNavStaticPlatform = "cloudflare-pages";
+
+/**
+ * Optional static hosting response-header artifact settings.
+ */
+export interface OpenNavStaticHeadersOptions {
+  /**
+   * Whether OpenNav should write a deploy-time response-header artifact.
+   *
+   * When `true`, `platform` must identify the static host whose file format
+   * OpenNav should write. When `false`, OpenNav should not create or edit a
+   * static hosting header file even if the platform has one enabled by default.
+   */
+  readonly enabled: boolean;
+}
+
+/**
  * Build settings for a static-site OpenNav run.
  */
 export interface OpenNavStaticSiteBuildOptions {
@@ -54,12 +73,29 @@ export interface OpenNavStaticSiteOptions {
   readonly preset?: OpenNavStaticSitePreset | undefined;
 
   /**
+   * Optional static hosting platform for platform-specific output behavior.
+   *
+   * `"cloudflare-pages"` creates or updates the Cloudflare Pages `_headers`
+   * file inside `outputDirectory` unless `staticHeaders.enabled` is `false`.
+   */
+  readonly platform?: OpenNavStaticPlatform | undefined;
+
+  /**
    * Optional access guidance preferences for generated static policy files.
    *
    * When omitted, OpenNav should not create or edit `robots.txt` for Content
    * Signals policy.
    */
   readonly accessGuidance?: OpenNavAccessGuidanceOptions | undefined;
+
+  /**
+   * Optional static hosting response-header artifact settings.
+   *
+   * When omitted and `platform` is configured, OpenNav should use the platform
+   * default. Set `enabled` to `false` to opt out of files such as Cloudflare
+   * Pages `_headers`.
+   */
+  readonly staticHeaders?: OpenNavStaticHeadersOptions | undefined;
 }
 
 /**
@@ -99,10 +135,28 @@ export interface OpenNavConfigOptions {
   readonly preset?: OpenNavStaticSitePreset | undefined;
 
   /**
+   * Optional static hosting platform for platform-specific output behavior.
+   *
+   * `"cloudflare-pages"` creates or updates the Cloudflare Pages `_headers`
+   * file inside the configured output directory unless `staticHeaders.enabled`
+   * is `false`.
+   */
+  readonly platform?: OpenNavStaticPlatform | undefined;
+
+  /**
    * Optional access guidance preferences for generated static policy files.
    *
    * When omitted, OpenNav should not create or edit `robots.txt` for Content
    * Signals policy.
    */
   readonly accessGuidance?: OpenNavAccessGuidanceOptions | undefined;
+
+  /**
+   * Optional static hosting response-header artifact settings.
+   *
+   * When omitted and `platform` is configured, callers should use the platform
+   * default. Set `enabled` to `false` to opt out of files such as Cloudflare
+   * Pages `_headers`.
+   */
+  readonly staticHeaders?: OpenNavStaticHeadersOptions | undefined;
 }

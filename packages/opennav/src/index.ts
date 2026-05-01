@@ -10,6 +10,8 @@ import type {
 } from "./types/open-nav-build";
 import type {
   OpenNavConfigOptions,
+  OpenNavStaticHeadersOptions,
+  OpenNavStaticPlatform,
   OpenNavStaticSiteBuildOptions,
   OpenNavStaticSiteOptions,
 } from "./types/open-nav-static-site";
@@ -28,6 +30,8 @@ export type {
 } from "./types/open-nav-policy";
 export type {
   OpenNavConfigOptions,
+  OpenNavStaticHeadersOptions,
+  OpenNavStaticPlatform,
   OpenNavStaticSiteBuildOptions,
   OpenNavStaticSiteOptions,
   OpenNavStaticSitePreset,
@@ -74,7 +78,9 @@ export class OpenNavStaticSite {
         baseUrl: this.options.siteUrl,
         outputDirectory: this.options.outputDirectory,
         filePaths: filePathsResult.value,
+        platform: this.options.platform,
         accessGuidance: this.options.accessGuidance,
+        staticHeaders: this.resolveStaticHeadersOptions(),
       },
       {
         dryRun: options.dryRun === true,
@@ -162,6 +168,27 @@ export class OpenNavStaticSite {
     }
 
     return String(cause);
+  }
+
+  private resolveStaticHeadersOptions():
+    | OpenNavStaticHeadersOptions
+    | undefined {
+    return (
+      this.options.staticHeaders ??
+      this.getDefaultStaticHeadersOptionsForPlatform(this.options.platform)
+    );
+  }
+
+  private getDefaultStaticHeadersOptionsForPlatform(
+    platform: OpenNavStaticPlatform | undefined,
+  ): OpenNavStaticHeadersOptions | undefined {
+    if (platform === "cloudflare-pages") {
+      return {
+        enabled: true,
+      };
+    }
+
+    return undefined;
   }
 
   private toOutputFilePath(

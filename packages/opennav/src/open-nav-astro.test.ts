@@ -145,4 +145,64 @@ describe("OpenNavAstro", (): void => {
       warnings: [],
     });
   });
+
+  it("writes Cloudflare Pages headers by default when Astro platform is configured", async (): Promise<void> => {
+    const outputDirectory = await createAstroOutputDirectory();
+    const integration = OpenNavAstro({
+      siteName: "Example Docs",
+      mode: "static",
+      platform: "cloudflare-pages",
+    });
+    const configDoneHook = getAstroHook<TestAstroConfigDoneHookInput>(
+      integration,
+      "astro:config:done",
+    );
+    const buildDoneHook = getAstroHook<TestAstroBuildDoneHookInput>(
+      integration,
+      "astro:build:done",
+    );
+
+    await configDoneHook({
+      config: {
+        site: "https://example.com",
+      },
+      logger: createTestAstroLogger(),
+    });
+    await buildDoneHook({
+      assets: new Map<string, readonly URL[]>(),
+      dir: pathToFileURL(outputDirectory),
+      logger: createTestAstroLogger(),
+      pages: [],
+    });
+
+    expect(await readFile(join(outputDirectory, "_headers"), "utf8")).toEqual(
+      `# Begin OpenNav AI
+# opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="${buildFingerprint}" manifest="/.well-known/opennav.json"
+/*.md
+  Content-Type: text/markdown; charset=utf-8
+  X-Content-Type-Options: nosniff
+
+/llms.txt
+  Content-Type: text/plain; charset=utf-8
+  X-Content-Type-Options: nosniff
+
+/llms-full.txt
+  Content-Type: text/plain; charset=utf-8
+  X-Content-Type-Options: nosniff
+
+/.well-known/llms.txt
+  Content-Type: text/plain; charset=utf-8
+  X-Content-Type-Options: nosniff
+
+/.well-known/llms-full.txt
+  Content-Type: text/plain; charset=utf-8
+  X-Content-Type-Options: nosniff
+
+/.well-known/opennav.json
+  Content-Type: application/json; charset=utf-8
+  X-Content-Type-Options: nosniff
+# End OpenNav AI
+`,
+    );
+  });
 });

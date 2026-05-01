@@ -139,6 +139,35 @@ describe("OpenNavNextStaticBuildRunner", (): void => {
     expect(mocks.build.mock.calls).toEqual([[]]);
   });
 
+  it("passes platform to the static-site runner so platform defaults can apply", async (): Promise<void> => {
+    const result = await runNextStaticBuild(
+      {
+        siteName: "Example Docs",
+        siteUrl: "https://example.com",
+        mode: "static",
+        platform: "cloudflare-pages",
+      },
+      {
+        output: "export",
+      },
+    );
+
+    expect(result.isOk()).toEqual(true);
+    expect(mocks.constructor.mock.calls).toEqual([
+      [
+        {
+          siteName: "Example Docs",
+          siteUrl: "https://example.com",
+          outputDirectory: resolve("out"),
+          preset: "next-export",
+          platform: "cloudflare-pages",
+          accessGuidance: undefined,
+        },
+      ],
+    ]);
+    expect(mocks.build.mock.calls).toEqual([[]]);
+  });
+
   it("rejects an absolute explicit OpenNav output directory", (): void => {
     const outputDirectory = resolve("public-build");
     const runner = new OpenNavNextStaticBuildRunner({

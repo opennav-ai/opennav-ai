@@ -42,6 +42,7 @@ const result = await new OpenNavStaticSite({
   siteUrl: "https://example.com",
   outputDirectory: "dist",
   preset: "astro",
+  platform: "cloudflare-pages",
   accessGuidance: {
     contentSignals: {
       search: "allow",
@@ -69,6 +70,10 @@ interface OpenNavStaticSiteOptions {
   readonly siteUrl: string;
   readonly outputDirectory: string;
   readonly preset?: "astro" | "next-export";
+  readonly platform?: "cloudflare-pages";
+  readonly staticHeaders?: {
+    readonly enabled: boolean;
+  };
   readonly accessGuidance?: {
     readonly contentSignals?: {
       readonly search?: "allow" | "disallow";
@@ -105,6 +110,51 @@ Optional. Framework hint for static-folder conventions.
 
 Supported values are `"astro"` and `"next-export"`. When omitted, OpenNav
 treats `outputDirectory` as a generic static site folder.
+
+### `platform`
+
+Optional. Static hosting platform for platform-specific generated files.
+
+Supported values are `"cloudflare-pages"`. When
+`platform: "cloudflare-pages"` is passed, OpenNav creates or updates the
+Cloudflare Pages `_headers` file by default. That file tells Cloudflare Pages to
+serve generated Markdown as `text/markdown`, generated `llms` indexes as
+`text/plain`, and the OpenNav manifest as `application/json`.
+
+Omit `platform` for a generic static build. More platform values will be added
+as OpenNav gains first-class support for additional static hosts.
+
+### `staticHeaders`
+
+Optional. Controls platform response-header artifacts such as Cloudflare Pages
+`_headers`.
+
+When omitted, OpenNav uses the configured platform default. The current
+Cloudflare Pages default is enabled, so `platform: "cloudflare-pages"` creates
+or updates `_headers` unless you opt out.
+
+If an existing caller-owned `_headers` route overlaps OpenNav's generated
+routes, OpenNav leaves `_headers` untouched and reports a warning.
+
+```typescript
+const result = await new OpenNavStaticSite({
+  siteName: "Example Docs",
+  siteUrl: "https://example.com",
+  outputDirectory: "dist",
+  platform: "cloudflare-pages",
+  staticHeaders: {
+    enabled: false,
+  },
+}).build();
+```
+
+### `staticHeaders.enabled`
+
+Required inside `staticHeaders`. Set to `false` to keep platform metadata such
+as `platform: "cloudflare-pages"` without creating or editing the platform
+header file. Set to `true` to explicitly request the platform header file. When
+`true`, `platform` must also be configured because each host has its own
+header-file format.
 
 ### `accessGuidance`
 

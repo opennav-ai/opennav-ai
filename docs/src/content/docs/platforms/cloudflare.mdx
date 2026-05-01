@@ -15,6 +15,12 @@ Worker middleware or configure AI Gateway. Start by publishing the files agents
 can discover today, then use the server-side roadmap when runtime Markdown
 responses are available.
 
+Cloudflare Pages is the first platform with a built-in OpenNav platform
+default. Passing `platform: "cloudflare-pages"` in the SDK, Astro, or Next, or
+`--platform cloudflare-pages` in the CLI, creates the Pages `_headers` artifact
+by default. Additional platform defaults are planned as OpenNav adds first-class
+support for more static hosts.
+
 ## Install
 
 Install OpenNav in the project that owns the Cloudflare build command.
@@ -40,7 +46,7 @@ Use the same output directory for both OpenNav and the Pages publish directory.
 ```json
 {
   "scripts": {
-    "build": "astro build && opennav build --static --output dist --site-url https://example.com --site-name \"Example Docs\""
+    "build": "astro build && opennav build --static --output dist --site-url https://example.com --site-name \"Example Docs\" --platform cloudflare-pages"
   }
 }
 ```
@@ -64,8 +70,12 @@ opennav build --static \
   --output dist \
   --site-url https://example.com \
   --site-name "Example Docs" \
+  --platform cloudflare-pages \
   --dry-run
 ```
+
+`--platform cloudflare-pages` is enough to create or update `_headers`; the
+older explicit `--static-headers` flag is not required for Cloudflare Pages.
 
 ## Astro On Cloudflare Pages
 
@@ -82,6 +92,7 @@ export default defineConfig({
     OpenNavAstro({
       siteName: "Example Docs",
       mode: "static",
+      platform: "cloudflare-pages",
     }),
   ],
 });
@@ -97,6 +108,20 @@ In Cloudflare Pages:
 Use this path for Astro sites that produce static HTML. Server-side Astro on
 Cloudflare is part of the [server-side roadmap](/frameworks/server-side/), not
 the current static profile.
+
+To keep the Cloudflare platform setting without writing `_headers`, opt out in
+the integration:
+
+```typescript
+OpenNavAstro({
+  siteName: "Example Docs",
+  mode: "static",
+  platform: "cloudflare-pages",
+  staticHeaders: {
+    enabled: false,
+  },
+});
+```
 
 ## Next.js Static Export On Cloudflare Pages
 
@@ -115,6 +140,7 @@ export default OpenNavNext({
   siteName: "Example Docs",
   siteUrl: "https://example.com",
   mode: "static",
+  platform: "cloudflare-pages",
 })(nextConfig);
 ```
 
@@ -128,6 +154,21 @@ In Cloudflare Pages:
 Use this path for exported static routes. Next.js server output, route handlers,
 and request-time dynamic pages are not covered by the current static profile.
 
+To keep the Cloudflare platform setting without writing `_headers`, opt out in
+the config wrapper:
+
+```typescript
+OpenNavNext({
+  siteName: "Example Docs",
+  siteUrl: "https://example.com",
+  mode: "static",
+  platform: "cloudflare-pages",
+  staticHeaders: {
+    enabled: false,
+  },
+})(nextConfig);
+```
+
 ## Custom SDK Or Monorepo Builds
 
 Use the root SDK when a custom script already knows which folder Cloudflare will
@@ -140,6 +181,7 @@ const result = await new OpenNavStaticSite({
   siteName: "Example Docs",
   siteUrl: "https://example.com",
   outputDirectory: "dist",
+  platform: "cloudflare-pages",
 }).build();
 
 if (result.isErr()) {
@@ -158,6 +200,62 @@ output folder.
   }
 }
 ```
+
+Set `staticHeaders: { enabled: false }` in the SDK options when you want to keep
+`platform: "cloudflare-pages"` for future Cloudflare-specific behavior but do
+not want OpenNav to create or edit `_headers`.
+
+## Cloudflare Pages Headers
+
+Cloudflare Pages can read a `_headers` file from the deployed output directory
+and attach response headers to matching routes. When
+`platform: "cloudflare-pages"` is configured, OpenNav creates or updates an
+OpenNav-managed block in that file by default.
+
+| Entry point | Cloudflare Pages header behavior |
+| ----------- | -------------------------------- |
+| CLI with `--platform cloudflare-pages` | Creates or updates `_headers` by default. |
+| `OpenNavStaticSite({ platform: "cloudflare-pages" })` | Creates or updates `_headers` by default. |
+| `OpenNavAstro({ platform: "cloudflare-pages" })` | Creates or updates `dist/_headers` by default. |
+| `OpenNavNext({ platform: "cloudflare-pages" })` | Creates or updates `_headers` in the static export folder by default. |
+| SDK, Astro, or Next with `staticHeaders: { enabled: false }` | Does not create or edit `_headers`. |
+
+The default is enabled only for currently supported platforms that have a known
+static header file format. Today that is Cloudflare Pages. More platform support
+is planned.
+
+```txt
+dist/
+  _headers
+  llms.txt
+  llms-full.txt
+  .well-known/opennav.json
+  index.md
+```
+
+The generated `_headers` block sets:
+
+| Route pattern | Response header behavior |
+| ------------- | ------------------------ |
+| `/*.md` | Serves generated Markdown mirrors as `text/markdown; charset=utf-8`. |
+| `/llms.txt`, `/llms-full.txt`, and `.well-known` copies | Serves generated indexes as `text/plain; charset=utf-8`. |
+| `/.well-known/opennav.json` | Serves the compatibility manifest as `application/json; charset=utf-8`. |
+
+OpenNav also sets `X-Content-Type-Options: nosniff` for those generated
+artifacts. In a request flow, an agent can fetch `https://example.com/llms.txt`
+or `https://example.com/docs/page/index.md`, and Cloudflare Pages will return
+the file with a concrete content type instead of relying on generic static-file
+detection.
+
+OpenNav preserves caller-owned `_headers` rules and replaces only the block
+between `# Begin OpenNav AI` and `# End OpenNav AI`. If an existing caller-owned
+route overlaps OpenNav's generated header routes, OpenNav leaves `_headers`
+untouched and reports a warning so the site owner can resolve the conflict
+intentionally. This applies to any header on the overlapping route, not only
+`Content-Type`.
+
+Cloudflare documents the file format, comment behavior, and route/header limits
+in [Pages Headers](https://developers.cloudflare.com/pages/configuration/headers/).
 
 ## Workers Static Assets
 
@@ -215,6 +313,7 @@ files beside your normal site:
 dist/
   llms.txt
   llms-full.txt
+  _headers
   .well-known/llms.txt
   .well-known/llms-full.txt
   .well-known/opennav.json
@@ -229,5 +328,6 @@ file behavior and ownership rules.
 ## Cloudflare References
 
 - [Cloudflare Pages build configuration](https://developers.cloudflare.com/pages/configuration/build-configuration/)
+- [Cloudflare Pages Headers](https://developers.cloudflare.com/pages/configuration/headers/)
 - [Cloudflare Workers static assets](https://developers.cloudflare.com/workers/static-assets/)
 - [Cloudflare Agent Readiness](https://blog.cloudflare.com/agent-readiness/)

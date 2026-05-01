@@ -1,6 +1,7 @@
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { CloudflareHeadersExpectation } from "./helpers/cloudflare-headers-expectation.ts";
 import { ExampleBuildTestRunner } from "./helpers/example-build-test-runner.ts";
 import { ExampleOutputSnapshot } from "./helpers/example-output-snapshot.ts";
 import { PackedOpenNavPackages } from "./helpers/packed-opennav-packages.ts";
@@ -64,6 +65,19 @@ class CliBuildScriptExample {
   }
 
   /**
+   * Runs only the example's static file generation step.
+   *
+   * @returns Promise that resolves after plain static files are written.
+   */
+  public async runStaticBuild(): Promise<void> {
+    await this.runner.runNpmScript(
+      this.exampleDirectory,
+      this.exampleName,
+      "build:static",
+    );
+  }
+
+  /**
    * Runs the example's full build script through the OpenNav CLI.
    *
    * @returns Promise that resolves after static and OpenNav files are written.
@@ -73,6 +87,46 @@ class CliBuildScriptExample {
       this.exampleDirectory,
       this.exampleName,
       "build",
+    );
+  }
+
+  /**
+   * Runs the packed OpenNav CLI with Cloudflare Pages platform settings.
+   *
+   * @returns Promise that resolves after OpenNav writes Cloudflare headers.
+   */
+  public async runCloudflareOpenNavBuild(): Promise<void> {
+    await this.runner.runCommand(
+      "npm",
+      [
+        "exec",
+        "--",
+        "opennav",
+        "build",
+        "--static",
+        "--output",
+        this.outputDirectory,
+        "--site-url",
+        "https://cli.example.com",
+        "--site-name",
+        "CLI Example Docs",
+        "--platform",
+        "cloudflare-pages",
+      ],
+      this.runner.resolveExampleDirectory(this.exampleDirectory),
+      `${this.exampleName} Cloudflare OpenNav CLI build`,
+    );
+  }
+
+  /**
+   * Reads the generated Cloudflare Pages `_headers` file.
+   *
+   * @returns Exact UTF-8 content of `dist/_headers`.
+   */
+  public async readHeadersFile(): Promise<string> {
+    return await this.runner.readExampleFile(
+      this.exampleDirectory,
+      join(this.outputDirectory, "_headers"),
     );
   }
 
@@ -100,6 +154,7 @@ describe("CLI build-script example", (): void => {
   );
   const runner = new ExampleBuildTestRunner(repositoryDirectory);
   const example = new CliBuildScriptExample(runner);
+  const cloudflareHeadersExpectation = new CloudflareHeadersExpectation();
   let packages: PackedOpenNavPackages | undefined;
 
   beforeAll(async (): Promise<void> => {
@@ -123,5 +178,21 @@ describe("CLI build-script example", (): void => {
     expect(await example.readOutputSnapshot()).toMatchSnapshot(
       "CLI build-script OpenNav output",
     );
+  }, 600_000);
+
+  it("writes Cloudflare Pages headers through the packed CLI", async (): Promise<void> => {
+    if (packages === undefined) {
+      throw new Error("Packed OpenNav packages were not created.");
+    }
+
+    await example.install(packages);
+    await example.runTypecheck();
+    await example.cleanOutput();
+    await example.runStaticBuild();
+    await example.runCloudflareOpenNavBuild();
+
+    expect(
+      cloudflareHeadersExpectation.normalize(await example.readHeadersFile()),
+    ).toEqual(cloudflareHeadersExpectation.expectedNormalizedContent());
   }, 600_000);
 });

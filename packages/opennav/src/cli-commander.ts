@@ -3,7 +3,15 @@ import type { Result } from "neverthrow";
 import { err, ok, ResultAsync } from "neverthrow";
 import { type OpenNavError, OpenNavStaticSite } from "./index";
 import type { OpenNavBuildResult } from "./types/open-nav-build";
-import type { OpenNavStaticSitePreset } from "./types/open-nav-static-site";
+import type {
+  OpenNavStaticHeadersOptions,
+  OpenNavStaticPlatform,
+  OpenNavStaticSitePreset,
+} from "./types/open-nav-static-site";
+
+const SUPPORTED_STATIC_PLATFORMS: readonly OpenNavStaticPlatform[] = [
+  "cloudflare-pages",
+];
 
 /**
  * Creates the Commander program used by the OpenNav executable.
@@ -23,6 +31,11 @@ export function createOpenNavCommand(): Command {
     .requiredOption("--site-url <url>", "Public absolute site URL.")
     .requiredOption("--site-name <name>", "Human-readable site name.")
     .option("--preset <preset>", "Static framework preset.")
+    .option("--platform <platform>", "Static hosting platform.")
+    .option(
+      "--static-headers",
+      "Create a static hosting response-header artifact.",
+    )
     .option("--dry-run", "Preview the build without writing files.")
     .action(async (): Promise<void> => {
       const options = buildCommand.opts<{
@@ -31,17 +44,23 @@ export function createOpenNavCommand(): Command {
         readonly siteUrl?: string | undefined;
         readonly siteName?: string | undefined;
         readonly preset?: string | undefined;
+        readonly platform?: string | undefined;
+        readonly staticHeaders?: boolean | undefined;
         readonly dryRun?: boolean | undefined;
       }>();
 
-      validateBuildOptions(buildCommand, options);
+      validateBuildOptions(options);
 
       const dryRun = options.dryRun === true;
+      const platform = toPlatform(options.platform);
+      const staticHeaders = toStaticHeaders(options.staticHeaders);
       const result = await new OpenNavStaticSite({
         siteName: options.siteName,
         siteUrl: options.siteUrl,
         outputDirectory: options.output,
-        preset: toPreset(buildCommand, options.preset),
+        preset: toPreset(options.preset),
+        ...(platform === undefined ? {} : { platform }),
+        ...(staticHeaders === undefined ? {} : { staticHeaders }),
       }).build({ dryRun });
 
       if (result.isOk()) {
@@ -49,7 +68,7 @@ export function createOpenNavCommand(): Command {
         return;
       }
 
-      buildCommand.error(result.error.message);
+      throw createCommanderError(result.error.message);
     });
 
   program.addCommand(buildCommand);
@@ -138,7 +157,6 @@ function isCommanderSuccessExit(cause: unknown): boolean {
 }
 
 function toPreset(
-  command: Command,
   preset: string | undefined,
 ): OpenNavStaticSitePreset | undefined {
   if (preset === undefined) {
@@ -149,29 +167,58 @@ function toPreset(
     return preset;
   }
 
-  command.error("argument --preset must be one of: astro, next-export");
+  throw createCommanderError(
+    "argument --preset must be one of: astro, next-export",
+  );
 }
 
-function validateBuildOptions(
-  command: Command,
-  options: {
-    readonly static?: boolean | undefined;
-    readonly output?: string | undefined;
-    readonly siteUrl?: string | undefined;
-    readonly siteName?: string | undefined;
-    readonly preset?: string | undefined;
-    readonly dryRun?: boolean | undefined;
-  },
-): asserts options is {
+function toPlatform(
+  platform: string | undefined,
+): OpenNavStaticPlatform | undefined {
+  if (platform === undefined) {
+    return undefined;
+  }
+
+  if (platform === "cloudflare-pages") {
+    return platform;
+  }
+
+  throw createUnsupportedPlatformError(platform);
+}
+
+function toStaticHeaders(
+  enabled: boolean | undefined,
+): OpenNavStaticHeadersOptions | undefined {
+  if (enabled !== true) {
+    return undefined;
+  }
+
+  return {
+    enabled: true,
+  };
+}
+
+function validateBuildOptions(options: {
+  readonly static?: boolean | undefined;
+  readonly output?: string | undefined;
+  readonly siteUrl?: string | undefined;
+  readonly siteName?: string | undefined;
+  readonly preset?: string | undefined;
+  readonly platform?: string | undefined;
+  readonly staticHeaders?: boolean | undefined;
+  readonly dryRun?: boolean | undefined;
+}): asserts options is {
   readonly static: true;
   readonly output: string;
   readonly siteUrl: string;
   readonly siteName: string;
   readonly preset?: string | undefined;
+  readonly platform?: string | undefined;
+  readonly staticHeaders?: boolean | undefined;
   readonly dryRun?: boolean | undefined;
 } {
   if (options.static !== true) {
-    command.error("Only --static is supported.");
+    throw createCommanderError("Only --static is supported.");
   }
 
   if (
@@ -179,6 +226,24 @@ function validateBuildOptions(
     options.siteUrl === undefined ||
     options.siteName === undefined
   ) {
-    command.error("Missing required build configuration.");
+    throw createCommanderError("Missing required build configuration.");
   }
+
+  if (options.staticHeaders === true && options.platform === undefined) {
+    throw createCommanderError(
+      "--platform is required when --static-headers is used",
+    );
+  }
+}
+
+function createCommanderError(message: string): CommanderError {
+  return new CommanderError(1, "commander.error", `error: ${message}`);
+}
+
+function createUnsupportedPlatformError(platform: string): CommanderError {
+  return createCommanderError(
+    `Unsupported platform "${platform}". Supported platforms: ${SUPPORTED_STATIC_PLATFORMS.join(
+      ", ",
+    )}. Pass a supported platform with --platform, or omit --platform when you do not need platform-specific artifacts.`,
+  );
 }
