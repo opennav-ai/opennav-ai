@@ -29,6 +29,28 @@ body :where(:not(.expressive-code, .expressive-code *)) {
 
 body {
   background-color: var(--opennav-docs-page-bg);
+  background-image: none;
+}
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+body::before {
+  z-index: 0;
+  background-image:
+    url("/site/opennav-compass-document-layers-desktop.webp");
+  background-position: right top;
+  background-repeat: no-repeat;
+  background-size: max(1774px, 100vw) auto;
+}
+
+body::after {
+  z-index: 1;
   background-image:
     linear-gradient(
       90deg,
@@ -43,21 +65,22 @@ body {
       rgb(247 246 241 / 0.42) 28%,
       rgb(247 246 241 / 0.42) 72%,
       rgb(247 246 241 / 0.88) 100%
-    ),
-    url("/site/opennav-compass-document-layers-desktop.webp");
+    );
   background-position:
     center top,
-    center top,
-    right top;
+    center top;
   background-repeat: no-repeat;
   background-size:
     100% 100%,
-    100% 100%,
-    min(1774px, 100vw) auto;
-  background-attachment: fixed;
+    100% 100%;
 }
 
-html[data-has-hero] body {
+body > * {
+  position: relative;
+  z-index: 2;
+}
+
+html[data-has-hero] body::after {
   background-image:
     linear-gradient(
       90deg,
@@ -72,8 +95,7 @@ html[data-has-hero] body {
       rgb(247 246 241 / 0.18) 24%,
       rgb(247 246 241 / 0.18) 72%,
       rgb(247 246 241 / 0.86) 100%
-    ),
-    url("/site/opennav-compass-document-layers-desktop.webp");
+    );
 }
 
 html[data-has-hero]:not([data-has-sidebar]) {
@@ -548,8 +570,20 @@ html .sl-markdown-content table:not(:where(.not-content *)) code {
   display: none;
 }
 
+@media (max-width: 64rem) and (min-width: 44.01rem) {
+  body::before {
+    background-position: 58% top;
+    background-size: 1280px auto;
+  }
+}
+
 @media (max-width: 44rem) {
-  body {
+  body::before {
+    background-position: 42% top;
+    background-size: 980px auto;
+  }
+
+  body::after {
     background-image:
       linear-gradient(
         180deg,
@@ -557,14 +591,9 @@ html .sl-markdown-content table:not(:where(.not-content *)) code {
         rgb(247 246 241 / 0.98) 36%,
         rgb(247 246 241 / 0.78) 54%,
         rgb(247 246 241 / 0.24) 100%
-      ),
-      url("/site/opennav-compass-document-layers-desktop.webp");
-    background-position:
-      center top,
-      42% bottom;
-    background-size:
-      100% 100%,
-      980px auto;
+      );
+    background-position: center top;
+    background-size: 100% 100%;
   }
 
   .opennav-example-toolbar {
