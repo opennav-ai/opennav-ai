@@ -3,6 +3,11 @@ import { OpenNavAstro } from "@opennav-ai/opennav/astro";
 import { defineConfig } from "astro/config";
 import starlightThemeRapide from "starlight-theme-rapide";
 
+const siteUrl = "https://docs.opennav.ai";
+const siteDescription =
+  "Open-source tooling for publishing static sites with agent-readable navigation files.";
+const socialImageUrl = `${siteUrl}/site/opennav-compass-document-layers-desktop.webp`;
+
 function lightOnlyDocsPlugin() {
   return {
     name: "opennav-light-only-docs",
@@ -27,13 +32,13 @@ function lightOnlyDocsPlugin() {
 }
 
 export default defineConfig({
-  site: "https://docs.opennav.ai",
+  site: siteUrl,
   output: "static",
   integrations: [
     starlight({
       title: "OpenNav AI",
-      description:
-        "Open-source tooling for publishing static sites with agent-readable navigation files.",
+      description: siteDescription,
+      disable404Route: true,
       favicon: "/favicon.svg",
       logo: {
         src: "../assets/full-open-logo.svg",
@@ -163,6 +168,34 @@ export default defineConfig({
           attrs: {
             name: "theme-color",
             content: "#1474f0",
+          },
+        },
+        {
+          tag: "meta",
+          attrs: {
+            property: "og:image",
+            content: socialImageUrl,
+          },
+        },
+        {
+          tag: "meta",
+          attrs: {
+            property: "og:image:alt",
+            content: siteDescription,
+          },
+        },
+        {
+          tag: "meta",
+          attrs: {
+            name: "twitter:image",
+            content: socialImageUrl,
+          },
+        },
+        {
+          tag: "meta",
+          attrs: {
+            name: "twitter:image:alt",
+            content: siteDescription,
           },
         },
         {
