@@ -42,8 +42,7 @@ body::after {
 
 body::before {
   z-index: 0;
-  background-image:
-    url("/site/opennav-compass-document-layers-desktop.webp");
+  background-image: url("/site/opennav-compass-document-layers-desktop.webp");
   background-position: right top;
   background-repeat: no-repeat;
   background-size: max(1774px, 100vw) auto;
@@ -120,7 +119,28 @@ html[data-has-hero] .sl-markdown-content {
     rgb(247 246 241 / 0.94) 68%,
     rgb(247 246 241 / 0) 100%
   );
-  padding: 1.25rem;
+}
+
+html[data-has-hero] .hero {
+  padding-block: 0.25rem;
+}
+
+html[data-has-hero] .hero + .sl-markdown-content {
+  margin-top: 0.5rem;
+}
+
+html[data-has-hero] main > .content-panel {
+  margin-top: -1rem;
+}
+
+@media (min-width: 50rem) {
+  html[data-has-hero] .hero {
+    padding-block: clamp(0.75rem, calc(0.5rem + 2vmin), 2rem);
+  }
+
+  html[data-has-hero] main > .content-panel {
+    margin-top: clamp(-5rem, calc(-1rem - 4vmin), -2rem);
+  }
 }
 
 .page,
@@ -299,7 +319,9 @@ html .expressive-code .ec-line span[style*="#D40000"] {
 
 .opennav-example-toolbar {
   display: grid;
-  grid-template-columns: minmax(max-content, 1fr) auto;
+  grid-template-columns:
+    minmax(max-content, 1fr)
+    auto;
   gap: 1rem;
   align-items: center;
   justify-content: space-between;
@@ -592,14 +614,13 @@ html .sl-markdown-content table:not(:where(.not-content *)) code {
   }
 
   body::after {
-    background-image:
-      linear-gradient(
-        180deg,
-        var(--opennav-docs-page-bg) 0%,
-        rgb(247 246 241 / 0.98) 36%,
-        rgb(247 246 241 / 0.78) 54%,
-        rgb(247 246 241 / 0.24) 100%
-      );
+    background-image: linear-gradient(
+      180deg,
+      var(--opennav-docs-page-bg) 0%,
+      rgb(247 246 241 / 0.98) 36%,
+      rgb(247 246 241 / 0.78) 54%,
+      rgb(247 246 241 / 0.24) 100%
+    );
     background-position: center top;
     background-size: 100% 100%;
   }
