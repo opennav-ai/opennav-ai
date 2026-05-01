@@ -17,7 +17,8 @@
     "version:opennav:patch": "npm version patch --workspace @opennav-ai/opennav --no-git-tag-version",
     "publish:opennav:dry-run": "npm run test:package:opennav && npm pack --dry-run --workspace @opennav-ai/opennav --cache .npm-cache",
     "publish:opennav": "npm run test:package:opennav && npm publish --workspace @opennav-ai/opennav --access restricted",
-    "release:opennav:patch": "npm run version:opennav:patch && npm run publish:opennav",
+    "release:opennav": "npx bun scripts/release-opennav.ts",
+    "release:opennav:patch": "npm run release:opennav -- --live --channel proper --bump patch",
     "test:verbose": "vitest run --reporter=verbose",
     "lint": "biome check .",
     "format": "biome format --write .",
@@ -27,6 +28,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.4.10",
     "@types/node": "^25.5.2",
+    "commander": "^14.0.3",
     "typescript": "^6.0.2",
     "vitest": "^4.1.4"
   }
