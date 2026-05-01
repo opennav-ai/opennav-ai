@@ -1,5 +1,10 @@
+// @ts-check
+
 import { OpenNavNext } from "@opennav-ai/opennav/next";
 
+/**
+ * @type {import("next").NextConfig}
+ */
 const nextConfig = {
   output: "export",
 };

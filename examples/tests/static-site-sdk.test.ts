@@ -43,6 +43,15 @@ class StaticSiteSdkExample {
   }
 
   /**
+   * Runs TypeScript against the static SDK example build script.
+   *
+   * @returns Promise that resolves after the public SDK imports typecheck.
+   */
+  public async runTypecheck(): Promise<void> {
+    await this.runner.runTypecheck(this.exampleDirectory, this.exampleName);
+  }
+
+  /**
    * Recreates the plain static output before OpenNav SDK behavior runs.
    *
    * @returns Promise that resolves after the baseline files are present.
@@ -176,6 +185,7 @@ describe("static site SDK example", (): void => {
     }
 
     await example.install(packages);
+    await example.runTypecheck();
     await example.writeBaselineOutput();
 
     expect(await example.readOutputSnapshot()).toMatchSnapshot(

@@ -43,6 +43,15 @@ class CliBuildScriptExample {
   }
 
   /**
+   * Runs TypeScript against the CLI example build script.
+   *
+   * @returns Promise that resolves after the script source typechecks.
+   */
+  public async runTypecheck(): Promise<void> {
+    await this.runner.runTypecheck(this.exampleDirectory, this.exampleName);
+  }
+
+  /**
    * Removes any previous static output before the example build runs.
    *
    * @returns Promise that resolves after the output directory is absent.
@@ -107,6 +116,7 @@ describe("CLI build-script example", (): void => {
     }
 
     await example.install(packages);
+    await example.runTypecheck();
     await example.cleanOutput();
     await example.runBuild();
 

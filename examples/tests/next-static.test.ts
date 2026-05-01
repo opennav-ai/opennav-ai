@@ -9,6 +9,7 @@ interface NextStaticExampleConfig {
   readonly name: string;
   readonly directory: string;
   readonly outputDirectory: string;
+  readonly configFilePath: string;
   readonly expectedOpenNavOutputFilePaths: readonly string[];
   readonly baselineConfigContent: string;
 }
@@ -70,6 +71,16 @@ class NextStaticExample {
   }
 
   /**
+   * Runs TypeScript against the Next example source and config.
+   *
+   * @returns Promise that resolves after the app router files and config
+   * typecheck.
+   */
+  public async runTypecheck(): Promise<void> {
+    await this.runner.runTypecheck(this.config.directory, this.config.name);
+  }
+
+  /**
    * Reads the checked-in Next config that wraps `OpenNavNext(...)`.
    *
    * @returns Exact UTF-8 contents of `next.config.mjs`.
@@ -77,7 +88,7 @@ class NextStaticExample {
   public async readOpenNavConfig(): Promise<string> {
     return await this.runner.readExampleFile(
       this.config.directory,
-      "next.config.mjs",
+      this.config.configFilePath,
     );
   }
 
@@ -90,7 +101,7 @@ class NextStaticExample {
   public async writeBaselineConfig(): Promise<void> {
     await this.runner.writeExampleFile(
       this.config.directory,
-      "next.config.mjs",
+      this.config.configFilePath,
       this.config.baselineConfigContent,
     );
   }
@@ -104,7 +115,7 @@ class NextStaticExample {
   public async restoreOpenNavConfig(content: string): Promise<void> {
     await this.runner.writeExampleFile(
       this.config.directory,
-      "next.config.mjs",
+      this.config.configFilePath,
       content,
     );
   }
@@ -295,6 +306,7 @@ describe("Next static examples", (): void => {
       name: "Next 16 static",
       directory: "examples/next-16-static",
       outputDirectory: "out",
+      configFilePath: "next.config.ts",
       expectedOpenNavOutputFilePaths: [
         "_not-found.md",
         ...standardOpenNavOutputFilePaths.slice(0, 3),
@@ -302,6 +314,7 @@ describe("Next static examples", (): void => {
       ],
       baselineConfigContent: `import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { NextConfig } from "next";
 
 const fixtureDirectory = dirname(fileURLToPath(import.meta.url));
 
@@ -310,7 +323,7 @@ const nextConfig = {
   turbopack: {
     root: fixtureDirectory,
   },
-};
+} satisfies NextConfig;
 
 export default nextConfig;
 `,
@@ -319,16 +332,18 @@ export default nextConfig;
       name: "Next 15 static",
       directory: "examples/next-15-static",
       outputDirectory: "out",
+      configFilePath: "next.config.ts",
       expectedOpenNavOutputFilePaths: standardOpenNavOutputFilePaths,
       baselineConfigContent: `import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { NextConfig } from "next";
 
 const exampleDirectory = dirname(fileURLToPath(import.meta.url));
 
 const nextConfig = {
   output: "export",
   outputFileTracingRoot: exampleDirectory,
-};
+} satisfies NextConfig;
 
 export default nextConfig;
 `,
@@ -337,8 +352,14 @@ export default nextConfig;
       name: "Next 14 static",
       directory: "examples/next-14-static",
       outputDirectory: "out",
+      configFilePath: "next.config.mjs",
       expectedOpenNavOutputFilePaths: standardOpenNavOutputFilePaths,
-      baselineConfigContent: `const nextConfig = {
+      baselineConfigContent: `// @ts-check
+
+/**
+ * @type {import("next").NextConfig}
+ */
+const nextConfig = {
   output: "export",
 };
 
@@ -364,6 +385,7 @@ export default nextConfig;
       const example = new NextStaticExample(config, runner);
 
       await example.install(packages);
+      await example.runTypecheck();
 
       const openNavConfig = await example.readOpenNavConfig();
 

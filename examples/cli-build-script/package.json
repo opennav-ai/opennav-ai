@@ -6,9 +6,12 @@
   "scripts": {
     "build": "npm run build:static && opennav build --static --output dist --site-url https://cli.example.com --site-name \"CLI Example Docs\"",
     "build:static": "node --experimental-strip-types scripts/build-static-output.ts",
-    "opennav:dry-run": "npm run build:static && opennav build --static --output dist --site-url https://cli.example.com --site-name \"CLI Example Docs\" --dry-run"
+    "opennav:dry-run": "npm run build:static && opennav build --static --output dist --site-url https://cli.example.com --site-name \"CLI Example Docs\" --dry-run",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@opennav-ai/opennav": "file:../../packages/opennav"
+    "@opennav-ai/opennav": "file:../../packages/opennav",
+    "@types/node": "25.5.2",
+    "typescript": "6.0.2"
   }
 }

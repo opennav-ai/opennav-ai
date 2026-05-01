@@ -54,6 +54,15 @@ class AstroStaticExample {
   }
 
   /**
+   * Runs Astro's static type checker against the example project.
+   *
+   * @returns Promise that resolves after the Astro config and pages typecheck.
+   */
+  public async runTypecheck(): Promise<void> {
+    await this.runner.runTypecheck(this.config.directory, this.config.name);
+  }
+
+  /**
    * Writes an Astro config that builds the same pages without OpenNav.
    *
    * @returns Promise that resolves after the baseline config exists.
@@ -183,6 +192,7 @@ describe("Astro static examples", (): void => {
       const example = new AstroStaticExample(config, runner);
 
       await example.install(packages);
+      await example.runTypecheck();
       await example.writeBaselineConfig();
 
       try {

@@ -101,6 +101,15 @@ export type OpenNavAstroHook<Input> = (input: Input) => Promise<void> | void;
  */
 export interface OpenNavAstroHooks {
   /**
+   * Other Astro hook names accepted by Astro's integration contract.
+   *
+   * OpenNav installs only the concrete static-build hooks documented below, but
+   * Astro models the hook map as an indexable object. This keeps the public
+   * integration return type assignable to Astro's own integration type.
+   */
+  readonly [hookName: string]: unknown;
+
+  /**
    * Captures Astro's resolved `site` URL before the build output exists.
    *
    * This hook does not write files; it stores the URL that `astro:build:done`

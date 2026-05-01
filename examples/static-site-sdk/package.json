@@ -4,9 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node --experimental-strip-types scripts/build.ts"
+    "build": "node --experimental-strip-types scripts/build.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@opennav-ai/opennav": "file:../../packages/opennav"
+  },
+  "devDependencies": {
+    "@types/node": "25.5.2",
+    "typescript": "6.0.2"
   }
 }

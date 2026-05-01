@@ -177,6 +177,21 @@ export class ExampleBuildTestRunner {
   }
 
   /**
+   * Runs an example project's static type check script.
+   *
+   * @param exampleDirectory - Repository-relative example project directory.
+   * @param exampleName - Human-readable example name used in command errors.
+   * @returns Promise that resolves after the example's public imports and source
+   * types are valid.
+   */
+  public async runTypecheck(
+    exampleDirectory: string,
+    exampleName: string,
+  ): Promise<void> {
+    await this.runNpmScript(exampleDirectory, exampleName, "typecheck");
+  }
+
+  /**
    * Writes one example project file used by a regression test setup step.
    *
    * @param exampleDirectory - Repository-relative example project directory.
