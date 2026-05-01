@@ -110,8 +110,10 @@ export default OpenNavNext({
 })(nextConfig);
 ```
 
-`OpenNavNext` reads from `out` by default. Pass `outputDirectory` when your
-export folder is different.
+`OpenNavNext` reads from `nextConfig.distDir` when it is a string, then falls
+back to `out`. Pass `outputDirectory` when OpenNav should read a different
+folder than the Next static export. Next output directories must be relative
+paths; trailing slashes are handled automatically.
 
 ## CLI
 
@@ -221,8 +223,8 @@ Static output is supported today. Server-side framework support is coming next.
 | `siteName` | Required. | Required. |
 | `siteUrl` | Optional when Astro `site` is set. | Required. |
 | `mode` | Optional. Defaults to `"static"`. | Optional. Defaults to `"static"`. |
-| `outputDirectory` | Uses Astro's build `dir`, normally `dist`. | Optional. Defaults to `out`. |
-| `accessGuidance` | Optional. Affects `dist/robots.txt` only when configured. | Optional. Affects `out/robots.txt` only when configured. |
+| `outputDirectory` | Uses Astro's build `dir`, normally `dist`. | Optional. Defaults to `nextConfig.distDir` when set, then `out`. |
+| `accessGuidance` | Optional. Affects `dist/robots.txt` only when configured. | Optional. Affects the static export folder's `robots.txt` only when configured. |
 
 ## Access Guidance
 

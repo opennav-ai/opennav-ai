@@ -1,4 +1,4 @@
-import { resolve } from "node:path";
+import { isAbsolute, resolve } from "node:path";
 import { err, ok, type Result } from "neverthrow";
 import { OpenNavStaticSite } from "../index";
 import type { OpenNavBuildResult, OpenNavError } from "../types/open-nav-build";
@@ -14,6 +14,8 @@ export class OpenNavNextStaticBuildRunner {
   private readonly options: OpenNavNextOptions;
 
   private buildResultReported = false;
+
+  private nextConfigOutputDirectory: string | undefined;
 
   /**
    * Stores the OpenNav Next settings for a future static export build.
@@ -41,6 +43,15 @@ export class OpenNavNextStaticBuildRunner {
       return err(this.createUnsupportedOutputError(nextConfig.output));
     }
 
+    this.nextConfigOutputDirectory =
+      this.selectNextConfigOutputDirectory(nextConfig);
+
+    const outputDirectoryResult = this.selectOutputDirectory();
+
+    if (outputDirectoryResult.isErr()) {
+      return err(outputDirectoryResult.error);
+    }
+
     if (!this.isNextBuildCommand(process.argv, process.env)) {
       return ok(undefined);
     }
@@ -57,10 +68,16 @@ export class OpenNavNextStaticBuildRunner {
    * @returns A typed engine report or a typed OpenNav failure.
    */
   public async build(): Promise<Result<OpenNavBuildResult, OpenNavError>> {
+    const outputDirectoryResult = this.selectOutputDirectory();
+
+    if (outputDirectoryResult.isErr()) {
+      return err(outputDirectoryResult.error);
+    }
+
     const staticSite = new OpenNavStaticSite({
       siteName: this.options.siteName,
       siteUrl: this.options.siteUrl,
-      outputDirectory: resolve(this.options.outputDirectory ?? "out"),
+      outputDirectory: resolve(outputDirectoryResult.value),
       preset: "next-export",
       accessGuidance: this.options.accessGuidance,
     });
@@ -86,6 +103,48 @@ export class OpenNavNextStaticBuildRunner {
         output: this.describeConfigValue(output),
       },
     };
+  }
+
+  private createAbsoluteOutputDirectoryError(
+    source: "outputDirectory" | "distDir",
+    outputDirectory: string,
+  ): OpenNavError {
+    return {
+      code: "OPENNAV_NEXT_RELATIVE_OUTPUT_DIRECTORY_REQUIRED",
+      message: "OpenNav Next output directories must be relative paths.",
+      context: {
+        source,
+        outputDirectory,
+      },
+    };
+  }
+
+  private selectOutputDirectory(): Result<string, OpenNavError> {
+    const outputDirectory =
+      this.options.outputDirectory ?? this.nextConfigOutputDirectory ?? "out";
+
+    if (isAbsolute(outputDirectory)) {
+      const source =
+        this.options.outputDirectory === undefined
+          ? "distDir"
+          : "outputDirectory";
+
+      return err(
+        this.createAbsoluteOutputDirectoryError(source, outputDirectory),
+      );
+    }
+
+    return ok(outputDirectory);
+  }
+
+  private selectNextConfigOutputDirectory(
+    nextConfig: OpenNavNextConfig,
+  ): string | undefined {
+    if (typeof nextConfig.distDir === "string") {
+      return nextConfig.distDir;
+    }
+
+    return undefined;
   }
 
   private describeConfigValue(value: unknown): string {
