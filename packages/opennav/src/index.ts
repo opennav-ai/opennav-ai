@@ -22,6 +22,7 @@ export type {
   OpenNavError,
   OpenNavOutputFilePath,
 } from "./types/open-nav-build";
+export type { OpenNavContentExtractionOptions } from "./types/open-nav-content-extraction";
 export type { OpenNavNextOptions } from "./types/open-nav-next";
 export type {
   OpenNavAccessGuidanceOptions,
@@ -80,6 +81,9 @@ export class OpenNavStaticSite {
         filePaths: filePathsResult.value,
         platform: this.options.platform,
         accessGuidance: this.options.accessGuidance,
+        ...(this.options.contentExtraction === undefined
+          ? {}
+          : { contentExtraction: this.options.contentExtraction }),
         staticHeaders: this.resolveStaticHeadersOptions(),
       },
       {

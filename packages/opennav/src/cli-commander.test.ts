@@ -297,6 +297,67 @@ describe("runOpenNavCli", (): void => {
     }
   });
 
+  it("passes strip-layout to OpenNavStaticSite content extraction options", async (): Promise<void> => {
+    const output: string[] = [];
+    const logSpy = vi
+      .spyOn(console, "log")
+      .mockImplementation((message?: unknown): void => {
+        output.push(String(message));
+      });
+
+    mocks.build.mockResolvedValue(
+      ok({
+        createdFilePaths: ["index.md"],
+        modifiedFilePaths: [],
+        skippedFilePaths: [],
+        warnings: [],
+      }),
+    );
+
+    try {
+      const result = await runOpenNavCli([
+        "node",
+        "opennav",
+        "build",
+        "--static",
+        "--output",
+        "dist",
+        "--site-url",
+        "https://example.com",
+        "--site-name",
+        "Example Docs",
+        "--strip-layout",
+      ]);
+
+      expect(result.isOk()).toEqual(true);
+      expect(mocks.constructor.mock.calls).toEqual([
+        [
+          {
+            siteName: "Example Docs",
+            siteUrl: "https://example.com",
+            outputDirectory: "dist",
+            preset: undefined,
+            contentExtraction: {
+              stripLayout: true,
+            },
+          },
+        ],
+      ]);
+      expect(mocks.build.mock.calls).toEqual([[{ dryRun: false }]]);
+      expect(output).toEqual([
+        [
+          "OpenNav build completed.",
+          "Created: 1",
+          "Modified: 0",
+          "Skipped: 0",
+          "Warnings: 0",
+        ].join("\n"),
+      ]);
+    } finally {
+      logSpy.mockRestore();
+    }
+  });
+
   it("rejects static headers without a platform", async (): Promise<void> => {
     const result = await runOpenNavCli([
       "node",

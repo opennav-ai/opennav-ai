@@ -36,6 +36,10 @@ export function createOpenNavCommand(): Command {
       "--static-headers",
       "Create a static hosting response-header artifact.",
     )
+    .option(
+      "--strip-layout",
+      "Remove documented layout elements before Markdown conversion.",
+    )
     .option("--dry-run", "Preview the build without writing files.")
     .action(async (): Promise<void> => {
       const options = buildCommand.opts<{
@@ -46,6 +50,7 @@ export function createOpenNavCommand(): Command {
         readonly preset?: string | undefined;
         readonly platform?: string | undefined;
         readonly staticHeaders?: boolean | undefined;
+        readonly stripLayout?: boolean | undefined;
         readonly dryRun?: boolean | undefined;
       }>();
 
@@ -60,6 +65,9 @@ export function createOpenNavCommand(): Command {
         outputDirectory: options.output,
         preset: toPreset(options.preset),
         ...(platform === undefined ? {} : { platform }),
+        ...(options.stripLayout === true
+          ? { contentExtraction: { stripLayout: true } }
+          : {}),
         ...(staticHeaders === undefined ? {} : { staticHeaders }),
       }).build({ dryRun });
 
@@ -206,6 +214,7 @@ function validateBuildOptions(options: {
   readonly preset?: string | undefined;
   readonly platform?: string | undefined;
   readonly staticHeaders?: boolean | undefined;
+  readonly stripLayout?: boolean | undefined;
   readonly dryRun?: boolean | undefined;
 }): asserts options is {
   readonly static: true;
@@ -215,6 +224,7 @@ function validateBuildOptions(options: {
   readonly preset?: string | undefined;
   readonly platform?: string | undefined;
   readonly staticHeaders?: boolean | undefined;
+  readonly stripLayout?: boolean | undefined;
   readonly dryRun?: boolean | undefined;
 } {
   if (options.static !== true) {

@@ -119,6 +119,93 @@ class CliBuildScriptExample {
   }
 
   /**
+   * Runs the packed OpenNav CLI with layout stripping enabled.
+   *
+   * @returns Promise that resolves after OpenNav writes stripped Markdown files.
+   */
+  public async runStripLayoutOpenNavBuild(): Promise<void> {
+    await this.runner.runCommand(
+      "npm",
+      [
+        "exec",
+        "--",
+        "opennav",
+        "build",
+        "--static",
+        "--output",
+        this.outputDirectory,
+        "--site-url",
+        "https://cli.example.com",
+        "--site-name",
+        "CLI Example Docs",
+        "--strip-layout",
+      ],
+      this.runner.resolveExampleDirectory(this.exampleDirectory),
+      `${this.exampleName} strip-layout OpenNav CLI build`,
+    );
+  }
+
+  /**
+   * Writes a small static output folder with repeated layout text around content.
+   *
+   * @returns Promise that resolves after the layout-heavy HTML pages exist.
+   */
+  public async writeLayoutHeavyStaticOutput(): Promise<void> {
+    await this.cleanOutput();
+    await this.runner.writeExampleFile(
+      this.exampleDirectory,
+      join(this.outputDirectory, "index.html"),
+      `<!doctype html>
+<html lang="en">
+  <head>
+    <title>CLI Example Home</title>
+    <meta
+      name="description"
+      content="Plain static site root page for the OpenNav CLI."
+    />
+  </head>
+  <body>
+    <a href="#content">Skip to content</a>
+    <header><p>Repeated header navigation</p></header>
+    <nav><p>Repeated primary navigation</p></nav>
+    <main id="content">
+      <h1>CLI Example Home</h1>
+      <p>Plain static HTML can run OpenNav from an npm build script.</p>
+    </main>
+    <aside><p>Repeated sidebar navigation</p></aside>
+    <footer><p>Repeated footer navigation</p></footer>
+  </body>
+</html>
+`,
+    );
+    await this.runner.writeExampleFile(
+      this.exampleDirectory,
+      join(this.outputDirectory, "docs/about.html"),
+      `<!doctype html>
+<html lang="en">
+  <head>
+    <title>CLI Example About</title>
+    <meta
+      name="description"
+      content="A second plain static route for the OpenNav CLI."
+    />
+  </head>
+  <body>
+    <header><p>Repeated header navigation</p></header>
+    <nav><p>Repeated primary navigation</p></nav>
+    <main>
+      <h1>CLI Example About</h1>
+      <p>This page proves the CLI discovers nested static HTML files.</p>
+    </main>
+    <aside><p>Repeated sidebar navigation</p></aside>
+    <footer><p>Repeated footer navigation</p></footer>
+  </body>
+</html>
+`,
+    );
+  }
+
+  /**
    * Reads the generated Cloudflare Pages `_headers` file.
    *
    * @returns Exact UTF-8 content of `dist/_headers`.
@@ -127,6 +214,19 @@ class CliBuildScriptExample {
     return await this.runner.readExampleFile(
       this.exampleDirectory,
       join(this.outputDirectory, "_headers"),
+    );
+  }
+
+  /**
+   * Reads one generated output file from the CLI example `dist` folder.
+   *
+   * @param outputFilePath - Output-directory-relative file path to read.
+   * @returns Exact UTF-8 content of the generated file.
+   */
+  public async readGeneratedFile(outputFilePath: string): Promise<string> {
+    return await this.runner.readExampleFile(
+      this.exampleDirectory,
+      join(this.outputDirectory, outputFilePath),
     );
   }
 
@@ -209,4 +309,36 @@ describe("CLI build-script example", (): void => {
       }),
     );
   }, 600_000);
+
+  it("strips layout content through the packed CLI", async (): Promise<void> => {
+    if (packages === undefined) {
+      throw new Error("Packed OpenNav packages were not created.");
+    }
+
+    await example.install(packages);
+    await example.runTypecheck();
+    await example.writeLayoutHeavyStaticOutput();
+    await example.runStripLayoutOpenNavBuild();
+
+    expect({
+      indexMarkdown: normalizeBuildFingerprint(
+        await example.readGeneratedFile("index.md"),
+      ),
+      llmsFullTxt: normalizeBuildFingerprint(
+        await example.readGeneratedFile("llms-full.txt"),
+      ),
+    }).toEqual({
+      indexMarkdown:
+        '# CLI Example Home\n\nPlain static HTML can run OpenNav from an npm build script.\n\n---\n\nSite index: [llms.txt](https://cli.example.com/llms.txt)\n\n<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:[opennav-build-fingerprint]" manifest="/.well-known/opennav.json" -->\n',
+      llmsFullTxt:
+        '# CLI Example Docs\n\n## Root\n\n### CLI Example Home\n\nURL: https://cli.example.com/index.md\n\nPlain static site root page for the OpenNav CLI.\n\n# CLI Example Home\n\nPlain static HTML can run OpenNav from an npm build script.\n\n---\n\n## Docs\n\n### CLI Example About\n\nURL: https://cli.example.com/docs/about.md\n\nA second plain static route for the OpenNav CLI.\n\n# CLI Example About\n\nThis page proves the CLI discovers nested static HTML files.\n\n<!-- opennav compatible="true" version="1.0" profile="static-agent-ready" build-fingerprint="sha256:[opennav-build-fingerprint]" manifest="/.well-known/opennav.json" -->\n',
+    });
+  }, 600_000);
 });
+
+function normalizeBuildFingerprint(content: string): string {
+  return content.replace(
+    /sha256:[0-9a-f]{12}/gu,
+    "sha256:[opennav-build-fingerprint]",
+  );
+}

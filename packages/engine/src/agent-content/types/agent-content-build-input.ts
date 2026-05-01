@@ -1,4 +1,5 @@
 import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
+import type { EngineContentExtractionOptions } from "../../types/engine-content-extraction-options";
 
 /**
  * Site metadata and lazy page readers needed to plan agent-readable files.
@@ -37,6 +38,15 @@ export interface AgentContentBuildInput {
    * capability false because OpenNav does not invent content-use policy.
    */
   readonly contentSignalsConfigured?: boolean | undefined;
+
+  /**
+   * Optional HTML content extraction preferences for generated readable files.
+   *
+   * When omitted, generated Markdown page artifacts and `llms-full.txt` convert
+   * the whole source `<body>` to Markdown. When `stripLayout` is enabled, the
+   * builder passes that preference to each lazy page conversion.
+   */
+  readonly contentExtraction?: EngineContentExtractionOptions | undefined;
 
   /**
    * Optional short summary for the whole site.

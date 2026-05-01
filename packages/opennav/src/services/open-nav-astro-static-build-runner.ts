@@ -71,6 +71,9 @@ export class OpenNavAstroStaticBuildRunner {
         ? {}
         : { platform: this.options.platform }),
       accessGuidance: this.options.accessGuidance,
+      ...(this.options.contentExtraction === undefined
+        ? {}
+        : { contentExtraction: this.options.contentExtraction }),
       ...(this.options.staticHeaders === undefined
         ? {}
         : { staticHeaders: this.options.staticHeaders }),

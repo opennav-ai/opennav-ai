@@ -1,4 +1,5 @@
 import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
+import type { EngineContentExtractionOptions } from "../../types/engine-content-extraction-options";
 
 /**
  * Source page data needed to produce one in-memory Markdown page body.
@@ -30,6 +31,15 @@ export interface PageMarkdownContentGenerateInput {
    * unchanged in generated page content.
    */
   readonly pages: readonly OpenNavPageMetadata[];
+
+  /**
+   * Optional HTML content extraction preferences for generated Markdown.
+   *
+   * Markdown source pages are returned unchanged. HTML source pages convert the
+   * whole source `<body>` by default and strip only the documented fixed layout
+   * elements before conversion when `stripLayout` is enabled.
+   */
+  readonly contentExtraction?: EngineContentExtractionOptions | undefined;
 
   /**
    * Exact UTF-8 body read from the page source file.

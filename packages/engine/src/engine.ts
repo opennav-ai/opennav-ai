@@ -114,6 +114,7 @@ export class Engine {
         contentSignalsGuidanceBuilder.hasConfiguredSignals({
           contentSignals: input.accessGuidance?.contentSignals,
         }),
+      contentExtraction: input.contentExtraction,
       maxLlmsFullContentTokens: DEFAULT_LLMS_FULL_MAX_CONTENT_TOKENS,
       outputDirectory: input.outputDirectory,
       pages: fileMetadataResult.value.pageMetadata,

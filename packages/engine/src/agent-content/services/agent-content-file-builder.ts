@@ -235,6 +235,7 @@ export class AgentContentFileBuilder {
       baseUrl: input.baseUrl,
       page,
       pages: input.pages,
+      contentExtraction: input.contentExtraction,
       sourceContent: sourceContentResult.value,
       includeSiteIndexBacklink,
     });

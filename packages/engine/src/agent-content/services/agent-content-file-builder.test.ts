@@ -8,6 +8,7 @@ import { EngineFileReader } from "../../input/services/engine-file-reader";
 import type { EngineFileReadInput } from "../../input/types/engine-file-read-input";
 import type { EngineFileReadResult } from "../../input/types/engine-file-read-result";
 import type { OpenNavPageMetadata } from "../../pages/types/opennav-page";
+import type { EngineContentExtractionOptions } from "../../types/engine-content-extraction-options";
 import { DEFAULT_LLMS_FULL_MAX_CONTENT_TOKENS } from "../constants/default-llms-full-max-content-tokens";
 import type { AgentContentBuildInput } from "../types/agent-content-build-input";
 import type { AgentContentBuildResult } from "../types/agent-content-build-result";
@@ -84,12 +85,14 @@ function createBuildInput(
   pages: readonly OpenNavPageMetadata[],
   maxLlmsFullContentTokens: number = DEFAULT_LLMS_FULL_MAX_CONTENT_TOKENS,
   contentSignalsConfigured = false,
+  contentExtraction?: EngineContentExtractionOptions | undefined,
 ): AgentContentBuildInput {
   return {
     siteName: "Example Docs",
     baseUrl: "https://example.com",
     buildFingerprint: BUILD_FINGERPRINT,
     contentSignalsConfigured,
+    contentExtraction,
     maxLlmsFullContentTokens,
     outputDirectory,
     pages,
@@ -420,6 +423,83 @@ describe("AgentContentFileBuilder", (): void => {
         content: createExpectedOpenNavManifestContent(false, true),
         warnings: [],
       },
+    });
+  });
+
+  it("strips repeated layout content from generated page artifacts and llms-full.txt when enabled", async (): Promise<void> => {
+    const outputDirectory = await createOutputDirectory();
+    const fileReader = new CountingEngineFileReader();
+    const homePage = createHtmlPage(
+      "index.html",
+      "/",
+      "Home",
+      "Project overview.",
+    );
+    await writeSourceFile(
+      outputDirectory,
+      homePage,
+      [
+        "<!doctype html>",
+        "<html>",
+        "<body>",
+        "<header><p>Repeated header</p></header>",
+        "<nav><p>Repeated nav</p></nav>",
+        "<main><h1>Home</h1><p>Readable body.</p></main>",
+        "<aside><p>Repeated sidebar</p></aside>",
+        "<footer><p>Repeated footer</p></footer>",
+        "</body>",
+        "</html>",
+      ].join(""),
+    );
+    const builder = new AgentContentFileBuilder({
+      fileReader,
+      llmsFullTxtGenerator: new LlmsFullTxtGenerator(
+        new StaticLlmsFullTxtTokenCounter(),
+      ),
+    });
+
+    const result: AgentContentBuildResult = builder.build(
+      createBuildInput(
+        outputDirectory,
+        [homePage],
+        DEFAULT_LLMS_FULL_MAX_CONTENT_TOKENS,
+        false,
+        {
+          stripLayout: true,
+        },
+      ),
+    );
+    const homeMarkdownContentResult = await findFileByPath(
+      result.files,
+      "index.md",
+    ).getContent();
+    const llmsFullTxtContentResult = await findFileByPath(
+      result.files,
+      "llms-full.txt",
+    ).getContent();
+
+    expect({
+      homeMarkdown: homeMarkdownContentResult.isOk()
+        ? homeMarkdownContentResult.value
+        : homeMarkdownContentResult.error,
+      llmsFullTxt: llmsFullTxtContentResult.isOk()
+        ? llmsFullTxtContentResult.value
+        : llmsFullTxtContentResult.error,
+      sourceReadCount: fileReader.readCount("index.html"),
+    }).toEqual({
+      homeMarkdown: {
+        content: appendExpectedBuildFingerprintMarker(
+          "# Home\n\nReadable body.\n\n---\n\nSite index: [llms.txt](https://example.com/llms.txt)\n",
+        ),
+        warnings: [],
+      },
+      llmsFullTxt: {
+        content: appendExpectedBuildFingerprintMarker(
+          "# Example Docs\n\n## Root\n\n### Home\n\nURL: https://example.com/index.md\n\nProject overview.\n\n# Home\n\nReadable body.\n",
+        ),
+        warnings: [],
+      },
+      sourceReadCount: 2,
     });
   });
 

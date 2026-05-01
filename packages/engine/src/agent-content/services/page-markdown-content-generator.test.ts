@@ -81,6 +81,101 @@ describe("PageMarkdownContentGenerator", (): void => {
     }
   });
 
+  it("preserves layout text when content extraction options are omitted", (): void => {
+    const generator = new PageMarkdownContentGenerator();
+    const page = {
+      sourceFilePath: "docs/guide.html",
+      sourceContentType: "html",
+      route: "/docs/guide",
+      canonicalUrl: "https://example.com/docs/guide",
+      title: "Guide",
+      description: "Read the guide.",
+    } as const;
+    const sourceContent = [
+      "<!doctype html>",
+      "<html>",
+      "<body>",
+      "<header><p>Global header</p></header>",
+      '<nav><a href="/docs/">Docs nav</a></nav>',
+      "<main><h1>Guide</h1><p>Core content.</p></main>",
+      "<aside><p>Sidebar note</p></aside>",
+      "<footer><p>Footer text</p></footer>",
+      "</body>",
+      "</html>",
+    ].join("");
+
+    const result: Result<PageMarkdownContentGenerateResult, OpenNavError> =
+      generator.generate({
+        baseUrl: "https://example.com",
+        page,
+        pages: [page],
+        sourceContent,
+      });
+
+    expect(result.isOk()).toEqual(true);
+    if (result.isOk()) {
+      expect(result.value).toEqual({
+        content:
+          "Global header\n\n[Docs nav](/docs/)\n\n# Guide\n\nCore content.\n\nSidebar note\n\nFooter text\n",
+      });
+    }
+  });
+
+  it("removes documented layout elements when stripLayout is enabled", (): void => {
+    const generator = new PageMarkdownContentGenerator();
+    const page = {
+      sourceFilePath: "docs/install.html",
+      sourceContentType: "html",
+      route: "/docs/install",
+      canonicalUrl: "https://example.com/docs/install",
+      title: "Install",
+      description: "Install the package.",
+    } as const;
+    const sourceContent = [
+      "<!doctype html>",
+      "<html>",
+      "<body>",
+      '<a href="#content">Skip to content</a>',
+      "<header><p>Header copy</p></header>",
+      '<nav><a href="/docs/">Docs nav</a></nav>',
+      '<div role="navigation"><p>Role nav</p></div>',
+      "<search>Search box</search>",
+      "<site-search>Site search</site-search>",
+      "<aside><p>Sidebar copy</p></aside>",
+      '<div role="search"><p>Role search</p></div>',
+      '<section role="complementary"><p>Related pages</p></section>',
+      "<div data-pagefind-ignore><p>Ignored text</p></div>",
+      '<main id="content">',
+      "<h1>Install</h1>",
+      "<p>Keep this body content.</p>",
+      '<a href="#details">Jump to details</a>',
+      '<p id="details">Details stay.</p>',
+      "</main>",
+      "<footer><p>Footer copy</p></footer>",
+      "</body>",
+      "</html>",
+    ].join("");
+
+    const result: Result<PageMarkdownContentGenerateResult, OpenNavError> =
+      generator.generate({
+        baseUrl: "https://example.com",
+        page,
+        pages: [page],
+        sourceContent,
+        contentExtraction: {
+          stripLayout: true,
+        },
+      });
+
+    expect(result.isOk()).toEqual(true);
+    if (result.isOk()) {
+      expect(result.value).toEqual({
+        content:
+          "# Install\n\nKeep this body content.\n\n[Jump to details](#details)\n\nDetails stay.\n",
+      });
+    }
+  });
+
   it("rewrites known internal HTML links to Markdown artifact URLs", (): void => {
     const generator = new PageMarkdownContentGenerator();
     const currentPage = {

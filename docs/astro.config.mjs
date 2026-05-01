@@ -85,6 +85,7 @@ export default defineConfig({
           label: "Reference",
           items: [
             { slug: "reference/generated-files" },
+            { slug: "reference/content-extraction" },
             { slug: "reference/access-guidance" },
           ],
         },

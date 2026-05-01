@@ -1,4 +1,5 @@
 import type { EngineAccessGuidanceOptions } from "./engine-access-guidance-options";
+import type { EngineContentExtractionOptions } from "./engine-content-extraction-options";
 import type { EngineFilePath } from "./engine-file-path";
 
 /**
@@ -51,6 +52,15 @@ export interface EngineExecuteInput {
    * Content Signals because no site owner policy has been configured.
    */
   readonly accessGuidance?: EngineAccessGuidanceOptions | undefined;
+
+  /**
+   * Optional HTML content extraction preferences for generated readable files.
+   *
+   * When omitted, HTML page artifacts and `llms-full.txt` convert the whole
+   * source `<body>` to Markdown. When `stripLayout` is enabled, the engine
+   * removes only the documented fixed layout elements before conversion.
+   */
+  readonly contentExtraction?: EngineContentExtractionOptions | undefined;
 
   /**
    * Optional static hosting response-header artifact settings.

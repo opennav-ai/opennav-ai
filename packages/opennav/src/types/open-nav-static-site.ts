@@ -1,3 +1,4 @@
+import type { OpenNavContentExtractionOptions } from "./open-nav-content-extraction";
 import type { OpenNavAccessGuidanceOptions } from "./open-nav-policy";
 
 /**
@@ -89,6 +90,15 @@ export interface OpenNavStaticSiteOptions {
   readonly accessGuidance?: OpenNavAccessGuidanceOptions | undefined;
 
   /**
+   * Optional HTML content extraction preferences for generated readable files.
+   *
+   * When omitted, OpenNav converts the whole source `<body>` for HTML page
+   * artifacts and `llms-full.txt`. Set `stripLayout` to remove only the
+   * documented fixed layout elements before Markdown conversion.
+   */
+  readonly contentExtraction?: OpenNavContentExtractionOptions | undefined;
+
+  /**
    * Optional static hosting response-header artifact settings.
    *
    * When omitted and `platform` is configured, OpenNav should use the platform
@@ -150,6 +160,15 @@ export interface OpenNavConfigOptions {
    * Signals policy.
    */
   readonly accessGuidance?: OpenNavAccessGuidanceOptions | undefined;
+
+  /**
+   * Optional HTML content extraction preferences for generated readable files.
+   *
+   * When omitted, OpenNav converts the whole source `<body>` for HTML page
+   * artifacts and `llms-full.txt`. Set `stripLayout` to remove only the
+   * documented fixed layout elements before Markdown conversion.
+   */
+  readonly contentExtraction?: OpenNavContentExtractionOptions | undefined;
 
   /**
    * Optional static hosting response-header artifact settings.

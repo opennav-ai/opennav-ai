@@ -34,6 +34,7 @@ opennav build --static \
   --site-name <name> \
   [--preset <preset>] \
   [--platform <platform>] \
+  [--strip-layout] \
   [--static-headers] \
   [--dry-run]
 ```
@@ -81,6 +82,22 @@ routes, OpenNav leaves `_headers` untouched and reports a warning.
 
 Omit `--platform` for a generic static build. Additional platform values will
 be added as OpenNav gains first-class support for more static hosts.
+
+### `--strip-layout`
+
+Optional. Sets `contentExtraction.stripLayout` to `true`.
+
+By default, OpenNav converts the whole HTML `<body>` when it creates generated
+Markdown page artifacts and `llms-full.txt`. Pass `--strip-layout` only when
+your built HTML uses normal layout elements for repeated interface such as
+navigation, sidebars, search, headers, footers, or table-of-contents panels.
+
+See the [content extraction reference](/reference/content-extraction/) for the
+exact elements OpenNav removes when this flag is enabled.
+
+This first version uses a fixed strip list. Future versions are expected to add
+more granular HTML element controls, such as tag-level, class-level, or
+selector-level strip and preserve rules.
 
 ### `--static-headers`
 

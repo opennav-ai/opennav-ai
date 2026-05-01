@@ -47,8 +47,16 @@ docs/api.html             -> docs/api.md
 docs/reference/index.html -> docs/reference/index.md
 ```
 
-The generated Markdown keeps the readable page content and adds a backlink to
-the root site index:
+By default, OpenNav converts the whole HTML `<body>` to Markdown. That keeps the
+static behavior conservative for sites with custom HTML structures. Callers can
+enable `contentExtraction.stripLayout` to remove the documented layout elements
+before Markdown conversion.
+
+This first version uses a fixed strip list. Future versions are expected to add
+more granular HTML element controls, such as tag-level, class-level, or
+selector-level strip and preserve rules.
+
+The generated Markdown also adds a backlink to the root site index:
 
 ```markdown
 ---
@@ -63,6 +71,9 @@ link from `/docs/guide/` to `/docs/api/` becomes a link to
 for that page.
 
 External links and links to unknown pages are left alone.
+
+See the [content extraction reference](/reference/content-extraction/) for the
+exact `stripLayout` behavior.
 
 ## HTML Resource Links
 

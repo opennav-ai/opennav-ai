@@ -43,6 +43,7 @@ export class MarkdownPageArtifactGenerator {
       baseUrl: input.baseUrl,
       page: input.page,
       pages: input.pages,
+      contentExtraction: input.contentExtraction,
       sourceContent: input.sourceContent,
     });
 

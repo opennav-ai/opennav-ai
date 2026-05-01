@@ -43,6 +43,9 @@ const result = await new OpenNavStaticSite({
   outputDirectory: "dist",
   preset: "astro",
   platform: "cloudflare-pages",
+  contentExtraction: {
+    stripLayout: true,
+  },
   accessGuidance: {
     contentSignals: {
       search: "allow",
@@ -71,6 +74,9 @@ interface OpenNavStaticSiteOptions {
   readonly outputDirectory: string;
   readonly preset?: "astro" | "next-export";
   readonly platform?: "cloudflare-pages";
+  readonly contentExtraction?: {
+    readonly stripLayout?: boolean;
+  };
   readonly staticHeaders?: {
     readonly enabled: boolean;
   };
@@ -126,6 +132,40 @@ first.
 
 Omit `platform` for a generic static build. More platform values will be added
 as OpenNav gains first-class support for additional static hosts.
+
+### `contentExtraction`
+
+Optional. Controls how OpenNav reads built HTML pages before creating generated
+Markdown page artifacts and `llms-full.txt`.
+
+When omitted, OpenNav preserves the current conservative behavior: it converts
+the whole HTML `<body>` to Markdown. Set `stripLayout` to `true` to remove the
+documented fixed list of layout elements before Markdown conversion.
+
+See the [content extraction reference](/reference/content-extraction/) for the
+exact stripped elements and the cases where you should leave this unset.
+
+This first version uses a fixed strip list. Future versions are expected to add
+more granular HTML element controls, such as tag-level, class-level, or
+selector-level strip and preserve rules.
+
+```typescript
+const result = await new OpenNavStaticSite({
+  siteName: "Example Docs",
+  siteUrl: "https://example.com",
+  outputDirectory: "dist",
+  contentExtraction: {
+    stripLayout: true,
+  },
+}).build();
+```
+
+### `contentExtraction.stripLayout`
+
+Optional. Defaults to `false`.
+
+When `true`, OpenNav still starts from the whole HTML `<body>`, but removes the
+declared layout elements before converting that body to Markdown.
 
 ### `staticHeaders`
 

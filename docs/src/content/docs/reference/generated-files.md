@@ -13,7 +13,7 @@ folder.
 | `llms-full.txt` | Combined readable page content when the site fits within the configured token limit. |
 | `.well-known/llms-full.txt` | Well-known copy of the full readable content file. |
 | `.well-known/opennav.json` | Static compatibility manifest with artifact paths and build fingerprint. |
-| `*.md` page artifacts | Markdown mirrors for HTML pages, such as `docs/api/index.md`. |
+| `*.md` page artifacts | Markdown mirrors for HTML pages, such as `docs/api/index.md`. By default these are converted from the whole HTML `<body>`; `contentExtraction.stripLayout` can remove documented layout elements first. |
 | `*.html` pages | Safe `<head>` links pointing to Markdown mirrors and `llms.txt`. |
 | `robots.txt` | Optional Content Signals guidance when configured by the caller. |
 | `_headers` | Optional platform response-header artifact. Created by default for Cloudflare Pages when `platform: "cloudflare-pages"` or `--platform cloudflare-pages` is configured. It sets content types for generated artifacts and per-page `Link` headers for HTML routes. |

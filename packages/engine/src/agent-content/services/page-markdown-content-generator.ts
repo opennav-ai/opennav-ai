@@ -11,6 +11,7 @@ import { gfm } from "turndown-plugin-gfm";
 import type { OpenNavError } from "../../common/types/opennav-error";
 import type { PageMarkdownContentGenerateInput } from "../types/page-markdown-content-generate-input";
 import type { PageMarkdownContentGenerateResult } from "../types/page-markdown-content-generate-result";
+import { HtmlLayoutStripper } from "./html-layout-stripper";
 import { MarkdownLinkHrefRewriter } from "./markdown-link-href-rewriter";
 
 /**
@@ -18,16 +19,20 @@ import { MarkdownLinkHrefRewriter } from "./markdown-link-href-rewriter";
  */
 export class PageMarkdownContentGenerator {
   readonly #linkHrefRewriter: MarkdownLinkHrefRewriter;
+  readonly #layoutStripper: HtmlLayoutStripper;
 
   /**
    * Creates a page content generator with the default link href rewriter.
    *
    * @param linkHrefRewriter - Rewrites known internal links to Markdown endpoints.
+   * @param layoutStripper - Removes documented layout elements from parsed HTML bodies.
    */
   public constructor(
     linkHrefRewriter: MarkdownLinkHrefRewriter = new MarkdownLinkHrefRewriter(),
+    layoutStripper: HtmlLayoutStripper = new HtmlLayoutStripper(),
   ) {
     this.#linkHrefRewriter = linkHrefRewriter;
+    this.#layoutStripper = layoutStripper;
   }
 
   /**
@@ -149,7 +154,7 @@ export class PageMarkdownContentGenerator {
   ): string {
     const markdown = this.normalizeMarkdownWhitespace(
       this.createTurndownService(input).turndown(
-        this.getConvertibleHtml(input.sourceContent),
+        this.getConvertibleHtml(input),
       ),
     ).trimEnd();
 
@@ -311,8 +316,8 @@ export class PageMarkdownContentGenerator {
     return undefined;
   }
 
-  private getConvertibleHtml(sourceContent: string): string {
-    const document = parse(sourceContent);
+  private getConvertibleHtml(input: PageMarkdownContentGenerateInput): string {
+    const document = parse(input.sourceContent);
     const bodyElement = this.findFirstElement(
       document,
       (element: DefaultTreeAdapterTypes.Element): boolean =>
@@ -320,7 +325,11 @@ export class PageMarkdownContentGenerator {
     );
 
     if (bodyElement === undefined) {
-      return sourceContent;
+      return input.sourceContent;
+    }
+
+    if (input.contentExtraction?.stripLayout === true) {
+      this.#layoutStripper.strip(bodyElement);
     }
 
     return serialize(bodyElement);
