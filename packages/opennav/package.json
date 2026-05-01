@@ -1,6 +1,7 @@
 {
   "name": "@opennav-ai/opennav",
   "version": "0.1.0",
+  "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/opennav/src/index.cjs",
   "module": "./dist/opennav/src/index.js",
@@ -38,6 +39,7 @@
     "access": "public"
   },
   "files": [
+    "LICENSE",
     "dist"
   ],
   "zshy": {
