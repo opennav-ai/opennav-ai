@@ -1,20 +1,24 @@
 :root,
 :root[data-theme="light"] {
-  --opennav-docs-text-color: #000000;
-  --opennav-docs-page-bg: #fbfcff;
-  --opennav-docs-surface-bg: #ffffff;
-  --opennav-docs-border-color: #d8dee8;
+  --opennav-docs-text-color: #021c3f;
+  --opennav-docs-muted-color: #536171;
+  --opennav-docs-page-bg: #f7f6f1;
+  --opennav-docs-surface-bg: rgb(255 255 255 / 0.72);
+  --opennav-docs-surface-solid-bg: #ffffff;
+  --opennav-docs-border-color: rgb(2 28 63 / 0.12);
+  --opennav-docs-blue: #1474f0;
+  --opennav-docs-cyan: #31bbf5;
   --sl-color-text: var(--opennav-docs-text-color);
   --sl-color-white: var(--opennav-docs-text-color);
   --sl-color-black: var(--opennav-docs-page-bg);
   --sl-color-bg: var(--opennav-docs-page-bg);
   --sl-color-bg-nav: var(--opennav-docs-surface-bg);
   --sl-color-bg-sidebar: var(--opennav-docs-page-bg);
-  --sl-color-gray-7: #f4f7fc;
-  --sl-color-gray-6: #e8edf5;
+  --sl-color-gray-7: rgb(255 255 255 / 0.58);
+  --sl-color-gray-6: rgb(2 28 63 / 0.08);
   --sl-color-gray-5: var(--opennav-docs-border-color);
   --sl-rapide-ui-bg-color: var(--opennav-docs-surface-bg);
-  --sl-rapide-ui-header-bg-color: rgb(255 255 255 / 0.82);
+  --sl-rapide-ui-header-bg-color: rgb(247 246 241 / 0.86);
   --sl-rapide-ui-border-color: var(--opennav-docs-border-color);
 }
 
@@ -25,6 +29,58 @@ body :where(:not(.expressive-code, .expressive-code *)) {
 
 body {
   background-color: var(--opennav-docs-page-bg);
+  background-image:
+    linear-gradient(
+      90deg,
+      var(--opennav-docs-page-bg) 0%,
+      rgb(247 246 241 / 0.96) 29%,
+      rgb(247 246 241 / 0.62) 52%,
+      rgb(247 246 241 / 0.18) 72%
+    ),
+    linear-gradient(
+      180deg,
+      rgb(247 246 241 / 0.76) 0%,
+      rgb(247 246 241 / 0.18) 24%,
+      rgb(247 246 241 / 0.18) 72%,
+      rgb(247 246 241 / 0.86) 100%
+    ),
+    url("/site/opennav-compass-document-layers-desktop.webp");
+  background-position:
+    center top,
+    center top,
+    right top;
+  background-repeat: no-repeat;
+  background-size:
+    100% 100%,
+    100% 100%,
+    min(1774px, 100vw) auto;
+  background-attachment: fixed;
+}
+
+.page,
+.main-frame,
+.main-pane,
+.content-panel,
+main {
+  background: transparent;
+}
+
+.header {
+  border-bottom-color: var(--opennav-docs-border-color);
+  background-color: rgb(247 246 241 / 0.86);
+  backdrop-filter: blur(18px);
+}
+
+.sidebar-pane,
+.right-sidebar-panel,
+.mobile-preferences {
+  background-color: rgb(247 246 241 / 0.7);
+  backdrop-filter: blur(18px);
+}
+
+.sidebar-content,
+.right-sidebar-panel .sl-container {
+  background-color: transparent;
 }
 
 ::placeholder {
@@ -33,7 +89,7 @@ body {
 }
 
 starlight-menu-button button {
-  background-color: #ffffff;
+  background-color: var(--opennav-docs-surface-solid-bg);
   color: var(--opennav-docs-text-color);
 }
 
@@ -64,22 +120,22 @@ html .expressive-code {
 }
 
 html {
-  --opennav-code-bg: #fafafa;
-  --opennav-code-border: #d8dee8;
+  --opennav-code-bg: rgb(255 255 255 / 0.78);
+  --opennav-code-border: var(--opennav-docs-border-color);
   --opennav-code-fg: #383a42;
-  --opennav-code-header-bg: #f0f2f6;
-  --opennav-code-muted-fg: #696c77;
+  --opennav-code-header-bg: rgb(255 255 255 / 0.58);
+  --opennav-code-muted-fg: var(--opennav-docs-muted-color);
   --opennav-code-scrollbar: rgb(56 58 66 / 0.22);
   --opennav-code-scrollbar-hover: rgb(56 58 66 / 0.42);
-  --opennav-code-token-control: #4078f2;
-  --opennav-code-token-function: #a626a4;
-  --opennav-code-token-keyword: #a626a4;
+  --opennav-code-token-control: var(--opennav-docs-blue);
+  --opennav-code-token-function: #0f5dbf;
+  --opennav-code-token-keyword: #0f5dbf;
   --opennav-code-token-number: #986801;
   --opennav-code-token-plain: #383a42;
-  --opennav-code-token-property: #e45649;
+  --opennav-code-token-property: #d14f3f;
   --opennav-code-token-string: #50a14f;
-  --opennav-code-token-type: #0184bc;
-  --opennav-code-token-variable: #c18401;
+  --opennav-code-token-type: #0f9f8f;
+  --opennav-code-token-variable: var(--opennav-docs-cyan);
 }
 
 html .expressive-code .ec-line span[style*="#000000"] {
@@ -134,7 +190,7 @@ html .expressive-code .ec-line span[style*="#D40000"] {
 }
 
 .opennav-example-label {
-  color: #334155;
+  color: var(--opennav-docs-muted-color);
   font-size: var(--sl-text-sm);
   font-weight: 700;
   margin-block: 1rem 0.5rem;
@@ -164,7 +220,7 @@ html .expressive-code .ec-line span[style*="#D40000"] {
   border: 0;
   border-bottom: 2px solid transparent;
   background: transparent;
-  color: #334155;
+  color: var(--opennav-docs-muted-color);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -177,7 +233,7 @@ html .expressive-code .ec-line span[style*="#D40000"] {
 
 .opennav-example-tabs button:hover,
 .opennav-example-tabs button:focus-visible {
-  color: #000000;
+  color: var(--opennav-docs-text-color);
 }
 
 .opennav-example-tabs button:focus-visible {
@@ -187,17 +243,17 @@ html .expressive-code .ec-line span[style*="#D40000"] {
 
 .opennav-example-tabs button[aria-selected="true"] {
   border-bottom-color: var(--sl-color-accent);
-  color: #000000;
+  color: var(--opennav-docs-text-color);
 }
 
 :root {
-  --opennav-table-accent: #1474f0;
-  --opennav-table-accent-2: #0f9f8f;
-  --opennav-table-border: #d8e2ef;
-  --opennav-table-muted: #526071;
-  --opennav-table-row: #ffffff;
-  --opennav-table-row-alt: #f7fbff;
-  --opennav-table-shadow: 0 1rem 2rem rgb(15 23 42 / 0.07);
+  --opennav-table-accent: var(--opennav-docs-blue);
+  --opennav-table-accent-2: var(--opennav-docs-cyan);
+  --opennav-table-border: var(--opennav-docs-border-color);
+  --opennav-table-muted: var(--opennav-docs-muted-color);
+  --opennav-table-row: rgb(255 255 255 / 0.78);
+  --opennav-table-row-alt: rgb(255 255 255 / 0.48);
+  --opennav-table-shadow: 0 1rem 2rem rgb(2 28 63 / 0.07);
 }
 
 html .sl-markdown-content table:not(:where(.not-content *)) {
@@ -207,7 +263,7 @@ html .sl-markdown-content table:not(:where(.not-content *)) {
   border-collapse: separate;
   border-spacing: 0;
   box-shadow: var(--opennav-table-shadow);
-  color: #0f172a;
+  color: var(--opennav-docs-text-color);
   overflow: hidden;
   table-layout: auto;
   margin-block: 1.25rem 1.6rem;
@@ -223,7 +279,7 @@ html .sl-markdown-content table:not(:where(.not-content *)) thead {
   background: linear-gradient(
     90deg,
     rgb(20 116 240 / 0.11),
-    rgb(15 159 143 / 0.1)
+    rgb(49 187 245 / 0.12)
   );
 }
 
@@ -235,14 +291,14 @@ html .sl-markdown-content table:not(:where(.not-content *)) :is(th, td) {
 }
 
 html .sl-markdown-content table:not(:where(.not-content *)) th {
-  color: #0f172a;
+  color: var(--opennav-docs-text-color);
   font-size: var(--sl-text-sm);
   font-weight: 800;
   line-height: 1.35;
 }
 
 html .sl-markdown-content table:not(:where(.not-content *)) td {
-  color: #1f2937;
+  color: var(--opennav-docs-text-color);
   font-size: var(--sl-text-sm);
   line-height: 1.6;
 }
@@ -260,7 +316,7 @@ html
 }
 
 html .sl-markdown-content table:not(:where(.not-content *)) tbody tr + tr td {
-  border-top: 1px solid rgb(216 226 239 / 0.8);
+  border-top: 1px solid var(--opennav-docs-border-color);
 }
 
 html
@@ -268,15 +324,15 @@ html
   table:not(:where(.not-content *))
   tbody
   td:first-child {
-  color: #0f3f85;
+  color: #0f5dbf;
   font-weight: 700;
 }
 
 html .sl-markdown-content table:not(:where(.not-content *)) code {
   max-width: 100%;
-  border: 1px solid rgb(15 23 42 / 0.08);
+  border: 1px solid var(--opennav-docs-border-color);
   background-color: rgb(255 255 255 / 0.72);
-  color: #0f172a;
+  color: var(--opennav-docs-text-color);
   overflow-wrap: anywhere;
 }
 
@@ -285,6 +341,24 @@ html .sl-markdown-content table:not(:where(.not-content *)) code {
 }
 
 @media (max-width: 44rem) {
+  body {
+    background-image:
+      linear-gradient(
+        180deg,
+        var(--opennav-docs-page-bg) 0%,
+        rgb(247 246 241 / 0.98) 36%,
+        rgb(247 246 241 / 0.78) 54%,
+        rgb(247 246 241 / 0.24) 100%
+      ),
+      url("/site/opennav-compass-document-layers-desktop.webp");
+    background-position:
+      center top,
+      42% bottom;
+    background-size:
+      100% 100%,
+      980px auto;
+  }
+
   .opennav-example-toolbar {
     grid-template-columns: 1fr;
     gap: 0.4rem;
@@ -308,7 +382,7 @@ html .sl-markdown-content table:not(:where(.not-content *)) code {
     border: 1px solid var(--opennav-table-border);
     border-radius: 0.75rem;
     background-color: var(--opennav-table-row);
-    box-shadow: 0 0.75rem 1.5rem rgb(15 23 42 / 0.06);
+    box-shadow: 0 0.75rem 1.5rem rgb(2 28 63 / 0.06);
     overflow: hidden;
   }
 
@@ -322,9 +396,9 @@ html .sl-markdown-content table:not(:where(.not-content *)) code {
     background: linear-gradient(
       90deg,
       rgb(20 116 240 / 0.1),
-      rgb(15 159 143 / 0.08)
+      rgb(49 187 245 / 0.12)
     );
-    color: #0f172a;
+    color: var(--opennav-docs-text-color);
     cursor: pointer;
     font: inherit;
     padding: 0.9rem 1rem;
@@ -336,7 +410,7 @@ html .sl-markdown-content table:not(:where(.not-content *)) code {
     background: linear-gradient(
       90deg,
       rgb(20 116 240 / 0.14),
-      rgb(15 159 143 / 0.11)
+      rgb(49 187 245 / 0.16)
     );
   }
 
@@ -358,7 +432,7 @@ html .sl-markdown-content table:not(:where(.not-content *)) code {
   .opennav-table-accordion-trigger-value {
     display: block;
     margin-top: 0.25rem;
-    color: #0f3f85;
+    color: #0f5dbf;
     font-size: var(--sl-text-base);
     font-weight: 800;
     line-height: 1.4;
@@ -380,8 +454,8 @@ html .sl-markdown-content table:not(:where(.not-content *)) code {
     content: "";
     width: 0.45rem;
     height: 0.45rem;
-    border-inline-end: 2px solid #0f3f85;
-    border-block-end: 2px solid #0f3f85;
+    border-inline-end: 2px solid #0f5dbf;
+    border-block-end: 2px solid #0f5dbf;
     transform: translateY(-0.1rem) rotate(45deg);
     transition: transform 160ms ease;
   }
@@ -403,14 +477,14 @@ html .sl-markdown-content table:not(:where(.not-content *)) code {
   }
 
   .opennav-table-accordion-field-value {
-    color: #1f2937;
+    color: var(--opennav-docs-text-color);
     font-size: var(--sl-text-base);
     line-height: 1.55;
     overflow-wrap: anywhere;
   }
 
   .opennav-table-accordion :is(a, a:visited) {
-    color: #0f3f85;
+    color: #0f5dbf;
     font-weight: 700;
     text-decoration: underline;
     text-underline-offset: 0.18rem;
@@ -419,10 +493,10 @@ html .sl-markdown-content table:not(:where(.not-content *)) code {
   html .sl-markdown-content .opennav-table-accordion code {
     display: inline;
     max-width: 100%;
-    border: 1px solid rgb(15 23 42 / 0.08);
+    border: 1px solid var(--opennav-docs-border-color);
     border-radius: 0.35rem;
     background-color: rgb(255 255 255 / 0.72);
-    color: #0f172a;
+    color: var(--opennav-docs-text-color);
     font-family: var(--__sl-font-mono);
     font-size: var(--sl-text-code);
     overflow-wrap: anywhere;

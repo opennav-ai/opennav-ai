@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OpenNav AI Hero Preview</title>
+    <style>
+      :root {
+        --page-bg: #f7f6f1;
+        --ink: #021c3f;
+        --muted: #536171;
+        --blue: #1474f0;
+        --cyan: #31bbf5;
+        --line: rgba(2, 28, 63, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--page-bg);
+        color: var(--ink);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+      }
+
+      .hero {
+        position: relative;
+        min-height: 100vh;
+        overflow: hidden;
+        background-color: var(--page-bg);
+        background-image: url("./opennav-compass-document-layers-desktop.webp");
+        background-repeat: no-repeat;
+        background-position: right center;
+        background-size: min(1774px, 100vw) auto;
+      }
+
+      .hero::after {
+        position: absolute;
+        inset: 0;
+        content: "";
+        pointer-events: none;
+        background:
+          linear-gradient(
+            90deg,
+            var(--page-bg) 0%,
+            rgba(247, 246, 241, 0.96) 29%,
+            rgba(247, 246, 241, 0.5) 52%,
+            rgba(247, 246, 241, 0) 72%
+          ),
+          linear-gradient(
+            180deg,
+            rgba(247, 246, 241, 0.72) 0%,
+            rgba(247, 246, 241, 0) 24%,
+            rgba(247, 246, 241, 0) 72%,
+            rgba(247, 246, 241, 0.8) 100%
+          );
+      }
+
+      .shell {
+        position: relative;
+        z-index: 1;
+        width: min(1180px, calc(100vw - 48px));
+        margin: 0 auto;
+        padding: 34px 0 72px;
+      }
+
+      .nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+      }
+
+      .brand {
+        display: block;
+        width: 188px;
+        height: auto;
+      }
+
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 26px;
+        color: rgba(2, 28, 63, 0.72);
+        font-size: 14px;
+        font-weight: 650;
+      }
+
+      .nav-links span {
+        white-space: nowrap;
+      }
+
+      .content {
+        width: min(560px, 100%);
+        padding-top: clamp(92px, 16vh, 164px);
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0 0 22px;
+        color: var(--blue);
+        font-size: 14px;
+        font-weight: 760;
+        letter-spacing: 0;
+      }
+
+      .eyebrow::before {
+        width: 10px;
+        height: 10px;
+        content: "";
+        border-radius: 999px;
+        background: linear-gradient(135deg, var(--blue), var(--cyan));
+        box-shadow: 0 0 18px rgba(49, 187, 245, 0.72);
+      }
+
+      h1 {
+        max-width: 540px;
+        margin: 0;
+        color: var(--ink);
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: clamp(48px, 6vw, 82px);
+        font-weight: 500;
+        line-height: 0.96;
+        letter-spacing: 0;
+      }
+
+      .lede {
+        max-width: 510px;
+        margin: 26px 0 0;
+        color: var(--muted);
+        font-size: clamp(17px, 1.8vw, 20px);
+        line-height: 1.55;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        margin-top: 34px;
+      }
+
+      .button {
+        display: inline-flex;
+        min-height: 48px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        padding: 0 20px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.62);
+        color: var(--ink);
+        font-size: 15px;
+        font-weight: 720;
+        text-decoration: none;
+        box-shadow: 0 18px 42px rgba(2, 28, 63, 0.08);
+      }
+
+      .button.primary {
+        border-color: transparent;
+        background: linear-gradient(135deg, #1474f0, #31bbf5);
+        color: white;
+        box-shadow: 0 18px 42px rgba(20, 116, 240, 0.22);
+      }
+
+      .file-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 9px;
+        margin-top: 42px;
+      }
+
+      .file-pill {
+        border: 1px solid rgba(2, 28, 63, 0.1);
+        border-radius: 999px;
+        padding: 9px 12px;
+        background: rgba(255, 255, 255, 0.54);
+        color: rgba(2, 28, 63, 0.7);
+        font-family:
+          "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 12px;
+        box-shadow: 0 12px 30px rgba(2, 28, 63, 0.05);
+      }
+
+      @media (max-width: 780px) {
+        .hero {
+          min-height: 100svh;
+          background-position: 42% bottom;
+          background-size: 980px auto;
+        }
+
+        .hero::after {
+          background:
+            linear-gradient(
+              180deg,
+              var(--page-bg) 0%,
+              rgba(247, 246, 241, 0.98) 36%,
+              rgba(247, 246, 241, 0.78) 54%,
+              rgba(247, 246, 241, 0.18) 100%
+            );
+        }
+
+        .shell {
+          width: min(100% - 32px, 620px);
+          padding-top: 24px;
+        }
+
+        .brand {
+          width: 154px;
+        }
+
+        .nav-links {
+          display: none;
+        }
+
+        .content {
+          padding-top: 72px;
+        }
+
+        h1 {
+          max-width: 420px;
+          font-size: clamp(44px, 13vw, 62px);
+        }
+
+        .lede {
+          max-width: 430px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="hero">
+      <div class="shell">
+        <nav class="nav" aria-label="Preview navigation">
+          <img class="brand" src="../full-open-logo.svg" alt="OpenNav AI" />
+          <div class="nav-links" aria-hidden="true">
+            <span>Docs</span>
+            <span>CLI</span>
+            <span>SDK</span>
+          </div>
+        </nav>
+
+        <section class="content" aria-labelledby="hero-title">
+          <p class="eyebrow">Static sites, agent-ready</p>
+          <h1 id="hero-title">The open standard for agent navigation</h1>
+          <p class="lede">
+            OpenNav turns your finished static site into predictable files that
+            AI agents can discover, read, and verify without scraping visual
+            HTML.
+          </p>
+
+          <div class="actions" aria-label="Preview actions">
+            <a class="button primary" href="#">Get started</a>
+            <a class="button" href="#">View docs</a>
+          </div>
+
+          <div class="file-row" aria-label="Generated file examples">
+            <span class="file-pill">llms.txt</span>
+            <span class="file-pill">llms-full.txt</span>
+            <span class="file-pill">/.well-known/opennav.json</span>
+            <span class="file-pill">index.md</span>
+          </div>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

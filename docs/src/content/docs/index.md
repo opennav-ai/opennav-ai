@@ -5,9 +5,6 @@ template: splash
 hero:
   title: OpenNav AI
   tagline: The open standard for agent navigation.
-  image:
-    file: ../../assets/open-logo-padded.svg
-    alt: OpenNav AI logo
   actions:
     - text: Get Started
       link: /getting-started/

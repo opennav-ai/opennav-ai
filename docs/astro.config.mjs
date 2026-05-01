@@ -35,7 +35,7 @@ export default defineConfig({
           "Open-source tooling for publishing static sites with agent-readable navigation files.",
         favicon: "/favicon.svg",
         logo: {
-          src: "./src/assets/open-logo-padded.svg",
+          src: "../assets/full-open-logo.svg",
           alt: "OpenNav AI",
         },
         plugins: [starlightThemeRapide(), lightOnlyDocsPlugin()],

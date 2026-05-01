@@ -1,5 +1,5 @@
 :root {
-  --sl-color-accent-low: #dff5ff;
+  --sl-color-accent-low: rgb(49 187 245 / 0.18);
   --sl-color-accent: #1474f0;
   --sl-color-accent-high: #021c3f;
   --sl-color-white: #ffffff;
@@ -9,12 +9,12 @@
 }
 
 .site-title img {
-  height: 1.75rem;
+  height: 2rem;
   width: auto;
 }
 
 .site-title span:not(.sr-only) {
-  color: #000000;
+  display: none;
 }
 
 .hero img {
@@ -38,8 +38,8 @@ code {
 .opennav-copy-markdown-button {
   border: 1px solid var(--opennav-docs-border-color);
   border-radius: 0.375rem;
-  background-color: #ffffff;
-  color: #000000;
+  background-color: var(--opennav-docs-surface-bg);
+  color: var(--opennav-docs-text-color);
   cursor: pointer;
   font: inherit;
   font-size: var(--sl-text-sm);
