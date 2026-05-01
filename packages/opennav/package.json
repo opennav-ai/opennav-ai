@@ -35,7 +35,7 @@
     "opennav-ai": "./dist/opennav/src/cli.cjs"
   },
   "publishConfig": {
-    "access": "restricted"
+    "access": "public"
   },
   "files": [
     "dist"

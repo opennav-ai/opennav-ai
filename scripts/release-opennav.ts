@@ -908,7 +908,7 @@ class OpenNavReleaseCommand {
         "--workspace",
         PACKAGE_NAME,
         "--access",
-        "restricted",
+        "public",
         "--tag",
         plan.npmDistTag,
       ],

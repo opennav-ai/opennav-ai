@@ -16,7 +16,7 @@
     "test:package:opennav": "npm run test:package --workspace @opennav-ai/opennav",
     "version:opennav:patch": "npm version patch --workspace @opennav-ai/opennav --no-git-tag-version",
     "publish:opennav:dry-run": "npm run test:package:opennav && npm pack --dry-run --workspace @opennav-ai/opennav --cache .npm-cache",
-    "publish:opennav": "npm run test:package:opennav && npm publish --workspace @opennav-ai/opennav --access restricted",
+    "publish:opennav": "npm run test:package:opennav && npm publish --workspace @opennav-ai/opennav --access public",
     "release:opennav": "npx bun scripts/release-opennav.ts",
     "release:opennav:patch": "npm run release:opennav -- --live --channel proper --bump patch",
     "test:verbose": "vitest run --reporter=verbose",
