@@ -2,6 +2,14 @@
   "name": "@opennav-ai/opennav",
   "version": "0.1.1",
   "license": "Apache-2.0",
+  "homepage": "https://OpenNav.ai",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/opennav-ai/opennav-ai.git"
+  },
+  "bugs": {
+    "url": "https://github.com/opennav-ai/opennav-ai/issues"
+  },
   "type": "module",
   "main": "./dist/opennav/src/index.cjs",
   "module": "./dist/opennav/src/index.js",

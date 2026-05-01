@@ -7,6 +7,7 @@ your static site build and it adds predictable files, Markdown page mirrors,
 machine-checkable compatibility metadata, and safe page links that agents can
 discover without reverse-engineering your visual layout.
 
+- GitHub: [opennav-ai/opennav-ai](https://github.com/opennav-ai/opennav-ai)
 - Website: [OpenNav.ai](https://OpenNav.ai)
 - Docs: [docs.opennav.ai](https://docs.opennav.ai)
 - Package: `@opennav-ai/opennav`

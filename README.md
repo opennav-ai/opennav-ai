@@ -34,6 +34,7 @@ OpenNav does not call an LLM, crawl the public internet, edit your source files,
 or deploy your site. Your existing build and hosting workflow stays in charge.
 
 - Package: `@opennav-ai/opennav`
+- GitHub: [opennav-ai/opennav-ai](https://github.com/opennav-ai/opennav-ai)
 - Website: [OpenNav.ai](https://OpenNav.ai)
 - Docs site: [docs.opennav.ai](https://docs.opennav.ai)
 - Local docs source: [`docs/`](./docs/)
