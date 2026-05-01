@@ -30,6 +30,10 @@ export default OpenNavNext({
 })(nextConfig);
 ```
 
+This is all you need for the standard Next static export folder. OpenNav reads
+`out` after `next build` and writes the generated AI Web Compatibility Layer
+files there.
+
 <p class="opennav-example-label" data-example-role="full">Full example</p>
 
 ```typescript
@@ -38,13 +42,13 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "export",
+  distDir: "dist",
 };
 
 export default OpenNavNext({
   siteName: "Example Docs",
   siteUrl: "https://example.com",
   mode: "static",
-  outputDirectory: "out",
   accessGuidance: {
     contentSignals: {
       search: "allow",
@@ -54,6 +58,23 @@ export default OpenNavNext({
   },
 })(nextConfig);
 ```
+
+OpenNav follows `distDir` automatically, so the example above reads and writes
+`dist` without repeating that path inside `OpenNavNext(...)`.
+
+## Output Folder Behavior
+
+Most projects should leave `outputDirectory` out of `OpenNavNext(...)`.
+OpenNav uses the same folder Next uses for the static export.
+
+| Next config | OpenNav scans |
+| ----------- | ------------- |
+| `output: "export"` | `out` |
+| `output: "export", distDir: "dist"` | `dist` |
+| `output: "export", distDir: "public-build/"` | `public-build` |
+
+Pass `outputDirectory` only when OpenNav should read a different relative
+folder than the one configured for the Next static export.
 
 ## `OpenNavNext(options)`
 
@@ -79,8 +100,8 @@ interface OpenNavNextOptions {
 ### `siteName`
 
 Required. Human-readable site or docs name written into generated OpenNav
-files, including `out/llms.txt`, page Markdown files, and
-`out/.well-known/opennav.json`.
+files, including `llms.txt`, page Markdown files, and
+`.well-known/opennav.json` inside the static export folder.
 
 ### `siteUrl`
 
@@ -97,18 +118,26 @@ OpenNav runs only when the wrapped Next config uses `output: "export"`.
 ### `outputDirectory`
 
 Optional. Static export folder OpenNav scans and updates after `next build`.
-Defaults to `out`.
+Defaults to the wrapped Next config's `distDir` when it is a string, then
+falls back to `out`.
+
+Use this only when OpenNav should read a different folder than the one
+configured for the Next static export. Relative paths are resolved from the
+working directory that runs `next build`, so monorepo setups can use paths such
+as `apps/docs/out`. Absolute paths are rejected, and trailing slashes are
+handled automatically.
 
 ### `accessGuidance`
 
 Optional. Controls whether OpenNav creates or updates its managed Content
-Signals block in `out/robots.txt`.
+Signals block in the static export folder's `robots.txt`.
 
 When omitted, OpenNav does not create or edit `robots.txt` for access guidance.
 
 ### `accessGuidance.contentSignals`
 
-Optional. Content-use preferences OpenNav writes into `out/robots.txt`.
+Optional. Content-use preferences OpenNav writes into the static export folder's
+`robots.txt`.
 
 At least one nested field must be configured before OpenNav creates or updates
 its managed Content Signals block.

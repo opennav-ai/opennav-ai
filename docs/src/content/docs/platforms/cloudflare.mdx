@@ -1,0 +1,233 @@
+---
+title: Cloudflare
+description: Run OpenNav on Cloudflare Pages, Workers static assets, and AI Gateway experiments.
+---
+
+import PackageInstallTabs from "../../../components/PackageInstallTabs.astro";
+
+Cloudflare is the clearest first platform for OpenNav: Pages already deploys a
+finished folder, Workers can serve static assets from a configured directory,
+and AI Gateway teams are already thinking about agent cost, routing, and
+observability.
+
+OpenNav currently ships the static agent-readable layer. It does not install
+Worker middleware or configure AI Gateway. Start by publishing the files agents
+can discover today, then use the server-side roadmap when runtime Markdown
+responses are available.
+
+## Install
+
+Install OpenNav in the project that owns the Cloudflare build command.
+
+<PackageInstallTabs />
+
+## Choose Your Cloudflare Path
+
+| Cloudflare path | OpenNav setup |
+| --------------- | ------------- |
+| Pages with any static output folder | Run the [CLI](/cli/) after your normal build. |
+| Pages with Astro | Use [OpenNavAstro](/frameworks/astro/) after `astro build`. |
+| Pages with Next.js static export | Use [OpenNavNext](/frameworks/next/) with `output: "export"`. |
+| Pages with a custom build script or monorepo | Use the [TypeScript SDK](/sdk/) from the script that knows the output folder. |
+| Workers static assets | Run OpenNav before `wrangler deploy` uploads the configured assets directory. |
+| AI Gateway or agent experiments | Fetch the generated OpenNav files from Pages or Workers assets; AI Gateway remains the AI app proxy and observability layer. |
+
+## Cloudflare Pages With The CLI
+
+Cloudflare Pages lets you configure a build command and an output directory.
+Use the same output directory for both OpenNav and the Pages publish directory.
+
+```json
+{
+  "scripts": {
+    "build": "astro build && opennav build --static --output dist --site-url https://example.com --site-name \"Example Docs\""
+  }
+}
+```
+
+In Cloudflare Pages:
+
+| Pages setting | Value |
+| ------------- | ----- |
+| Build command | `npm run build` |
+| Build output directory | `dist` |
+
+Use the deployed production URL for `--site-url`, including the protocol and
+host. In monorepos, make `--output` relative to the project root that Pages uses
+for the build command.
+
+Run a dry run locally when you want to preview the file plan before changing the
+build command:
+
+```bash
+opennav build --static \
+  --output dist \
+  --site-url https://example.com \
+  --site-name "Example Docs" \
+  --dry-run
+```
+
+## Astro On Cloudflare Pages
+
+Astro static builds usually publish `dist`. Add `OpenNavAstro` to the Astro
+config, then let Pages run the normal Astro build.
+
+```typescript
+import { defineConfig } from "astro/config";
+import { OpenNavAstro } from "@opennav-ai/opennav/astro";
+
+export default defineConfig({
+  site: "https://example.com",
+  integrations: [
+    OpenNavAstro({
+      siteName: "Example Docs",
+      mode: "static",
+    }),
+  ],
+});
+```
+
+In Cloudflare Pages:
+
+| Pages setting | Value |
+| ------------- | ----- |
+| Build command | `npm run build` |
+| Build output directory | `dist` |
+
+Use this path for Astro sites that produce static HTML. Server-side Astro on
+Cloudflare is part of the [server-side roadmap](/frameworks/server-side/), not
+the current static profile.
+
+## Next.js Static Export On Cloudflare Pages
+
+OpenNav supports Next.js static export builds. Configure Next with
+`output: "export"` and publish the generated `out` folder.
+
+```typescript
+import { OpenNavNext } from "@opennav-ai/opennav/next";
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  output: "export",
+};
+
+export default OpenNavNext({
+  siteName: "Example Docs",
+  siteUrl: "https://example.com",
+  mode: "static",
+})(nextConfig);
+```
+
+In Cloudflare Pages:
+
+| Pages setting | Value |
+| ------------- | ----- |
+| Build command | `npm run build` |
+| Build output directory | `out` |
+
+Use this path for exported static routes. Next.js server output, route handlers,
+and request-time dynamic pages are not covered by the current static profile.
+
+## Custom SDK Or Monorepo Builds
+
+Use the root SDK when a custom script already knows which folder Cloudflare will
+publish.
+
+```typescript
+import { OpenNavStaticSite } from "@opennav-ai/opennav";
+
+const result = await new OpenNavStaticSite({
+  siteName: "Example Docs",
+  siteUrl: "https://example.com",
+  outputDirectory: "dist",
+}).build();
+
+if (result.isErr()) {
+  console.error(result.error.message);
+  process.exit(1);
+}
+```
+
+Then call that script after the framework build and before Pages uploads the
+output folder.
+
+```json
+{
+  "scripts": {
+    "build": "npm run build:site && node scripts/opennav.mjs"
+  }
+}
+```
+
+## Workers Static Assets
+
+Workers can deploy static assets from a configured directory. Run OpenNav before
+`wrangler deploy` so the assets directory already contains the generated
+OpenNav files.
+
+```jsonc
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "example-docs",
+  "compatibility_date": "2026-05-01",
+  "assets": {
+    "directory": "./dist"
+  }
+}
+```
+
+```json
+{
+  "scripts": {
+    "build": "astro build && opennav build --static --output dist --site-url https://example.com --site-name \"Example Docs\"",
+    "deploy": "npm run build && wrangler deploy"
+  }
+}
+```
+
+If your Worker code serves assets through a binding, keep the binding pointed at
+the same directory OpenNav updates. OpenNav writes files only; it does not
+change Worker routing.
+
+## AI Gateway And Agent Experiments
+
+AI Gateway is useful for observing and controlling AI application traffic. It
+does not publish website content. Pair it with OpenNav by having the agent fetch
+the generated files from a Cloudflare Pages site or a Workers static-assets
+deployment:
+
+| Agent need | OpenNav file |
+| ---------- | ------------ |
+| Find the readable site index | `https://example.com/llms.txt` |
+| Read page content without visual HTML | `https://example.com/path/index.md` |
+| Verify generated files and static compatibility | `https://example.com/.well-known/opennav.json` |
+| Read content-use guidance | `https://example.com/robots.txt` when `accessGuidance` is configured |
+
+Use this when you are testing agent workflows, token cost, or browser fallback
+behavior around Cloudflare-hosted sites.
+
+## What Gets Published
+
+After OpenNav runs, the same Cloudflare deployment includes the agent-readable
+files beside your normal site:
+
+```txt
+dist/
+  llms.txt
+  llms-full.txt
+  .well-known/llms.txt
+  .well-known/llms-full.txt
+  .well-known/opennav.json
+  index.md
+  docs/getting-started/index.md
+  robots.txt
+```
+
+See the [generated files reference](/reference/generated-files/) for the full
+file behavior and ownership rules.
+
+## Cloudflare References
+
+- [Cloudflare Pages build configuration](https://developers.cloudflare.com/pages/configuration/build-configuration/)
+- [Cloudflare Workers static assets](https://developers.cloudflare.com/workers/static-assets/)
+- [Cloudflare Agent Readiness](https://blog.cloudflare.com/agent-readiness/)

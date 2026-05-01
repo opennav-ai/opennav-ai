@@ -92,10 +92,12 @@ value should include the protocol and host, such as `https://example.com`.
 
 ### `outputDirectory`
 
-Required. Built static output folder OpenNav scans and updates.
+Required. Built static output folder OpenNav scans and updates. In most
+projects, pass an output-directory-relative path from the script's working
+directory, such as `dist`, `out`, or `apps/docs/dist`.
 
 OpenNav reads from and writes to this folder only. Relative paths are resolved
-by the calling script from the current project root.
+by the calling script from the current working directory.
 
 ### `preset`
 

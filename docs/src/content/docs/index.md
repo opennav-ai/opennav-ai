@@ -54,6 +54,24 @@ produce real HTML or Markdown files. It fits deploys to Cloudflare Pages,
 Netlify, Vercel static output, GitHub Pages, S3-compatible hosting, and any CDN
 that serves plain files.
 
+## Cloudflare Pages Teams
+
+Cloudflare Pages is the clearest place to make a site agent-ready today. Pages
+already deploys a finished static folder, and OpenNav can run as the final build
+step before that folder ships.
+
+If you are exploring Workers, AI Gateway, or agent access patterns around a
+Cloudflare site, start with the static layer first: publish `llms.txt`, Markdown
+page mirrors, `/.well-known/opennav.json`, and optional Content Signals guidance
+with the same deploy.
+
+| Cloudflare path | Start here |
+| --------------- | ---------- |
+| Pages with any static output folder | Use the [Cloudflare guide](/platforms/cloudflare/) for Pages setup. |
+| Pages with Astro | Use the [Astro guide](/frameworks/astro/) to run OpenNav after `astro build`. |
+| Pages with Next.js static export | Use the [Next.js guide](/frameworks/next/) for `output: "export"`. |
+| Workers or AI Gateway experiments | Ship the static OpenNav files now, then follow the [server-side roadmap](/frameworks/server-side/) for runtime Markdown responses. |
+
 | Before OpenNav | After OpenNav |
 | -------------- | ------------- |
 | Agents load visual HTML and guess which content matters. | Agents discover readable entrypoints from `llms.txt` and page links. |
@@ -83,7 +101,8 @@ let agents discover, read, and respect a site without scraping the visual HTML.
 | Astro | You want OpenNav to run after `astro build`. | [Astro Guide](/frameworks/astro/) |
 | Next.js | You use Next.js static export. | [Next.js Guide](/frameworks/next/) |
 | CLI | You want a build-step command. | [CLI Reference](/cli/) |
-| Static site platforms | You deploy a finished folder to Cloudflare Pages, Netlify, Vercel static output, GitHub Pages, S3-compatible hosting, or a CDN. | [Static Site Platforms](#static-site-platforms) |
+| Cloudflare | You deploy to Cloudflare Pages, Workers static assets, or are testing AI Gateway agent access. | [Cloudflare Guide](/platforms/cloudflare/) |
+| Static site platforms | You deploy a finished folder to Netlify, Vercel static output, GitHub Pages, S3-compatible hosting, or a CDN. | [Static Site Platforms](#static-site-platforms) |
 | Server-side Astro and Next.js | You want runtime Markdown content negotiation. Fast-follow open-source track. | [Server-Side Roadmap](/frameworks/server-side/) |
 
 ## What OpenNav Does Not Do
