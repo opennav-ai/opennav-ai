@@ -93,6 +93,10 @@ starlight-menu-button button {
   color: var(--opennav-docs-text-color);
 }
 
+.opennav-copy-markdown-button {
+  background-color: var(--opennav-table-row);
+}
+
 html .expressive-code {
   --ec-brdCol: var(--opennav-code-border);
   --ec-codeBg: var(--opennav-code-bg);
@@ -120,10 +124,10 @@ html .expressive-code {
 }
 
 html {
-  --opennav-code-bg: rgb(255 255 255 / 0.78);
+  --opennav-code-bg: #fffdfa;
   --opennav-code-border: var(--opennav-docs-border-color);
   --opennav-code-fg: #383a42;
-  --opennav-code-header-bg: rgb(255 255 255 / 0.58);
+  --opennav-code-header-bg: #f1efe7;
   --opennav-code-muted-fg: var(--opennav-docs-muted-color);
   --opennav-code-scrollbar: rgb(56 58 66 / 0.22);
   --opennav-code-scrollbar-hover: rgb(56 58 66 / 0.42);
@@ -136,6 +140,28 @@ html {
   --opennav-code-token-string: #50a14f;
   --opennav-code-token-type: #0f9f8f;
   --opennav-code-token-variable: var(--opennav-docs-cyan);
+}
+
+html .expressive-code {
+  background-color: var(--opennav-code-bg);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+html .expressive-code .frame {
+  border-radius: inherit;
+}
+
+html
+  .sl-markdown-content
+  :not(pre)
+  > code:not(:where(.expressive-code *, .not-content *)) {
+  border: 1px solid var(--opennav-table-chip-border);
+  border-radius: 0.35rem;
+  background-color: var(--opennav-table-chip-bg);
+  color: var(--opennav-docs-text-color);
+  overflow-wrap: anywhere;
+  padding: 0.08rem 0.35rem;
 }
 
 html .expressive-code .ec-line span[style*="#000000"] {
@@ -275,8 +301,8 @@ html[data-has-hero] .hero h1 {
   --opennav-table-accent-2: var(--opennav-docs-cyan);
   --opennav-table-border: var(--opennav-docs-border-color);
   --opennav-table-muted: var(--opennav-docs-muted-color);
-  --opennav-table-row: rgb(255 255 255 / 0.78);
-  --opennav-table-row-alt: rgb(255 255 255 / 0.48);
+  --opennav-table-row: #fffdfa;
+  --opennav-table-row-alt: #f8f6ef;
   --opennav-table-shadow: 0 1rem 2rem rgb(2 28 63 / 0.07);
   --opennav-table-header-bg: #eceae1;
   --opennav-table-chip-bg: #f0eee6;
@@ -288,9 +314,7 @@ html[data-has-hero] .hero h1 {
   overflow-x: auto;
   border: 1px solid var(--opennav-table-border);
   border-radius: 0.5rem;
-  background:
-    linear-gradient(180deg, rgb(255 255 255 / 0.78), rgb(255 255 255 / 0.58)),
-    var(--opennav-docs-surface-bg);
+  background-color: var(--opennav-table-row);
   box-shadow: 0 1rem 2rem rgb(2 28 63 / 0.08);
 }
 
@@ -326,11 +350,11 @@ html[data-has-hero] .hero h1 {
 }
 
 .opennav-options-table-preview tbody tr {
-  background-color: rgb(255 255 255 / 0.58);
+  background-color: var(--opennav-table-row);
 }
 
 .opennav-options-table-preview tbody tr:nth-child(2n) {
-  background-color: rgb(255 255 255 / 0.36);
+  background-color: var(--opennav-table-row-alt);
 }
 
 .opennav-options-table-preview tbody tr + tr td {
@@ -378,7 +402,7 @@ html .sl-markdown-content h3 code:not(:where(.not-content *)) {
 
 .opennav-nested-field {
   border-color: var(--opennav-table-border);
-  background-color: rgb(255 255 255 / 0.58);
+  background-color: var(--opennav-table-row);
 }
 
 .opennav-nested-field-list {
@@ -401,6 +425,7 @@ html .sl-markdown-content table:not(:where(.not-content *)) {
   width: 100%;
   border: 1px solid var(--opennav-table-border);
   border-radius: 0.5rem;
+  background-color: var(--opennav-table-row);
   border-collapse: separate;
   border-spacing: 0;
   box-shadow: var(--opennav-table-shadow);
