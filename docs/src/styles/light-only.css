@@ -222,12 +222,17 @@ html
   .sl-markdown-content
   :not(pre)
   > code:not(:where(.expressive-code *, .not-content *)) {
+  display: inline;
   border: 1px solid var(--opennav-table-chip-border);
   border-radius: 0.35rem;
   background-color: var(--opennav-table-chip-bg);
   color: var(--opennav-docs-text-color);
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
   padding: 0.08rem 0.35rem;
+  white-space: nowrap;
+  word-break: normal;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
 html .expressive-code .ec-line span[style*="#000000"] {
@@ -447,6 +452,7 @@ html[data-has-hero] .hero h1 {
   line-height: 1.35;
   overflow-wrap: anywhere;
   padding: 0.16rem 0.42rem;
+  white-space: normal;
   word-break: break-word;
 }
 
@@ -463,6 +469,7 @@ html .sl-markdown-content h3 code:not(:where(.not-content *)) {
   color: var(--opennav-docs-text-color);
   overflow-wrap: anywhere;
   padding: 0.16rem 0.42rem;
+  white-space: normal;
   word-break: break-word;
 }
 
@@ -484,6 +491,7 @@ html .sl-markdown-content .opennav-nested-field h4 code {
   color: var(--opennav-docs-text-color);
   overflow-wrap: anywhere;
   padding: 0.16rem 0.42rem;
+  white-space: normal;
   word-break: break-word;
 }
 
@@ -720,7 +728,7 @@ html .sl-markdown-content table:not(:where(.not-content *)) code {
   }
 
   html .sl-markdown-content .opennav-table-accordion code {
-    display: inline;
+    display: inline-block;
     max-width: 100%;
     border: 1px solid var(--opennav-table-chip-border);
     border-radius: 0.35rem;
@@ -728,8 +736,11 @@ html .sl-markdown-content table:not(:where(.not-content *)) code {
     color: var(--opennav-docs-text-color);
     font-family: var(--__sl-font-mono);
     font-size: var(--sl-text-code);
-    overflow-wrap: anywhere;
+    overflow-x: auto;
+    overflow-wrap: normal;
     padding: 0.05rem 0.35rem;
-    word-break: break-word;
+    vertical-align: bottom;
+    white-space: nowrap;
+    word-break: normal;
   }
 }
