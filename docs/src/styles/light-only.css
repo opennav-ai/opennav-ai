@@ -77,11 +77,11 @@ html[data-has-hero] body {
 }
 
 html[data-has-hero]:not([data-has-sidebar]) {
-  --sl-content-width: 52rem;
+  --sl-content-width: 48rem;
 }
 
 html[data-has-hero] .content-panel > .sl-container {
-  max-width: 52rem;
+  max-width: 48rem;
   margin-inline: max(1rem, calc((100vw - 76rem) / 2)) auto;
   background: linear-gradient(
     90deg,
@@ -89,6 +89,16 @@ html[data-has-hero] .content-panel > .sl-container {
     rgb(247 246 241 / 0.78) 72%,
     rgb(247 246 241 / 0) 100%
   );
+}
+
+html[data-has-hero] .sl-markdown-content {
+  background: linear-gradient(
+    90deg,
+    var(--opennav-docs-page-bg) 0%,
+    rgb(247 246 241 / 0.94) 68%,
+    rgb(247 246 241 / 0) 100%
+  );
+  padding: 1.25rem;
 }
 
 .page,
