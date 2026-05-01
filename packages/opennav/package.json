@@ -53,7 +53,7 @@
     }
   },
   "scripts": {
-    "build": "zshy --project tsconfig.build.json",
+    "build": "zshy --project tsconfig.build.json && sh ../../scripts/copy-opennav-package-files.sh",
     "pack:check": "npm pack --dry-run --cache ../../.npm-cache",
     "test": "vitest run --root ../.. --reporter=default packages/opennav/src",
     "test:package": "npm run build && node ../../scripts/check-opennav-package-exports.mjs"
