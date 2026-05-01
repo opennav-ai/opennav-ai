@@ -33,16 +33,16 @@ body {
     linear-gradient(
       90deg,
       var(--opennav-docs-page-bg) 0%,
-      rgb(247 246 241 / 0.96) 29%,
-      rgb(247 246 241 / 0.62) 52%,
-      rgb(247 246 241 / 0.18) 72%
+      var(--opennav-docs-page-bg) 58%,
+      rgb(247 246 241 / 0.9) 70%,
+      rgb(247 246 241 / 0.36) 88%
     ),
     linear-gradient(
       180deg,
-      rgb(247 246 241 / 0.76) 0%,
-      rgb(247 246 241 / 0.18) 24%,
-      rgb(247 246 241 / 0.18) 72%,
-      rgb(247 246 241 / 0.86) 100%
+      rgb(247 246 241 / 0.86) 0%,
+      rgb(247 246 241 / 0.42) 28%,
+      rgb(247 246 241 / 0.42) 72%,
+      rgb(247 246 241 / 0.88) 100%
     ),
     url("/site/opennav-compass-document-layers-desktop.webp");
   background-position:
