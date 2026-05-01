@@ -261,6 +261,21 @@ Current examples cover:
 When OpenNav package dependencies change, refresh the example lockfiles so the
 packed examples still model real consumer installs.
 
+## Release Pipeline Improvements To Track
+
+The examples check is strong enough to act as a release gate, but the current
+release scripts do not enforce it yet. `publish:opennav:dry-run` and
+`publish:opennav` currently run `test:package:opennav`; they do not run
+`npm run test:examples`. Until the scripts are updated, maintainers must run the
+example matrix manually before publishing.
+
+The current example matrix is also explicit. Astro, Next, CLI, and static SDK
+examples are listed in the Vitest files under `examples/tests/`. If a new
+`examples/*/package.json` project is added, add matching test coverage at the
+same time. A future meta-test should compare the example folders on disk with
+the configured matrix so new examples cannot silently drift outside the release
+check.
+
 ## Standard Verification Before Publishing
 
 Run this full set before publishing `@opennav-ai/opennav`:
