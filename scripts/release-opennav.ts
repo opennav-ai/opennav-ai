@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { readFile, readFile, writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import process from "node:process";
 import { createInterface, type Interface } from "node:readline/promises";
