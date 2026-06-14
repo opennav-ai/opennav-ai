@@ -126,6 +126,7 @@ export default defineConfig({
             { slug: "reference/generated-files" },
             { slug: "reference/content-extraction" },
             { slug: "reference/access-guidance" },
+            { slug: "changelog" },
           ],
         },
         {
