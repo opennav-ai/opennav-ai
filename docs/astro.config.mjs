@@ -1,8 +1,8 @@
-import starlight from "@astrojs/starlight";
-import { OpenNavAstro } from "@opennav-ai/opennav/astro";
-import sitemap from "@astrojs/sitemap";
 import { copyFile } from "node:fs/promises";
 import { join } from "node:path";
+import sitemap from "@astrojs/sitemap";
+import starlight from "@astrojs/starlight";
+import { OpenNavAstro } from "@opennav-ai/opennav/astro";
 import { defineConfig } from "astro/config";
 import starlightThemeRapide from "starlight-theme-rapide";
 
@@ -113,7 +113,6 @@ export default defineConfig({
             {
               slug: "frameworks/server-side",
               label: "Server-side frameworks",
-              badge: "Soon",
             },
           ],
         },

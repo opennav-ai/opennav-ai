@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "deploy": "astro build && wrangler pages deploy dist/",
+    "deploy:preview": "astro build && wrangler pages deploy dist/ --branch preview"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.2",
@@ -16,6 +18,7 @@
     "starlight-theme-rapide": "^0.5.2"
   },
   "devDependencies": {
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.2",
+    "wrangler": "^4.100.0"
   }
 }

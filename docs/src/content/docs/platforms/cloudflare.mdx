@@ -10,10 +10,10 @@ finished folder, Workers can serve static assets from a configured directory,
 and AI Gateway teams are already thinking about agent cost, routing, and
 observability.
 
-OpenNav currently ships the static agent-readable layer. It does not install
-Worker middleware or configure AI Gateway. Start by publishing the files agents
-can discover today, then use the server-side roadmap when runtime Markdown
-responses are available.
+OpenNav ships both the static agent-readable layer and runtime content
+negotiation via Cloudflare Pages Functions. Start by publishing the static files
+agents can discover, then add a Pages Function for on-the-fly HTML-to-Markdown
+conversion when the client sends `Accept: text/markdown`.
 
 Cloudflare Pages is the first platform with a built-in OpenNav platform
 default. Passing `platform: "cloudflare-pages"` in the SDK, Astro, or Next, or
@@ -105,9 +105,9 @@ In Cloudflare Pages:
 | Build command | `npm run build` |
 | Build output directory | `dist` |
 
-Use this path for Astro sites that produce static HTML. Server-side Astro on
-Cloudflare is part of the [server-side roadmap](/frameworks/server-side/), not
-the current static profile.
+Use this path for Astro sites that produce static HTML. For server-rendered
+Astro routes, add a [Cloudflare Pages Function](#cloudflare-pages-functions)
+alongside your static build.
 
 To keep the Cloudflare platform setting without writing `_headers`, opt out in
 the integration:
@@ -151,8 +151,9 @@ In Cloudflare Pages:
 | Build command | `npm run build` |
 | Build output directory | `out` |
 
-Use this path for exported static routes. Next.js server output, route handlers,
-and request-time dynamic pages are not covered by the current static profile.
+Use this path for exported static routes. For server-rendered Next.js routes,
+use [OpenNavServer](/frameworks/server-side/) in a Route Handler or add a
+[Cloudflare Pages Function](#cloudflare-pages-functions).
 
 To keep the Cloudflare platform setting without writing `_headers`, opt out in
 the config wrapper:
@@ -296,9 +297,10 @@ For a small site with a home page and one docs page, the complete generated
 # End OpenNav AI
 ```
 
-That does not implement runtime `Accept: text/markdown` negotiation. It gives
-agents a response-header discovery path for the same Markdown alternate and
-site index that OpenNav already advertises inside the HTML `<head>`.
+This gives agents a response-header discovery path for the same Markdown
+alternate and site index that OpenNav already advertises inside the HTML
+`<head>`. For runtime `Accept: text/markdown` content negotiation, add a
+[Cloudflare Pages Function](#cloudflare-pages-functions).
 
 OpenNav preserves caller-owned `_headers` rules and replaces only the block
 between `# Begin OpenNav AI` and `# End OpenNav AI`. If an existing caller-owned
@@ -309,6 +311,110 @@ intentionally. This applies to any header on the overlapping route, not only
 
 Cloudflare documents the file format, comment behavior, and route/header limits
 in [Pages Headers](https://developers.cloudflare.com/pages/configuration/headers/).
+
+## Cloudflare Pages Functions
+
+For runtime `Accept: text/markdown` content negotiation, add a Pages Function
+that converts HTML responses to Markdown on-the-fly. Place a `functions/`
+directory at your project root (next to `dist/`, not inside it):
+
+```
+your-project/
+  functions/
+    [[path]].ts
+  dist/
+  ...
+```
+
+Create `functions/[[path]].ts`:
+
+```ts
+import { AcceptHeaderNegotiator, OpenNavServer } from "@opennav-ai/opennav/server";
+
+const opennav = new OpenNavServer();
+const acceptNegotiator = new AcceptHeaderNegotiator();
+
+interface PagesFunctionEnv {
+  ASSETS: { fetch(request: Request): Promise<Response> };
+}
+
+export async function onRequest(context: {
+  request: Request;
+  env: PagesFunctionEnv;
+  next(): Promise<Response>;
+}): Promise<Response> {
+  const url = new URL(context.request.url);
+
+  const decision = acceptNegotiator.negotiate({
+    acceptHeader: context.request.headers.get("accept") ?? null,
+    produces: ["text/html", "text/markdown"],
+  });
+
+  // HTML (or no Accept header) — pass through with Vary + Link.
+  if (decision === "text/html" || decision === null) {
+    const htmlResponse = await context.next();
+    const result = await opennav.negotiate({ request: context.request, htmlResponse });
+    if (result.isErr()) return new Response("Internal error", { status: 500 });
+    return result.value;
+  }
+
+  // Markdown — try static .md first to avoid conversion cost.
+  const mdPath = url.pathname
+    .replace(/\/$/, "")
+    .replace(/\.html$/, "") + ".md";
+
+  const staticMd = await context.env.ASSETS.fetch(
+    new Request(new URL(mdPath, context.request.url), context.request),
+  );
+
+  if (staticMd.ok) {
+    const headers = new Headers(staticMd.headers);
+    headers.set("Vary", "Accept");
+    headers.set("Content-Type", "text/markdown; charset=utf-8");
+    return new Response(staticMd.body, {
+      status: staticMd.status,
+      statusText: staticMd.statusText,
+      headers,
+    });
+  }
+
+  const htmlResponse = await context.next();
+  if (!htmlResponse.ok) return htmlResponse;
+
+  const result = await opennav.negotiate({ request: context.request, htmlResponse });
+  if (result.isErr()) return new Response("Internal error", { status: 500 });
+  return result.value;
+}
+```
+
+Deploy with the [Pages Git integration](https://developers.cloudflare.com/pages/configuration/git-integration/)
+or via wrangler from the project root:
+
+```bash
+npx wrangler pages deploy dist/
+```
+
+Wrangler auto-detects `functions/` alongside the output directory and deploys
+both together.
+
+### How it works
+
+| Request | Behavior |
+| ------- | -------- |
+| No Accept header or prefers HTML | Serves static HTML with `Vary: Accept` and `Link: rel="alternate"` to the Markdown representation. |
+| Prefers Markdown, `.md` file exists on disk | Serves the static `.md` file directly (zero conversion cost — OpenNav's build output). |
+| Prefers Markdown, no `.md` file on disk | Fetches the HTML and converts it to Markdown on-the-fly via `OpenNavServer`. |
+| Unsupported Accept type | Returns `406 Not Acceptable` with `Vary: Accept`. |
+
+### Cloudflare's built-in Markdown for Agents
+
+Cloudflare also offers a native [Markdown for
+Agents](https://developers.cloudflare.com/fundamentals/reference/markdown-for-agents/)
+feature (Pro plan and above) that converts HTML to Markdown at the edge with
+zero application code. Use it when you want hands-off conversion. Use the
+OpenNav Pages Function when you need custom stripping rules, want to ship
+Markdown alongside your existing Cloudflare setup, or are on a plan without the
+native feature.
 
 ## Workers Static Assets
 
@@ -381,6 +487,8 @@ file behavior and ownership rules.
 ## Cloudflare References
 
 - [Cloudflare Pages build configuration](https://developers.cloudflare.com/pages/configuration/build-configuration/)
+- [Cloudflare Pages Functions](https://developers.cloudflare.com/pages/functions/)
 - [Cloudflare Pages Headers](https://developers.cloudflare.com/pages/configuration/headers/)
 - [Cloudflare Workers static assets](https://developers.cloudflare.com/workers/static-assets/)
+- [Cloudflare Markdown for Agents](https://developers.cloudflare.com/fundamentals/reference/markdown-for-agents/)
 - [Cloudflare Agent Readiness](https://blog.cloudflare.com/agent-readiness/)

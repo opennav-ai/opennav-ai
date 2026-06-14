@@ -369,34 +369,28 @@ its managed Content Signals block.
 
 ## Server-Side Support
 
-Astro server output is the next open-source track. This is the future of
-agent-ready websites: the same route can serve HTML to people and Markdown to
-agents through content negotiation.
-
-Planned launch shape:
+For Astro server-rendered (SSR) pages, use `OpenNavServer` from
+`@opennav-ai/opennav/server`. Import it in your route handler and pass the
+incoming request and the rendered HTML response:
 
 ```typescript
-import { defineConfig } from "astro/config";
-import { OpenNavAstroServer } from "@opennav-ai/opennav/astro";
+import { OpenNavServer } from "@opennav-ai/opennav/server";
 
-export default defineConfig({
-  output: "server",
-  integrations: [
-    OpenNavAstroServer({
-      siteName: "Example Docs",
-      markdown: {
-        mode: "content-negotiation",
-        routes: ["/docs/**", "/blog/**"],
-      },
-    }),
-  ],
-});
+const opennav = new OpenNavServer();
+
+export const GET: APIRoute = async (ctx) => {
+  const htmlResponse = await ctx.render();
+  const result = await opennav.negotiate({
+    request: ctx.request,
+    htmlResponse,
+  });
+  if (result.isErr()) return new Response(null, { status: 500 });
+  return result.value;
+};
 ```
 
-When a request prefers `text/markdown`, OpenNav will return an agent-readable
-Markdown representation from the same URL. Browser requests still receive HTML,
-and responses include `Vary: Accept` so caches keep both representations
-correct.
+When the client sends `Accept: text/markdown`, the HTML is converted to Markdown
+on-the-fly. Browser requests still receive HTML, and responses include
+`Vary: Accept` so caches keep both representations correct.
 
-See the [server-side framework roadmap](/frameworks/server-side/) for the
-shared Astro and Next.js launch shape.
+For static Astro sites, continue using `OpenNavAstro()` as described above.

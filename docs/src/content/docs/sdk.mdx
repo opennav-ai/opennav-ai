@@ -256,3 +256,52 @@ interface OpenNavStaticSiteBuildOptions {
 
 Optional. Set to `true` to preview created, modified, skipped, and warning paths
 without changing files.
+
+## `OpenNavServer(options)`
+
+Runtime content negotiation for server-rendered pages. Converts HTML responses to
+Markdown on-the-fly when the client sends `Accept: text/markdown`.
+
+```ts
+import { OpenNavServer } from "@opennav-ai/opennav/server";
+```
+
+```ts
+interface OpenNavServerOptions {
+  readonly produces?: readonly string[] | undefined;
+  readonly contentExtraction?: OpenNavContentExtractionOptions | undefined;
+}
+
+interface OpenNavServerNegotiateInput {
+  readonly request: Request;
+  readonly htmlResponse: Response;
+}
+```
+
+### `negotiate(input)`
+
+Inspects the request `Accept` header and returns the appropriate response.
+
+```ts
+const opennav = new OpenNavServer();
+
+const result = await opennav.negotiate({
+  request,
+  htmlResponse,
+});
+
+if (result.isErr()) {
+  console.error(result.error.message);
+}
+
+return result.value;
+```
+
+| Client preference | Response |
+| ----------------- | -------- |
+| `text/markdown` | HTML body converted to Markdown. `Content-Type: text/markdown; charset=utf-8`. |
+| `text/html` | Original HTML passes through with `Vary: Accept` and `Link: rel="alternate"`. |
+| No match (406) | `406 Not Acceptable`. |
+
+See the [Server-Side Frameworks](/frameworks/server-side/) guide for framework
+examples and Cloudflare Workers and Pages recommendations.
