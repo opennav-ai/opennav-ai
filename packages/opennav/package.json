@@ -1,6 +1,6 @@
 {
   "name": "@opennav-ai/opennav",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "license": "Apache-2.0",
   "homepage": "https://OpenNav.ai",
   "repository": {
@@ -30,6 +30,11 @@
       "types": "./dist/opennav/src/next.d.cts",
       "import": "./dist/opennav/src/next.js",
       "require": "./dist/opennav/src/next.cjs"
+    },
+    "./server": {
+      "types": "./dist/opennav/src/server.d.cts",
+      "import": "./dist/opennav/src/server.js",
+      "require": "./dist/opennav/src/server.cjs"
     }
   },
   "imports": {
@@ -47,6 +52,7 @@
     "access": "public"
   },
   "files": [
+    "CHANGELOG.md",
     "LICENSE",
     "dist"
   ],
@@ -55,7 +61,8 @@
       "./package.json": "./package.json",
       ".": "./src/index.ts",
       "./astro": "./src/astro.ts",
-      "./next": "./src/next.ts"
+      "./next": "./src/next.ts",
+      "./server": "./src/server.ts"
     },
     "bin": {
       "opennav": "./src/cli.ts",

@@ -55,8 +55,12 @@ describe("Engine", (): void => {
     expect(publicExports.Engine).toEqual(Engine);
   });
 
-  it("keeps Engine as the only runtime export", (): void => {
-    expect(Object.keys(publicExports).sort()).toEqual(["Engine"]);
+  it("exports the agreed public engine classes", (): void => {
+    expect(Object.keys(publicExports).sort()).toEqual([
+      "AcceptHeaderNegotiator",
+      "Engine",
+      "HtmlResponseMarkdownNegotiator",
+    ]);
   });
 
   it("reads built file paths and returns unsupported files as skipped warnings", async (): Promise<void> => {

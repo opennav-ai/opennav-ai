@@ -73,7 +73,7 @@ HTTP `Link` headers for Markdown alternates and `llms.txt`.
 | Pages with any static output folder | Use the [Cloudflare guide](/platforms/cloudflare/) for Pages setup. |
 | Pages with Astro | Use the [Astro guide](/frameworks/astro/) to run OpenNav after `astro build`. |
 | Pages with Next.js static export | Use the [Next.js guide](/frameworks/next/) for `output: "export"`. |
-| Workers or AI Gateway experiments | Ship the static OpenNav files now, then follow the [server-side roadmap](/frameworks/server-side/) for runtime Markdown responses. |
+| Workers or AI Gateway experiments | Ship static OpenNav files now, or use [server-side content negotiation](/frameworks/server-side/) for runtime Markdown responses. |
 
 | Before OpenNav | After OpenNav |
 | -------------- | ------------- |
@@ -107,7 +107,7 @@ let agents discover, read, and respect a site without scraping the visual HTML.
 | CLI | You want a build-step command. | [CLI Reference](/cli/) |
 | Cloudflare | You deploy to Cloudflare Pages, Workers static assets, or are testing AI Gateway agent access. | [Cloudflare Guide](/platforms/cloudflare/) |
 | Static site platforms | You deploy a finished folder to Netlify, Vercel static output, GitHub Pages, S3-compatible hosting, or a CDN. | [Static Site Platforms](#static-site-platforms) |
-| Server-side Astro and Next.js | You want runtime Markdown content negotiation. Fast-follow open-source track. | [Server-Side Roadmap](/frameworks/server-side/) |
+| Server-side frameworks | You want runtime Markdown content negotiation for Astro, Next.js, Hono, or any WinterCG-compatible server. | [Server-Side Frameworks](/frameworks/server-side/) |
 
 ## What OpenNav Does Not Do
 
@@ -132,16 +132,28 @@ serve the result.
 | Astro helper | Astro static builds. | `astro build` projects that publish `dist/`. |
 | Next.js helper | Next.js static export builds. | `output: "export"` projects that publish `out/`. |
 
-## Server-Side Roadmap
+## Server-Side Support
 
-The static profile is the first step toward the broader OpenNav standard:
-websites exposing a predictable interface that agents can discover before they
-spend tokens reading whole pages.
+OpenNav now supports runtime HTML-to-Markdown content negotiation for any
+Node.js or WinterCG-compatible server. Import `OpenNavServer` from
+`@opennav-ai/opennav/server` and wrap your existing route handlers:
 
-Server-side Astro and Next.js support is the next open-source track. This is
-the future of agent-ready websites: runtime routes that serve HTML to people
-and Markdown to agents from the same URL, with site-wide middleware and
-per-endpoint controls for apps that cannot export every route first.
+```ts
+import { OpenNavServer } from "@opennav-ai/opennav/server";
 
-See the [server-side roadmap](/frameworks/server-side/) for the planned Astro
-and Next.js runtime integrations.
+const opennav = new OpenNavServer();
+
+app.get("/docs/:slug", async (c) => {
+  const htmlResponse = await renderPage(c.req.param("slug"));
+  const result = await opennav.negotiate({
+    request: c.req.raw,
+    htmlResponse,
+  });
+  if (result.isErr()) return c.text("Internal error", 500);
+  return result.value;
+});
+```
+
+See the [Server-Side Frameworks](/frameworks/server-side/) guide for
+framework-specific advice, including Cloudflare Workers and Pages
+recommendations.

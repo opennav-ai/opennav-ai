@@ -1,4 +1,5 @@
 node_modules/
+_internals/
 .manual-runs/
 .npm-cache/
 dist/
@@ -19,3 +20,6 @@ TODO.md
 *.tgz
 
 PHASE*.md
+stretch-goal.txt
+findings.md
+pr.md

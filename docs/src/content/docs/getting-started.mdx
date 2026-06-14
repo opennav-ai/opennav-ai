@@ -57,15 +57,31 @@ framework-specific SDK paths.
 
 More framework helpers will follow in coming releases.
 
-## Coming Next: Server-Side Frameworks
+## Server-Side Frameworks
 
-Server-side Astro and Next.js support is planned after the static launch path.
-The goal is Markdown content negotiation for runtime pages: agents can request a
-Markdown representation while people still receive normal HTML.
+OpenNav supports runtime HTML-to-Markdown content negotiation for any Node.js or
+WinterCG-compatible server. Import `OpenNavServer` from
+`@opennav-ai/opennav/server` and wrap your existing route handlers:
 
-The planned server-side integrations will support both site-wide middleware and
-per-endpoint middleware, so teams can choose a default policy for the whole app
-or opt specific routes into Markdown responses.
+```ts
+import { OpenNavServer } from "@opennav-ai/opennav/server";
 
-See the [server-side framework roadmap](/frameworks/server-side/) for the
-planned Astro and Next.js runtime integrations.
+const opennav = new OpenNavServer();
+
+app.get("/docs/:slug", async (c) => {
+  const htmlResponse = await renderPage(c.req.param("slug"));
+  const result = await opennav.negotiate({
+    request: c.req.raw,
+    htmlResponse,
+  });
+  if (result.isErr()) return c.text("Internal error", 500);
+  return result.value;
+});
+```
+
+When the client sends `Accept: text/markdown`, the HTML is converted to Markdown
+on-the-fly. Browser requests still receive normal HTML, and responses include
+`Vary: Accept` so caches keep both representations separate.
+
+See the [Server-Side Frameworks](/frameworks/server-side/) guide for
+framework-specific advice.

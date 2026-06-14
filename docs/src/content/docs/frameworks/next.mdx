@@ -271,37 +271,28 @@ its managed Content Signals block.
 
 ## Server-Side Support
 
-Next.js server output is the next open-source track. This is the future of
-agent-ready websites: the same route can serve HTML to people and Markdown to
-agents through content negotiation.
-
-Planned launch shape:
+For Next.js server-rendered pages, use `OpenNavServer` from
+`@opennav-ai/opennav/server`. Call `negotiate()` in a Route Handler:
 
 ```typescript
-import { OpenNavNextServer } from "@opennav-ai/opennav/next/server";
-import type { NextRequest } from "next/server";
+import { OpenNavServer } from "@opennav-ai/opennav/server";
 
-const opennav = OpenNavNextServer({
-  siteName: "Example Docs",
-  markdown: {
-    mode: "content-negotiation",
-    routes: ["/docs/:path*", "/blog/:path*"],
-  },
-});
+const opennav = new OpenNavServer();
 
-export function proxy(request: NextRequest) {
-  return opennav.handle(request);
+export async function GET(req: Request) {
+  const htmlResponse = await fetchPageHtml(req.url);
+  const result = await opennav.negotiate({
+    request: req,
+    htmlResponse,
+  });
+  if (result.isErr()) return new Response(null, { status: 500 });
+  return result.value;
 }
-
-export const config = {
-  matcher: ["/docs/:path*", "/blog/:path*"],
-};
 ```
 
-When a request prefers `text/markdown`, OpenNav will return an agent-readable
-Markdown representation from the same URL. Browser requests still receive HTML,
-and responses include `Vary: Accept` so caches keep both representations
-correct.
+When the client sends `Accept: text/markdown`, the HTML is converted to Markdown
+on-the-fly. Browser requests still receive HTML, and responses include
+`Vary: Accept` so caches keep both representations correct.
 
-See the [server-side framework roadmap](/frameworks/server-side/) for the
-shared Astro and Next.js launch shape.
+For static Next.js export sites, continue using `OpenNavNext()` as described
+above.

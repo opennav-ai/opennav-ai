@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import process from "node:process";
 import { createInterface, type Interface } from "node:readline/promises";
@@ -7,6 +7,7 @@ import { Command } from "commander";
 
 const PACKAGE_NAME = "@opennav-ai/opennav";
 const PACKAGE_JSON_PATH = "packages/opennav/package.json";
+const CHANGELOG_PATH = "packages/opennav/CHANGELOG.md";
 
 type ReleaseMode = "dry-run" | "live";
 type ReleaseChannel = "proper" | "beta" | "alpha" | "rc";
@@ -550,12 +551,14 @@ class OpenNavVersionPlanner {
 }
 
 class OpenNavReleaseCommand {
+  readonly #cwd: string;
   readonly #prompt: ReleasePrompt;
   readonly #shell: ShellCommandRunner;
   readonly #versionPlanner: OpenNavVersionPlanner;
   readonly #versionReader: NpmPackageVersionReader;
 
   public constructor(cwd: string) {
+    this.#cwd = cwd;
     this.#prompt = new ReleasePrompt();
     this.#shell = new ShellCommandRunner(cwd);
     this.#versionPlanner = new OpenNavVersionPlanner();
@@ -864,6 +867,8 @@ class OpenNavReleaseCommand {
       mode,
     });
 
+    await this.maybeUpdateChangelog(plan, mode);
+
     await this.maybeRunStep({
       args: ["run", "publish:opennav:dry-run"],
       command: "npm",
@@ -872,9 +877,9 @@ class OpenNavReleaseCommand {
     });
 
     await this.maybeRunStep({
-      args: ["add", "package-lock.json", PACKAGE_JSON_PATH],
+      args: ["add", CHANGELOG_PATH, "package-lock.json", PACKAGE_JSON_PATH],
       command: "git",
-      label: "Stage release version files?",
+      label: "Stage release version files and changelog?",
       mode,
     });
 
@@ -939,6 +944,47 @@ class OpenNavReleaseCommand {
     });
 
     console.log("Release helper finished.");
+  }
+
+  private async maybeUpdateChangelog(
+    plan: ReleasePlan,
+    mode: ReleaseMode,
+  ): Promise<void> {
+    const today = new Date().toISOString().slice(0, 10);
+    const label = `Update ${CHANGELOG_PATH} header from [Unreleased] to [${plan.targetVersion}] - ${today}?`;
+
+    const shouldRun = await this.#prompt.confirm(label, false);
+
+    if (!shouldRun) {
+      console.log(`Skipped changelog update.`);
+      return;
+    }
+
+    if (mode === "dry-run") {
+      console.log(
+        `Dry run: would replace "## [Unreleased]" with "## [${plan.targetVersion}] - ${today}" in ${CHANGELOG_PATH}.`,
+      );
+      return;
+    }
+
+    const changelogPath = resolve(this.#cwd, CHANGELOG_PATH);
+    const contents = await readFile(changelogPath, "utf8");
+    const updated = contents.replace(
+      "## [Unreleased]",
+      `## [${plan.targetVersion}] - ${today}`,
+    );
+
+    if (updated === contents) {
+      console.log(
+        `Could not find "## [Unreleased]" header in ${CHANGELOG_PATH}.`,
+      );
+      return;
+    }
+
+    await writeFile(changelogPath, updated, "utf8");
+    console.log(
+      `Updated ${CHANGELOG_PATH} header to [${plan.targetVersion}] - ${today}.`,
+    );
   }
 
   private async maybeRunStep(input: {
