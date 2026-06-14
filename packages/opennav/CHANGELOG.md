@@ -2,6 +2,17 @@
 
 All notable changes to `@opennav-ai/opennav` are documented in this file.
 
+## [0.2.1] - 2026-06-14
+
+### Changed
+
+- **README** — replaced the outdated "Server-Side Roadmap" section with live
+  documentation for `OpenNavServer`, `accept()`, `toMarkdown()`, and
+  `negotiate()`. The server-side entry point (`@opennav-ai/opennav/server`)
+  is now listed in the "Pick Your Hook" table. The static site support
+  disclaimer now directs readers to the server-side guide instead of saying
+  SSR is unsupported.
+
 ## [0.2.0] - 2026-06-14
 
 ### Added
@@ -99,6 +110,7 @@ All notable changes to `@opennav-ai/opennav` are documented in this file.
 - **`OpenNavConfig`** — a typed config helper for SDK consumers that validates
   options at construction time.
 
+[0.2.1]: https://github.com/opennav-ai/opennav-ai/compare/opennav-v0.2.0...opennav-v0.2.1
 [0.2.0]: https://github.com/opennav-ai/opennav-ai/compare/opennav-v0.1.2...opennav-v0.2.0
 [0.1.2]: https://github.com/opennav-ai/opennav-ai/compare/opennav-v0.1.1...opennav-v0.1.2
 [0.1.1]: https://github.com/opennav-ai/opennav-ai/compare/opennav-v0.1.0...opennav-v0.1.1
