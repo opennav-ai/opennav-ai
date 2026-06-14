@@ -29,6 +29,7 @@ a build script.
 | Astro | You want OpenNav to run after `astro build`. | `OpenNavAstro` from `@opennav-ai/opennav/astro` |
 | Next.js | You use Next.js static export. | `OpenNavNext` from `@opennav-ai/opennav/next` |
 | CLI | You want a build-step command. | `opennav build --static` |
+| Server-side | You want runtime `Accept: text/markdown` content negotiation. | `OpenNavServer` from `@opennav-ai/opennav/server` |
 
 ## TypeScript SDK
 
@@ -192,17 +193,47 @@ hosting, and any CDN or server that serves plain files.
 | Docusaurus, VitePress, Eleventy, Hugo, Jekyll, MkDocs | Generic static-folder support. |
 | Any folder of real HTML or Markdown files | Generic static-folder support. |
 
-OpenNav does not claim full coverage for SSR-only apps, request-time dynamic
-routes, serverless functions, or pure SPA shells that emit one generic
-`index.html`.
+OpenNav's static build covers pre-rendered output. For server-rendered pages,
+use the `OpenNavServer` class for runtime `Accept: text/markdown` content
+negotiation — see [server-side guide](#server-side-content-negotiation) above.
 
-## Server-Side Roadmap
+## Server-Side Content Negotiation
 
-Server-side Astro and Next.js support is planned after the static launch path.
-That work will add Markdown content negotiation for runtime pages, with both
-site-wide and per-endpoint middleware options.
+`OpenNavServer` handles runtime `Accept: text/markdown` content negotiation.
+When a client sends the right Accept header, the server converts the HTML
+response to clean Markdown on-the-fly. Browser requests still receive normal
+HTML. Works with any WinterCG-compatible runtime: Hono, Astro SSR, Next.js,
+Cloudflare Workers, Bun, SvelteKit.
 
-Static output is supported today. Server-side framework support is coming next.
+```ts
+import { OpenNavServer } from "@opennav-ai/opennav/server";
+
+const opennav = new OpenNavServer();
+
+app.get("/docs/:slug", async (c) => {
+  const htmlResponse = await renderPage(c.req.param("slug"));
+
+  const result = await opennav.negotiate({
+    request: c.req.raw,
+    htmlResponse,
+  });
+
+  if (result.isErr()) return c.text("Internal error", 500);
+  return result.value;
+});
+```
+
+`OpenNavServer` exposes three methods at increasing levels of control:
+
+| Method | When to use |
+| ------ | ----------- |
+| `negotiate({ request, htmlResponse })` | Full pipeline — accept header → decision → response. The default for most routes. |
+| `accept(request)` | Need the Accept decision *before* fetching or rendering expensive page content. Sync, no I/O. |
+| `toMarkdown({ request, htmlResponse })` | Already know Markdown is needed (static `.md` cache miss, markdown-only endpoint). |
+
+Read the [server-side guide](https://docs.opennav.ai/frameworks/server-side/)
+for framework-specific examples and the "Choosing a Method" section for
+endpoint-level code examples showing when to use each method independently.
 
 ## Options
 
@@ -257,4 +288,5 @@ change server behavior.
 - SDK reference: [docs.opennav.ai/sdk](https://docs.opennav.ai/sdk/)
 - Astro guide: [docs.opennav.ai/frameworks/astro](https://docs.opennav.ai/frameworks/astro/)
 - Next.js guide: [docs.opennav.ai/frameworks/next](https://docs.opennav.ai/frameworks/next/)
-- Server-side roadmap: [docs.opennav.ai/frameworks/server-side](https://docs.opennav.ai/frameworks/server-side/)
+- Server-side guide: [docs.opennav.ai/frameworks/server-side](https://docs.opennav.ai/frameworks/server-side/)
+- Changelog: [docs.opennav.ai/changelog](https://docs.opennav.ai/changelog/)
