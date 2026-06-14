@@ -20,10 +20,11 @@ a one-off scraping job.
 | Compatibility | Makes the page usable by agents. | OpenNav |
 | Execution | Uses the page to complete the task. | AI agents and browsers |
 
-Today OpenNav starts with static output because that is the fastest path to a
-visible, inspectable win. Run it after your existing static site build. It reads
-a finished folder such as `dist/`, `out/`, `build/`, or `site/`, then writes an
-agent-readable layer beside the files you already deploy.
+OpenNav works with both static and server-rendered sites. For static output, run
+it after your existing build — it reads `dist/`, `out/`, `build/`, or `site/`
+and writes an agent-readable layer beside the files you already deploy. For
+server-rendered pages, use `OpenNavServer` for runtime `Accept: text/markdown`
+content negotiation — same URL serves HTML to browsers and Markdown to agents.
 
 The result is a normal website with a stable reading path for agents: clean
 Markdown instead of visual HTML scraping, predictable discovery files instead
@@ -86,7 +87,7 @@ step before Cloudflare publishes that folder.
 | Pages with any static output folder | Run `opennav build --static` after your normal build. |
 | Pages with Astro | Use `OpenNavAstro` to run after `astro build`. |
 | Pages with Next.js static export | Use `OpenNavNext` with `output: "export"`. |
-| Workers or AI Gateway experiments | Ship the static OpenNav files now, then follow the server-side roadmap for runtime Markdown responses. |
+| Workers or Pages Functions | Deploy static `.md` files for zero CPU. Use `OpenNavServer` for runtime `Accept: text/markdown` negotiation on SSR routes with a [Cloudflare Pages Function](https://docs.opennav.ai/platforms/cloudflare/#cloudflare-pages-functions). |
 
 Set your Pages build command to run the same script you use locally, and publish
 the same output folder (`dist/`, `out/`, `build/`, or your framework output).
@@ -155,6 +156,7 @@ fits the place where your build already knows the output path.
 | TypeScript SDK | A custom Node script already knows the output folder. | `OpenNavStaticSite` from `@opennav-ai/opennav` |
 | Astro | You want OpenNav to run after `astro build`. | `OpenNavAstro` from `@opennav-ai/opennav/astro` |
 | Next.js | You use Next.js static export. | `OpenNavNext` from `@opennav-ai/opennav/next` |
+| Server-side | You want runtime `Accept: text/markdown` content negotiation. | `OpenNavServer` from `@opennav-ai/opennav/server` |
 
 ## TypeScript SDK
 
@@ -226,9 +228,8 @@ plain files.
 | Docusaurus, VitePress, Eleventy, Hugo, Jekyll, MkDocs | Generic static-folder support. |
 | Any folder of real HTML or Markdown files | Generic static-folder support. |
 
-OpenNav does not claim full coverage for SSR-only apps, request-time dynamic
-routes, serverless functions, or pure SPA shells that emit one generic
-`index.html`.
+For server-rendered pages, use the `OpenNavServer` class for runtime
+`Accept: text/markdown` content negotiation — see [Server-Side](#server-side-content-negotiation).
 
 ## Access Guidance
 
@@ -257,14 +258,24 @@ Content-signal: search=yes, ai-input=yes, ai-train=no
 This is guidance, not enforcement. OpenNav does not block requests, add auth, or
 change server behavior.
 
-## Server-Side Roadmap
+## Server-Side Content Negotiation
 
-Static output is supported today. Server-side Astro and Next.js support is the
-next open-source track.
+`OpenNavServer` handles runtime `Accept: text/markdown` content negotiation.
+When a client sends the right Accept header, the server converts the HTML
+response to clean Markdown on-the-fly. Browser requests still receive normal
+HTML. Works with any WinterCG-compatible runtime.
 
-That work will add Markdown content negotiation for runtime pages, with
-site-wide and per-endpoint middleware options. The goal is that the same route
-can serve HTML to people and Markdown to agents from the same URL.
+`OpenNavServer` exposes three methods at increasing levels of control:
+
+| Method | When to use |
+| ------ | ----------- |
+| `negotiate({ request, htmlResponse })` | Full pipeline — accept header → decision → response. The default. |
+| `accept(request)` | Need the Accept decision *before* fetching or rendering. Sync, no I/O. |
+| `toMarkdown({ request, htmlResponse })` | Already know Markdown is needed (cache miss, markdown-only endpoint). |
+
+See the [server-side guide](https://docs.opennav.ai/frameworks/server-side/)
+for framework examples (Hono, Astro SSR, Next.js, Cloudflare Workers) and the
+"Choosing a Method" section for when to use each method.
 
 ## Learn More
 
@@ -275,7 +286,8 @@ can serve HTML to people and Markdown to agents from the same URL.
 - Next.js guide: [docs.opennav.ai/frameworks/next](https://docs.opennav.ai/frameworks/next/)
 - Generated files reference: [docs.opennav.ai/reference/generated-files](https://docs.opennav.ai/reference/generated-files/)
 - Access guidance reference: [docs.opennav.ai/reference/access-guidance](https://docs.opennav.ai/reference/access-guidance/)
-- Server-side roadmap: [docs.opennav.ai/frameworks/server-side](https://docs.opennav.ai/frameworks/server-side/)
+- Server-side guide: [docs.opennav.ai/frameworks/server-side](https://docs.opennav.ai/frameworks/server-side/)
+- Changelog: [docs.opennav.ai/changelog](https://docs.opennav.ai/changelog/)
 - Cloudflare Agent Readiness: [blog.cloudflare.com/agent-readiness](https://blog.cloudflare.com/agent-readiness/)
 
 ## Workspace
