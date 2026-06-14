@@ -329,10 +329,9 @@ your-project/
 Create `functions/[[path]].ts`:
 
 ```ts
-import { AcceptHeaderNegotiator, OpenNavServer } from "@opennav-ai/opennav/server";
+import { OpenNavServer } from "@opennav-ai/opennav/server";
 
 const opennav = new OpenNavServer();
-const acceptNegotiator = new AcceptHeaderNegotiator();
 
 interface PagesFunctionEnv {
   ASSETS: { fetch(request: Request): Promise<Response> };
@@ -345,10 +344,7 @@ export async function onRequest(context: {
 }): Promise<Response> {
   const url = new URL(context.request.url);
 
-  const decision = acceptNegotiator.negotiate({
-    acceptHeader: context.request.headers.get("accept") ?? null,
-    produces: ["text/html", "text/markdown"],
-  });
+  const decision = opennav.accept(context.request);
 
   // HTML (or no Accept header) — pass through with Vary + Link.
   if (decision === "text/html" || decision === null) {

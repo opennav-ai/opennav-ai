@@ -1,13 +1,22 @@
 import { err, ok, type Result } from "neverthrow";
-import { type AcceptDecision, AcceptHeaderNegotiator } from "../../engine/src/accept/services/accept-header-negotiator";
+import {
+  type AcceptDecision,
+  AcceptHeaderNegotiator,
+} from "../../engine/src/accept/services/accept-header-negotiator";
 import { HtmlResponseMarkdownNegotiator } from "../../engine/src/accept/services/html-response-markdown-negotiator";
 import type { OpenNavError } from "../../engine/src/common/types/opennav-error.ts";
 import type { OpenNavPageMetadata } from "../../engine/src/pages/types/opennav-page.ts";
 import type { PageContentType } from "../../engine/src/pages/types/page-content-type.ts";
 import type { OpenNavContentExtractionOptions } from "./types/open-nav-content-extraction.ts";
-import type { OpenNavServerNegotiateInput, OpenNavServerOptions } from "./types/open-nav-server";
+import type {
+  OpenNavServerNegotiateInput,
+  OpenNavServerOptions,
+} from "./types/open-nav-server";
 
-export { type AcceptDecision, AcceptHeaderNegotiator } from "../../engine/src/accept/services/accept-header-negotiator";
+export {
+  type AcceptDecision,
+  AcceptHeaderNegotiator,
+} from "../../engine/src/accept/services/accept-header-negotiator";
 export type {
   OpenNavServerNegotiateInput,
   OpenNavServerOptions,
@@ -23,6 +32,15 @@ const DEFAULT_PRODUCES: readonly string[] = ["text/html", "text/markdown"];
  * static build generates `.md` files from a built output directory,
  * `OpenNavServer` does per-request HTML-to-Markdown conversion when
  * the client sends `Accept: text/markdown`.
+ *
+ * Three methods are available, ranging from simple to fine-grained:
+ *
+ * - `negotiate({ request, htmlResponse })` — full content negotiation
+ *   pipeline: accept header → decision → appropriate response.
+ * - `accept(request)` — parse the Accept header and return the content
+ *   type decision. No I/O, no conversion.
+ * - `toMarkdown({ request, htmlResponse })` — convert HTML to Markdown
+ *   without inspecting the Accept header.
  *
  * Usage:
  *
@@ -64,18 +82,75 @@ export class OpenNavServer {
   }
 
   /**
+   * Parses the request Accept header and returns the best content type
+   * match from the configured produces list.
+   *
+   * No I/O or conversion is performed. Callers use this to branch before
+   * fetching or rendering expensive page content — for example, to check
+   * for a static `.md` file before falling back to runtime conversion.
+   *
+   * @param request - The incoming request.
+   * @returns The winning content type, or `null` if no type in the
+   * produces list is acceptable to the client.
+   */
+  public accept(request: Request): AcceptDecision {
+    return this.#acceptNegotiator.negotiate({
+      acceptHeader: request.headers.get("accept") ?? null,
+      produces: this.#produces,
+    });
+  }
+
+  /**
+   * Converts the HTML response body to Markdown without inspecting the
+   * Accept header.
+   *
+   * Use this when the caller already knows Markdown is needed — for
+   * example, after a static `.md` file check failed and the fallback
+   * HTML has been fetched.
+   *
+   * Page metadata (route, canonical URL, source path) is derived
+   * automatically from the request URL.
+   *
+   * @param input - The incoming request and the server's HTML response
+   * for this page.
+   * @returns A Response with `Content-Type: text/markdown; charset=utf-8`
+   * and `Vary: Accept`, or a typed OpenNav error if conversion fails.
+   */
+  public async toMarkdown(
+    input: OpenNavServerNegotiateInput,
+  ): Promise<Result<Response, OpenNavError>> {
+    const page = this.toPageMetadata(input.request);
+
+    const result = await this.#responseNegotiator.negotiate({
+      htmlResponse: input.htmlResponse,
+      decision: "text/markdown",
+      page,
+      pages: [page],
+      baseUrl: "",
+      contentExtraction: this.#contentExtraction,
+    });
+
+    if (result.isErr()) {
+      return err(result.error);
+    }
+
+    return ok(result.value.response);
+  }
+
+  /**
    * Inspects the request Accept header and returns the right Response
    * (HTML, Markdown, or 406) for a given page.
    *
-   * Page metadata (route, canonical URL, source path) is derived
-   * automatically from the request URL. No manual page records or
-   * site page lists are needed.
+   * This is the high-level entry point for most callers. It parses the
+   * Accept header via `accept()`, then:
    *
-   * When the client prefers `text/markdown`, the HTML response body is
-   * converted to Markdown on-the-fly. When the client prefers
-   * `text/html`, the original response is passed through with a
-   * `Vary: Accept` header and a `Link: rel="alternate"` header
-   * advertising the Markdown representation.
+   * - `text/markdown` → delegates to `toMarkdown()` for conversion
+   * - `text/html` → passes through the original response with `Vary` and
+   *   `Link: rel="alternate"` headers
+   * - `null` (no match) → returns 406 Not Acceptable
+   *
+   * For callers that need fine-grained control over the decision or
+   * conversion steps, use `accept()` and `toMarkdown()` directly.
    *
    * @param input - The incoming request and the server's HTML response
    * for this page.
@@ -84,10 +159,11 @@ export class OpenNavServer {
   public async negotiate(
     input: OpenNavServerNegotiateInput,
   ): Promise<Result<Response, OpenNavError>> {
-    const decision: AcceptDecision = this.#acceptNegotiator.negotiate({
-      acceptHeader: input.request.headers.get("accept") ?? null,
-      produces: this.#produces,
-    });
+    const decision = this.accept(input.request);
+
+    if (decision === "text/markdown") {
+      return this.toMarkdown(input);
+    }
 
     const page = this.toPageMetadata(input.request);
 

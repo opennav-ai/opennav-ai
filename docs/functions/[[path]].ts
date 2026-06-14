@@ -1,8 +1,6 @@
 import { OpenNavServer } from "../../packages/opennav/src/server.ts";
-import { AcceptHeaderNegotiator } from "../../packages/engine/src/accept/services/accept-header-negotiator.ts";
 
 const opennav = new OpenNavServer();
-const acceptNegotiator = new AcceptHeaderNegotiator();
 
 interface PagesFunctionEnv {
   ASSETS: {
@@ -15,10 +13,7 @@ export async function onRequest(context: {
   env: PagesFunctionEnv;
   next(): Promise<Response>;
 }): Promise<Response> {
-  const decision = acceptNegotiator.negotiate({
-    acceptHeader: context.request.headers.get("accept") ?? null,
-    produces: ["text/html", "text/markdown"],
-  });
+  const decision = opennav.accept(context.request);
 
   // 406 — no acceptable type
   if (decision === null) {

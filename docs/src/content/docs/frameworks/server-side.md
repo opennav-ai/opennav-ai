@@ -195,20 +195,16 @@ Worker. But you can still avoid wasted CPU by checking for a static `.md` file
 first:
 
 ```ts
-import { AcceptHeaderNegotiator, OpenNavServer } from "@opennav-ai/opennav/server";
+import { OpenNavServer } from "@opennav-ai/opennav/server";
 
 const opennav = new OpenNavServer();
-const acceptNegotiator = new AcceptHeaderNegotiator();
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
-    // Negotiate first to get the decision without converting anything.
-    const decision = acceptNegotiator.negotiate({
-      acceptHeader: request.headers.get("accept") ?? null,
-      produces: ["text/html", "text/markdown"],
-    });
+    // Parse the Accept header without fetching or converting anything.
+    const decision = opennav.accept(request);
 
     // HTML (or no Accept header) — pass through with Vary + Link.
     if (decision === "text/html" || decision === null) {
@@ -281,11 +277,197 @@ interface OpenNavServerOptions {
 }
 ```
 
+## Choosing a Method
+
+`OpenNavServer` exposes three methods instead of one because real-world servers
+often need to decide what to do *before* the expensive work happens — fetching
+HTML, rendering a page, or converting to Markdown. Each method does one thing
+so you can compose them when you need control, or take the default when you
+don't.
+
+### `negotiate()` — the default for most routes
+
+```ts
+import { OpenNavServer } from "@opennav-ai/opennav/server";
+
+const opennav = new OpenNavServer();
+
+app.get("/docs/:slug", async (c) => {
+  const htmlResponse = await renderPage(c.req.param("slug"));
+
+  const result = await opennav.negotiate({
+    request: c.req.raw,
+    htmlResponse,
+  });
+
+  if (result.isErr()) return c.text("Internal error", 500);
+
+  // result.value is already the right response:
+  //   HTML (with Vary + Link) if the client prefers text/html
+  //   Markdown if the client prefers text/markdown
+  //   406 Not Acceptable if no type matches
+  return result.value;
+});
+```
+
+`negotiate()` is the full pipeline: accept header → decision → response. Use
+it when you already have an HTML response in hand and want the right thing to
+happen based on what the client asked for. It covers all three outcomes in one
+call. This is the right choice for straightforward SSR routes, Hono handlers,
+and any path where rendering the page is cheap.
+
+All framework examples above use `negotiate()` for this reason.
+
+### `accept()` — when you need the decision before doing work
+
+```ts
+import { OpenNavServer } from "@opennav-ai/opennav/server";
+
+const opennav = new OpenNavServer();
+
+app.get("/docs/:slug", async (c) => {
+  const decision = opennav.accept(c.req.raw);
+
+  // An expensive SSR render is about to happen, but the client
+  // only wants Markdown — and we might already have a cached copy.
+  if (decision === "text/markdown") {
+    const cachedMd = await getCachedMarkdown(c.req.param("slug"));
+
+    if (cachedMd) {
+      return new Response(cachedMd, {
+        headers: {
+          "Content-Type": "text/markdown; charset=utf-8",
+          "Vary": "Accept",
+        },
+      });
+    }
+  }
+
+  // Either the client wants HTML, or the Markdown cache missed.
+  // Either way, render the page and let negotiate() handle it.
+  const htmlResponse = await renderPage(c.req.param("slug"));
+
+  const result = await opennav.negotiate({
+    request: c.req.raw,
+    htmlResponse,
+  });
+
+  if (result.isErr()) return c.text("Internal error", 500);
+  return result.value;
+});
+```
+
+`accept()` parses the request's `Accept` header against the configured
+`produces` list and returns the content type decision. It is synchronous and
+does no I/O — just a string parse. Use it when you want to branch *before*
+the expensive work begins:
+
+- **Pre-built `.md` files on disk.** In a Cloudflare Worker or static file
+  server, call `accept()` first, then fetch the static `.md` directly if the
+  decision is `"text/markdown"`. Never invoke the HTML render at all.
+- **Expensive rendering.** If your page hits a database or external API, you
+  can skip the full render when Markdown is already cached, as shown above.
+- **Early 406 rejection.** If the client asks for a type you don't produce,
+  short-circuit before touching your origin at all.
+
+`accept()` replaces the need to import `AcceptHeaderNegotiator` directly. It
+uses the same `produces` list configured on the `OpenNavServer` instance, so
+you get consistent decisions across `accept()` and `negotiate()`.
+
+### `toMarkdown()` — when you already know Markdown is needed
+
+`toMarkdown()` converts the HTML body to Markdown without inspecting the
+`Accept` header. Use it when the decision is already settled — either because
+you branched on `accept()` and the Markdown cache missed, or because the
+endpoint itself only serves Markdown.
+
+**Conversion fallback after a cache miss:**
+
+```ts
+const opennav = new OpenNavServer();
+
+app.get("/docs/:slug", async (c) => {
+  const decision = opennav.accept(c.req.raw);
+
+  if (decision === "text/markdown") {
+    const cached = await getCachedMd(c.req.param("slug"));
+    if (cached) return cached;
+
+    // Cache missed — render HTML and convert. No need for negotiate()
+    // because we already know the client wants Markdown.
+    const htmlResponse = await renderPage(c.req.param("slug"));
+    const result = await opennav.toMarkdown({
+      request: c.req.raw,
+      htmlResponse,
+    });
+
+    if (result.isErr()) return c.text("Internal error", 500);
+    return result.value;
+  }
+
+  const htmlResponse = await renderPage(c.req.param("slug"));
+  const result = await opennav.negotiate({ request: c.req.raw, htmlResponse });
+  if (result.isErr()) return c.text("Internal error", 500);
+  return result.value;
+});
+```
+
+**Markdown-only API endpoint:**
+
+```ts
+const opennav = new OpenNavServer();
+
+// This route always returns Markdown — no content negotiation.
+app.get("/api/:slug.md", async (c) => {
+  const htmlResponse = await renderPage(c.req.param("slug"));
+
+  const result = await opennav.toMarkdown({
+    request: c.req.raw,
+    htmlResponse,
+  });
+
+  if (result.isErr()) return c.text("Internal error", 500);
+  return result.value;
+});
+```
+
+`toMarkdown()` respects the same `contentExtraction` options as `negotiate()`.
+It derives page metadata from the request URL automatically, so link rewriting
+and path normalization still work.
+
+### Why these are separate methods
+
+The split follows a design rule: each method has one responsibility.
+
+| Method | Responsibility |
+| ------ | -------------- |
+| `accept()` | Content type decision |
+| `toMarkdown()` | HTML-to-Markdown conversion |
+| `negotiate()` | Orchestration (calls `accept()` then acts) |
+
+For the 90% case — an SSR route where rendering is cheap — `negotiate()` is
+the only call you need. The other two methods exist so callers with more
+complex setups (static `.md` files, caches, expensive renders) can compose the
+pieces without re-implementing logic the SDK already owns or importing engine
+internals.
+
+### Quick-reference: which method when
+
+| If you… | Use… |
+| -------- | ---- |
+| Have HTML and want the right response based on Accept | `negotiate()` |
+| Need the Accept decision before fetching or rendering | `accept()` |
+| Have HTML and know Markdown is the right output | `toMarkdown()` |
+| Serve pre-built `.md` files alongside HTML | `accept()` to branch, then `negotiate()` or `toMarkdown()` to convert |
+| Build a Markdown-only API endpoint | `toMarkdown()`
+
 ## Out of Scope
 
-The `OpenNavServer` does one thing: per-request HTML-to-Markdown content
-negotiation. It does not:
+The `OpenNavServer` handles per-request HTML-to-Markdown content negotiation and
+conversion. It does not:
 
+- Check for or serve pre-built static `.md` files (use `accept()` to branch into
+  your own static-asset logic).
 - Rewrite internal links to `.md` endpoints.
 - Cache converted Markdown (wrap in your own CDN/cache headers).
 - Generate `llms.txt` or `llms-full.txt` at runtime (those are build-time artifacts).

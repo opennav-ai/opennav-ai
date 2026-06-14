@@ -24,6 +24,180 @@ describe("OpenNavServer", (): void => {
     });
   }
 
+  describe("accept", (): void => {
+    it("returns text/html by default when no Accept header is present", (): void => {
+      const server = new OpenNavServer();
+
+      expect(server.accept(createRequest(null))).toEqual("text/html");
+    });
+
+    it("returns text/html when Accept header is empty", (): void => {
+      const server = new OpenNavServer();
+
+      expect(server.accept(createRequest(""))).toEqual("text/html");
+    });
+
+    it("returns text/markdown when Accept: text/markdown", (): void => {
+      const server = new OpenNavServer();
+
+      expect(server.accept(createRequest("text/markdown"))).toEqual(
+        "text/markdown",
+      );
+    });
+
+    it("returns text/html when Accept: text/html", (): void => {
+      const server = new OpenNavServer();
+
+      expect(server.accept(createRequest("text/html"))).toEqual("text/html");
+    });
+
+    it("returns null when no matching type is in the produces list", (): void => {
+      const server = new OpenNavServer();
+
+      expect(server.accept(createRequest("application/pdf"))).toBeNull();
+    });
+
+    it("returns null when all types have q=0 rejection", (): void => {
+      const server = new OpenNavServer();
+
+      expect(
+        server.accept(createRequest("text/html;q=0, text/markdown;q=0")),
+      ).toBeNull();
+    });
+
+    it("returns text/markdown when Accept: text/markdown, text/html (client-order tiebreak)", (): void => {
+      const server = new OpenNavServer();
+
+      expect(server.accept(createRequest("text/markdown, text/html"))).toEqual(
+        "text/markdown",
+      );
+    });
+
+    it("returns text/html when Accept: text/html, text/markdown (client-order tiebreak)", (): void => {
+      const server = new OpenNavServer();
+
+      expect(server.accept(createRequest("text/html, text/markdown"))).toEqual(
+        "text/html",
+      );
+    });
+
+    it("respects custom produces list from constructor", (): void => {
+      const server = new OpenNavServer({
+        produces: ["text/markdown", "text/html"],
+      });
+
+      expect(server.accept(createRequest(null))).toEqual("text/markdown");
+    });
+
+    it("honors q=0 rejection and falls through to the next candidate", (): void => {
+      const server = new OpenNavServer();
+
+      expect(
+        server.accept(createRequest("text/markdown;q=0, text/html")),
+      ).toEqual("text/html");
+    });
+  });
+
+  describe("toMarkdown", (): void => {
+    it("converts HTML to Markdown with proper Content-Type and Vary", async (): Promise<void> => {
+      const server = new OpenNavServer();
+      const result = await server.toMarkdown({
+        request: createRequest("text/markdown"),
+        htmlResponse: createHtmlResponse(HTML_BODY),
+      });
+
+      expect(result.isOk()).toEqual(true);
+
+      if (result.isErr()) {
+        throw new Error("Expected ok result");
+      }
+
+      const response = result.value;
+
+      expect(response.headers.get("Content-Type")).toEqual(
+        "text/markdown; charset=utf-8",
+      );
+      expect(response.headers.get("Vary")).toEqual("Accept");
+      expect(await response.text()).toEqual("# Home\n\nWelcome to the site.\n");
+    });
+
+    it("converts to Markdown even when Accept header prefers HTML", async (): Promise<void> => {
+      const server = new OpenNavServer();
+      const result = await server.toMarkdown({
+        request: createRequest("text/html"),
+        htmlResponse: createHtmlResponse(HTML_BODY),
+      });
+
+      expect(result.isOk()).toEqual(true);
+
+      if (result.isErr()) {
+        throw new Error("Expected ok result");
+      }
+
+      expect(result.value.headers.get("Content-Type")).toEqual(
+        "text/markdown; charset=utf-8",
+      );
+    });
+
+    it("does not add Link header on Markdown responses", async (): Promise<void> => {
+      const server = new OpenNavServer();
+      const result = await server.toMarkdown({
+        request: createRequest("text/html"),
+        htmlResponse: createHtmlResponse(HTML_BODY),
+      });
+
+      expect(result.isOk()).toEqual(true);
+
+      if (result.isErr()) {
+        throw new Error("Expected ok result");
+      }
+
+      expect(result.value.headers.get("Link")).toBeNull();
+    });
+
+    it("respects contentExtraction.stripLayout", async (): Promise<void> => {
+      const server = new OpenNavServer({
+        contentExtraction: { stripLayout: true },
+      });
+
+      const htmlWithNav =
+        '<!doctype html><html lang="en"><head><title>Test</title></head><body><nav>Skip</nav><main><h1>Test</h1><p>Content.</p></main></body></html>';
+
+      const result = await server.toMarkdown({
+        request: createRequest("text/markdown"),
+        htmlResponse: createHtmlResponse(htmlWithNav),
+      });
+
+      expect(result.isOk()).toEqual(true);
+
+      if (result.isErr()) {
+        throw new Error("Expected ok result");
+      }
+
+      expect(await result.value.text()).toEqual("# Test\n\nContent.\n");
+    });
+
+    it("derives page metadata from request URL", async (): Promise<void> => {
+      const server = new OpenNavServer();
+      const result = await server.toMarkdown({
+        request: new Request("https://docs.example.com/guide/", {
+          headers: new Headers({ accept: "text/markdown" }),
+        }),
+        htmlResponse: createHtmlResponse(
+          "<!doctype html><html><body><h1>Guide</h1><p>Welcome.</p></body></html>",
+        ),
+      });
+
+      expect(result.isOk()).toEqual(true);
+
+      if (result.isErr()) {
+        throw new Error("Expected ok result");
+      }
+
+      expect(await result.value.text()).toEqual("# Guide\n\nWelcome.\n");
+    });
+  });
+
   describe("negotiate", (): void => {
     it("returns Markdown when Accept: text/markdown is sent", async (): Promise<void> => {
       const server = new OpenNavServer();
